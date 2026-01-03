@@ -23,10 +23,13 @@ RUN pip3 install --no-cache-dir -r requirements.server.txt
 COPY faster_whisper/ ./faster_whisper/
 COPY app/ ./app/
 
+# Pre-download turbo model for offline use
+RUN python3 -c "from faster_whisper import WhisperModel; WhisperModel('turbo', device='cpu')"
+
 WORKDIR /app/app
 
 # Environment variables
-ENV MODEL_SIZE=base
+ENV MODEL_SIZE=turbo
 ENV DEVICE=cuda
 ENV COMPUTE_TYPE=float16
 ENV PORT=8600

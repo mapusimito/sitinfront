@@ -6,10 +6,47 @@ __pycache__/
 
 # Distribution / Packaging
 venv/
+env/
+.venv/
+dist/
+build/
+*.egg-info/
 
 # Unit Test
 .pytest_cache/
+.coverage
+htmlcov/
 
-# Ignore IDE, Editor Files
+# IDE / Editor
 .idea/
 .vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Cache
+.cache/
+*.cache
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Model files (downloaded at runtime)
+*.bin
+*.pt
+*.onnx
+models/

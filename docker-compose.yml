@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  whisper:
+    build: .
+    image: neosun/faster-whisper:latest
+    container_name: faster-whisper
+    ports:
+      - "${PORT:-8600}:8600"
+    environment:
+      - MODEL_SIZE=${MODEL_SIZE:-base}
+      - DEVICE=${DEVICE:-cuda}
+      - COMPUTE_TYPE=${COMPUTE_TYPE:-float16}
+      - IDLE_TIMEOUT=${IDLE_TIMEOUT:-300}
+      - PORT=8600
+    volumes:
+      - whisper-cache:/root/.cache
+      - ./app:/app/app:ro
+      - ./faster_whisper:/app/faster_whisper:ro
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8600/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  whisper-cache:

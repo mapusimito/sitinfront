@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faster Whisper</title>
+    <style>
+:root{--bg:linear-gradient(135deg,#0f0f23,#1a0a2e);--surface:rgba(255,255,255,0.05);--surface2:rgba(255,255,255,0.1);--border:rgba(255,255,255,0.1);--text:#e8e8f0;--dim:#a0a0b0;--accent:#ec4899;--accent2:#8b5cf6;--green:#22c55e;--blue:#3b82f6;--orange:#f59e0b;--red:#ef4444}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.header{text-align:center;padding:2rem 1rem 1rem;position:relative}
+.title{font-size:2.5rem;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{color:var(--dim);margin-top:.5rem}
+.container{max-width:900px;margin:0 auto;padding:1rem}
+.metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;margin-bottom:2rem}
+.metric-card{background:var(--surface);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:12px;padding:1.25rem;text-align:center;transition:all .3s}
+.metric-card.success{background:rgba(34,197,94,0.1);border-color:var(--green)}
+.metric-label{font-size:.75rem;color:var(--dim);margin-bottom:.5rem}
+.metric-value{font-size:1.5rem;font-weight:600;color:var(--accent)}
+.metric-unit{font-size:.8rem;color:var(--dim)}
+.card{background:var(--surface);backdrop-filter:blur(10px);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem}
+.card-title{font-size:1rem;font-weight:600;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.form-group{margin-bottom:1rem}
+.form-label{display:block;font-size:.85rem;color:var(--dim);margin-bottom:.5rem;font-weight:500}
+.form-hint{font-size:.75rem;color:var(--dim);margin-top:.25rem}
+input,select,textarea{width:100%;padding:.75rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.9rem;transition:all .3s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);background:rgba(255,255,255,0.08)}
+textarea{min-height:100px;resize:vertical;font-family:inherit}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+@media(max-width:600px){.form-row{grid-template-columns:1fr}}
+.btn{width:100%;padding:1rem;background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;border-radius:8px;color:#fff;font-size:1rem;font-weight:600;cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.btn:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(236,72,153,0.3)}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-secondary{background:var(--surface);border:1px solid var(--border);color:var(--text)}
+.upload-zone{border:2px dashed var(--border);border-radius:12px;padding:3rem;text-align:center;cursor:pointer;transition:all .3s;background:rgba(255,255,255,0.02)}
+.upload-zone:hover,.upload-zone.dragover{border-color:var(--accent);background:rgba(236,72,153,0.1)}
+.upload-icon{font-size:3rem;margin-bottom:1rem}
+.result-area{margin-top:1.5rem}
+.result-text{background:rgba(255,255,255,0.05);border-radius:8px;padding:1rem;font-family:monospace;white-space:pre-wrap;max-height:400px;overflow-y:auto;border:1px solid var(--border);line-height:1.6;font-size:.85rem}
+.segment{padding:.5rem 0;border-bottom:1px solid var(--border)}
+.segment:last-child{border-bottom:none}
+.segment-time{color:var(--accent);font-size:.75rem;margin-right:.5rem;font-family:monospace}
+audio{width:100%;margin-top:1rem;border-radius:8px}
+.status-bar{display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:1.5rem;font-size:.85rem}
+.status-item{display:flex;align-items:center;gap:.5rem}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.status-dot.loading{background:var(--orange);animation:pulse 1s infinite}
+.hidden{display:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.progress-bar{width:100%;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;margin-top:1rem}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0%;transition:width .3s}
+.lang-select{position:absolute;top:1rem;right:1rem;padding:.5rem;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.85rem}
+.switch{position:relative;display:inline-block;width:44px;height:22px}
+.switch input{opacity:0;width:0;height:0}
+.switch-slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.1);transition:.3s;border-radius:22px}
+.switch-slider:before{position:absolute;content:"";height:16px;width:16px;left:3px;bottom:3px;background:white;transition:.3s;border-radius:50%}
+input:checked+.switch-slider{background:linear-gradient(135deg,var(--accent),var(--accent2))}
+input:checked+.switch-slider:before{transform:translateX(22px)}
+.tabs{display:flex;gap:.5rem;margin-bottom:1rem}
+.tab{padding:.5rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:.85rem;transition:all .2s}
+.tab.active{background:var(--accent);border-color:var(--accent)}
+    </style>
+</head>
+<body>
+<div class="header">
+    <select class="lang-select" id="langSelect" onchange="setLanguage(this.value)">
+        <option value="zh-CN">🇨🇳 简体中文</option>
+        <option value="zh-TW">🇹🇼 繁體中文</option>
+        <option value="en">🇺🇸 English</option>
+        <option value="ja">🇯🇵 日本語</option>
+    </select>
+    <h1 class="title">🎙️ Faster Whisper</h1>
+    <p class="subtitle" data-i18n="subtitle">GPU加速的高性能语音转录服务</p>
+</div>
+<div class="container">
+    <!-- 性能指标 -->
+    <div class="metrics-grid">
+        <div class="metric-card" id="time-card">
+            <div class="metric-label" data-i18n="metric.time">处理耗时</div>
+            <div class="metric-value" id="time-value">--</div>
+            <div class="metric-unit">s</div>
+        </div>
+        <div class="metric-card" id="duration-card">
+            <div class="metric-label" data-i18n="metric.duration">音频时长</div>
+            <div class="metric-value" id="duration-value">--</div>
+            <div class="metric-unit">s</div>
+        </div>
+        <div class="metric-card" id="speed-card">
+            <div class="metric-label" data-i18n="metric.speed">处理速度</div>
+            <div class="metric-value" id="speed-value">--</div>
+            <div class="metric-unit">x</div>
+        </div>
+        <div class="metric-card" id="size-card">
+            <div class="metric-label" data-i18n="metric.size">文件大小</div>
+            <div class="metric-value" id="size-value">--</div>
+            <div class="metric-unit">MB</div>
+        </div>
+    </div>
+    <!-- 技术说明 -->
+    <div class="card" style="background:linear-gradient(135deg,rgba(139,92,246,0.1),rgba(236,72,153,0.1));border-color:var(--accent2)">
+        <div class="card-title">⚡ <span data-i18n="tech.title">为什么 Faster Whisper 更快？</span></div>
+        <div style="font-size:.85rem;line-height:1.8;color:var(--dim)">
+            <p data-i18n="tech.desc">Faster Whisper 使用 <strong style="color:var(--accent)">CTranslate2</strong> 推理引擎重新实现 OpenAI Whisper，相比原版：</p>
+            <ul style="margin:.75rem 0 0 1.5rem">
+                <li data-i18n="tech.speed">🚀 <strong style="color:var(--green)">4倍速度提升</strong> - 同等精度下处理速度提升4倍</li>
+                <li data-i18n="tech.memory">💾 <strong style="color:var(--blue)">更低内存占用</strong> - INT8量化可减少50%显存</li>
+                <li data-i18n="tech.batch">📦 <strong style="color:var(--orange)">批量推理</strong> - batch_size=16 可再提速3-4倍</li>
+                <li data-i18n="tech.vad">🔇 <strong style="color:var(--accent2)">VAD静音过滤</strong> - 自动跳过无语音片段</li>
+            </ul>
+        </div>
+    </div>
+    <!-- 状态栏 -->
+    <div class="status-bar">
+        <div class="status-item">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText" data-i18n="status.ready">就绪</span>
+        </div>
+        <div class="status-item">
+            <span style="color:var(--dim)" data-i18n="status.model">模型:</span>
+            <span id="modelName">--</span>
+        </div>
+        <div class="status-item">
+            <span style="color:var(--dim)" data-i18n="status.gpu">GPU:</span>
+            <span id="gpuMemory">--</span>
+        </div>
+        <button onclick="offloadGPU()" style="padding:.25rem .75rem;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;font-size:.8rem" data-i18n="status.release">释放</button>
+    </div>
+    <!-- 上传区域 -->
+    <div class="card">
+        <div class="card-title">📁 <span data-i18n="upload.title">上传音频</span></div>
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon">🎵</div>
+            <div data-i18n="upload.hint">拖拽音频文件到此处或点击上传</div>
+            <div style="margin-top:.5rem;font-size:.8rem;color:var(--dim)" data-i18n="upload.formats">支持 MP3, WAV, M4A, FLAC, OGG 等格式</div>
+        </div>
+        <input type="file" id="fileInput" accept="audio/*,video/*" class="hidden" onchange="handleFile(this.files[0])">
+        <div id="fileName" class="hidden" style="margin-top:1rem;text-align:center;color:var(--accent)"></div>
+    </div>
+    <!-- 参数设置 -->
+    <div class="card">
+        <div class="card-title">⚙️ <span data-i18n="params.title">转录设置</span></div>
+        <div class="form-group">
+            <label class="form-label" data-i18n="params.model">🤖 模型选择</label>
+            <select id="modelSelect" onchange="onModelChange()">
+                <optgroup label="⚡ 推荐 (速度与精度平衡)">
+                    <option value="turbo" selected>turbo - 最快大模型 (推荐)</option>
+                    <option value="base">base - 快速基础模型</option>
+                    <option value="small">small - 小型精确模型</option>
+                </optgroup>
+                <optgroup label="🎯 高精度">
+                    <option value="large-v3">large-v3 - 最高精度</option>
+                    <option value="large-v2">large-v2 - 高精度</option>
+                    <option value="medium">medium - 中等精度</option>
+                </optgroup>
+                <optgroup label="🚀 Distil (英语优化)">
+                    <option value="distil-large-v3">distil-large-v3 - 蒸馏版v3</option>
+                    <option value="distil-large-v2">distil-large-v2 - 蒸馏版v2</option>
+                </optgroup>
+                <optgroup label="💨 轻量级">
+                    <option value="tiny">tiny - 最小最快</option>
+                    <option value="tiny.en">tiny.en - 英语专用</option>
+                    <option value="base.en">base.en - 英语专用</option>
+                    <option value="small.en">small.en - 英语专用</option>
+                </optgroup>
+            </select>
+            <div class="form-hint" id="modelHint">💡 turbo 模型速度最快，large-v3 精度最高</div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" data-i18n="params.language">语言</label>
+                <select id="language">
+                    <option value="" data-i18n="params.language.auto">自动检测</option>
+                    <option value="zh">中文</option>
+                    <option value="en">English</option>
+                    <option value="ja">日本語</option>
+                    <option value="ko">한국어</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
+                    <option value="ru">Русский</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label" data-i18n="params.format">输出格式</label>
+                <select id="outputFormat">
+                    <option value="json">JSON (详细)</option>
+                    <option value="text">纯文本</option>
+                    <option value="srt">SRT 字幕</option>
+                    <option value="vtt">VTT 字幕</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label"><span data-i18n="params.prompt">提示词</span> <span id="promptCount" style="color:var(--dim);font-size:.75rem">(0/1000)</span></label>
+            <textarea id="prompt" placeholder="输入专业术语、人名、地名等，提高识别准确率..." oninput="updatePromptCount()">标点：Hello, hi! Yes? No. Thank you. 你好，谢谢！是的。云计算：AWS, Azure, GCP, S3, EC2, Lambda, CloudFront, ECS, EKS, RDS, DynamoDB, SageMaker, Bedrock. 大数据：Kafka, Flink, Spark, Hadoop, Hive, Presto, Airflow, EMR, Glue, Athena, Redshift, Kinesis. AI/ML：OpenAI, ChatGPT, Claude, Gemini, GPT-4, Whisper, TensorFlow, PyTorch, MLX, LLM, RAG, Vector, Embedding. 开发：Python, JavaScript, TypeScript, Java, Go, Rust, React, Vue, Node.js, Docker, Kubernetes, Git, GitHub, GitLab, CI/CD, API, REST, GraphQL, gRPC. 职场：announce, confirm, schedule, meeting, deadline, deliverable, stakeholder, alignment, sync-up, follow-up, action item, escalate, prioritize, bandwidth, capacity. 公司：Amazon, Google, Microsoft, Meta, Apple, Netflix, Uber, Airbnb, Salesforce, Oracle, IBM, SAP. 人名：Neo, Damon, Jason, Kevin, Kenny, Rob, Eric, Richard, Michelle, Ken.</textarea>
+            <div class="form-hint" data-i18n="params.prompt.hint">💡 提示词可包含标点符号示例、专业术语、人名等，帮助模型更准确识别</div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" data-i18n="params.beam">Beam Size</label>
+                <input type="number" id="beamSize" value="5" min="1" max="10">
+            </div>
+            <div class="form-group">
+                <label class="form-label" data-i18n="params.batch">Batch Size</label>
+                <input type="number" id="batchSize" value="16" min="1" max="32">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label" style="display:flex;align-items:center;gap:1rem">
+                    <span data-i18n="params.vad">VAD 静音过滤</span>
+                    <label class="switch"><input type="checkbox" id="vadFilter" checked><span class="switch-slider"></span></label>
+                </label>
+            </div>
+            <div class="form-group">
+                <label class="form-label" style="display:flex;align-items:center;gap:1rem">
+                    <span data-i18n="params.word">词级时间戳</span>
+                    <label class="switch"><input type="checkbox" id="wordTimestamps"><span class="switch-slider"></span></label>
+                </label>
+            </div>
+        </div>
+    </div>
+    <!-- 转录按钮 -->
+    <button class="btn" id="transcribeBtn" onclick="transcribe()" disabled>
+        <span>▶</span> <span data-i18n="btn.transcribe">开始转录</span>
+    </button>
+    <div class="progress-bar hidden" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <!-- 结果区域 -->
+    <div class="result-area hidden" id="resultArea">
+        <div class="card">
+            <div class="card-title">📝 <span data-i18n="result.title">转录结果</span></div>
+            <div class="tabs">
+                <div class="tab active" onclick="showTab('formatted')" data-i18n="result.formatted">格式化</div>
+                <div class="tab" onclick="showTab('text')" data-i18n="result.text">纯文本</div>
+                <div class="tab" onclick="showTab('srt')">SRT</div>
+                <div class="tab" onclick="showTab('vtt')">VTT</div>
+                <div class="tab" onclick="showTab('raw')" data-i18n="result.raw">原始JSON</div>
+            </div>
+            <div id="formattedResult" class="result-text"></div>
+            <div id="textResult" class="result-text hidden"></div>
+            <div id="srtResult" class="result-text hidden" style="font-family:monospace;white-space:pre"></div>
+            <div id="vttResult" class="result-text hidden" style="font-family:monospace;white-space:pre"></div>
+            <div id="rawResult" class="result-text hidden"></div>
+            <audio id="audioPlayer" controls class="hidden"></audio>
+            <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap">
+                <button class="btn btn-secondary" onclick="downloadAs('json')" style="flex:1;min-width:100px">
+                    <span>📄</span> JSON
+                </button>
+                <button class="btn btn-secondary" onclick="downloadAs('txt')" style="flex:1;min-width:100px">
+                    <span>📝</span> TXT
+                </button>
+                <button class="btn btn-secondary" onclick="downloadAs('srt')" style="flex:1;min-width:100px">
+                    <span>🎬</span> SRT
+                </button>
+                <button class="btn btn-secondary" onclick="downloadAs('vtt')" style="flex:1;min-width:100px">
+                    <span>🎥</span> VTT
+                </button>
+                <button class="btn btn-secondary" onclick="copyResult()" style="flex:1;min-width:100px">
+                    <span>📋</span> <span data-i18n="btn.copy">复制</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+const i18n = {
+    'zh-CN': {
+        subtitle: 'CTranslate2 推理引擎 · GPU加速的高性能语音转录服务',
+        'metric.time': '处理耗时', 'metric.duration': '音频时长', 'metric.speed': '处理速度', 'metric.size': '文件大小',
+        'status.ready': '就绪', 'status.processing': '处理中...', 'status.done': '完成', 'status.error': '错误',
+        'status.model': '模型:', 'status.gpu': 'GPU:', 'status.release': '释放',
+        'upload.title': '上传音频', 'upload.hint': '拖拽音频文件到此处或点击上传', 'upload.formats': '支持 MP3, WAV, M4A, FLAC, OGG 等格式',
+        'params.title': '转录设置', 'params.language': '语言', 'params.language.auto': '自动检测',
+        'params.format': '输出格式', 'params.prompt': '提示词', 'params.prompt.hint': '💡 提示词可包含标点符号示例、专业术语、人名等，帮助模型更准确识别',
+        'params.beam': 'Beam Size', 'params.batch': 'Batch Size', 'params.vad': 'VAD 静音过滤', 'params.word': '词级时间戳',
+        'btn.transcribe': '开始转录', 'btn.download': '下载结果', 'btn.copy': '复制',
+        'result.title': '转录结果', 'result.formatted': '格式化', 'result.text': '纯文本', 'result.raw': 'JSON'
+    },
+    'zh-TW': {
+        subtitle: 'CTranslate2 推理引擎 · GPU加速的高性能語音轉錄服務',
+        'metric.time': '處理耗時', 'metric.duration': '音頻時長', 'metric.speed': '處理速度', 'metric.size': '文件大小',
+        'status.ready': '就緒', 'status.processing': '處理中...', 'status.done': '完成', 'status.error': '錯誤',
+        'status.model': '模型:', 'status.gpu': 'GPU:', 'status.release': '釋放',
+        'upload.title': '上傳音頻', 'upload.hint': '拖拽音頻文件到此處或點擊上傳', 'upload.formats': '支持 MP3, WAV, M4A, FLAC, OGG 等格式',
+        'params.title': '轉錄設置', 'params.language': '語言', 'params.language.auto': '自動檢測',
+        'params.format': '輸出格式', 'params.prompt': '提示詞', 'params.prompt.hint': '💡 提示詞可包含標點符號示例、專業術語、人名等，幫助模型更準確識別',
+        'params.beam': 'Beam Size', 'params.batch': 'Batch Size', 'params.vad': 'VAD 靜音過濾', 'params.word': '詞級時間戳',
+        'btn.transcribe': '開始轉錄', 'btn.download': '下載結果', 'btn.copy': '複製',
+        'result.title': '轉錄結果', 'result.formatted': '格式化', 'result.text': '純文本', 'result.raw': 'JSON'
+    },
+    'en': {
+        subtitle: 'CTranslate2 Engine · GPU-accelerated Speech Transcription',
+        'metric.time': 'Process Time', 'metric.duration': 'Audio Duration', 'metric.speed': 'Speed', 'metric.size': 'File Size',
+        'status.ready': 'Ready', 'status.processing': 'Processing...', 'status.done': 'Done', 'status.error': 'Error',
+        'status.model': 'Model:', 'status.gpu': 'GPU:', 'status.release': 'Release',
+        'upload.title': 'Upload Audio', 'upload.hint': 'Drop audio file here or click to upload', 'upload.formats': 'Supports MP3, WAV, M4A, FLAC, OGG, etc.',
+        'params.title': 'Transcription Settings', 'params.language': 'Language', 'params.language.auto': 'Auto Detect',
+        'params.format': 'Output Format', 'params.prompt': 'Prompt', 'params.prompt.hint': '💡 Prompt can include punctuation examples, technical terms, names to improve accuracy',
+        'params.beam': 'Beam Size', 'params.batch': 'Batch Size', 'params.vad': 'VAD Filter', 'params.word': 'Word Timestamps',
+        'btn.transcribe': 'Start Transcription', 'btn.download': 'Download', 'btn.copy': 'Copy',
+        'result.title': 'Transcription Result', 'result.formatted': 'Formatted', 'result.text': 'Plain Text', 'result.raw': 'JSON'
+    },
+    'ja': {
+        subtitle: 'CTranslate2 エンジン · GPU加速の高性能音声文字起こし',
+        'metric.time': '処理時間', 'metric.duration': '音声時間', 'metric.speed': '処理速度', 'metric.size': 'ファイルサイズ',
+        'status.ready': '準備完了', 'status.processing': '処理中...', 'status.done': '完了', 'status.error': 'エラー',
+        'status.model': 'モデル:', 'status.gpu': 'GPU:', 'status.release': '解放',
+        'upload.title': '音声アップロード', 'upload.hint': '音声ファイルをドロップまたはクリックしてアップロード', 'upload.formats': 'MP3, WAV, M4A, FLAC, OGG などに対応',
+        'params.title': '文字起こし設定', 'params.language': '言語', 'params.language.auto': '自動検出',
+        'params.format': '出力形式', 'params.prompt': 'プロンプト', 'params.prompt.hint': '💡 句読点の例、専門用語、人名などを含めると精度が向上します',
+        'params.beam': 'Beam Size', 'params.batch': 'Batch Size', 'params.vad': 'VAD フィルター', 'params.word': '単語タイムスタンプ',
+        'btn.transcribe': '文字起こし開始', 'btn.download': 'ダウンロード', 'btn.copy': 'テキストをコピー',
+        'result.title': '文字起こし結果', 'result.formatted': 'フォーマット', 'result.raw': '生JSON'
+    }
+};
+
+let currentLang = localStorage.getItem('whisper-lang') || 'zh-CN';
+let selectedFile = null;
+let currentResult = null;
+
+function setLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem('whisper-lang', lang);
+    document.getElementById('langSelect').value = lang;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (i18n[lang] && i18n[lang][key]) el.textContent = i18n[lang][key];
+    });
+}
+
+function updatePromptCount() {
+    const count = document.getElementById('prompt').value.length;
+    document.getElementById('promptCount').textContent = `(${count}/500)`;
+    document.getElementById('promptCount').style.color = count > 1000 ? 'var(--red)' : 'var(--dim)';
+}
+
+function showTab(tab) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    ['formatted', 'text', 'srt', 'vtt', 'raw'].forEach(t => {
+        const el = document.getElementById(t + 'Result');
+        if (el) el.classList.toggle('hidden', tab !== t);
+    });
+}
+
+// Upload handling
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.ondragover = e => { e.preventDefault(); uploadZone.classList.add('dragover'); };
+uploadZone.ondragleave = () => uploadZone.classList.remove('dragover');
+uploadZone.ondrop = e => { e.preventDefault(); uploadZone.classList.remove('dragover'); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); };
+
+function handleFile(file) {
+    selectedFile = file;
+    document.getElementById('fileName').textContent = '📄 ' + file.name + ' (' + (file.size/1024/1024).toFixed(2) + ' MB)';
+    document.getElementById('fileName').classList.remove('hidden');
+    document.getElementById('transcribeBtn').disabled = false;
+    document.getElementById('size-value').textContent = (file.size/1024/1024).toFixed(2);
+    // Show audio player
+    const audio = document.getElementById('audioPlayer');
+    audio.src = URL.createObjectURL(file);
+    audio.classList.remove('hidden');
+    audio.onloadedmetadata = () => {
+        document.getElementById('duration-value').textContent = audio.duration.toFixed(1);
+    };
+}
+
+async function transcribe() {
+    if (!selectedFile) return;
+    const btn = document.getElementById('transcribeBtn');
+    const progress = document.getElementById('progressBar');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    
+    btn.disabled = true;
+    progress.classList.remove('hidden');
+    document.getElementById('progressFill').style.width = '30%';
+    statusDot.classList.add('loading');
+    statusText.textContent = i18n[currentLang]['status.processing'];
+    
+    const startTime = performance.now();
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('model', document.getElementById('modelSelect').value);
+    formData.append('language', document.getElementById('language').value);
+    formData.append('response_format', document.getElementById('outputFormat').value === 'json' ? 'verbose_json' : document.getElementById('outputFormat').value);
+    formData.append('prompt', document.getElementById('prompt').value);
+    formData.append('beam_size', document.getElementById('beamSize').value);
+    formData.append('batch_size', document.getElementById('batchSize').value);
+    formData.append('vad_filter', document.getElementById('vadFilter').checked);
+    formData.append('word_timestamps', document.getElementById('wordTimestamps').checked);
+    
+    try {
+        document.getElementById('progressFill').style.width = '60%';
+        const res = await fetch('/v1/audio/transcriptions', { method: 'POST', body: formData });
+        document.getElementById('progressFill').style.width = '90%';
+        
+        const contentType = res.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+            currentResult = await res.json();
+            if (currentResult.error) throw new Error(currentResult.error);
+            document.getElementById('rawResult').textContent = JSON.stringify(currentResult, null, 2);
+            if (currentResult.segments) {
+                // 格式化显示（带时间戳）
+                const html = currentResult.segments.map(s => 
+                    `<div class="segment"><span class="segment-time">[${formatTime(s.start)} → ${formatTime(s.end)}]</span>${s.text}</div>`
+                ).join('');
+                document.getElementById('formattedResult').innerHTML = html;
+                // 纯文本
+                document.getElementById('textResult').textContent = currentResult.segments.map(s => s.text).join(' ');
+                // SRT 格式
+                document.getElementById('srtResult').textContent = currentResult.segments.map((s, i) => 
+                    `${i+1}\n${formatSrtTime(s.start)} --> ${formatSrtTime(s.end)}\n${s.text.trim()}\n`
+                ).join('\n');
+                // VTT 格式
+                document.getElementById('vttResult').textContent = 'WEBVTT\n\n' + currentResult.segments.map(s => 
+                    `${formatVttTime(s.start)} --> ${formatVttTime(s.end)}\n${s.text.trim()}\n`
+                ).join('\n');
+            } else {
+                document.getElementById('formattedResult').textContent = currentResult.text || JSON.stringify(currentResult);
+                document.getElementById('textResult').textContent = currentResult.text || '';
+                document.getElementById('srtResult').textContent = '';
+                document.getElementById('vttResult').textContent = '';
+            }
+        } else {
+            currentResult = await res.text();
+            document.getElementById('formattedResult').textContent = currentResult;
+            document.getElementById('textResult').textContent = currentResult;
+            document.getElementById('rawResult').textContent = currentResult;
+            document.getElementById('srtResult').textContent = currentResult;
+            document.getElementById('vttResult').textContent = currentResult;
+        }
+        
+        const elapsed = (performance.now() - startTime) / 1000;
+        document.getElementById('time-value').textContent = elapsed.toFixed(2);
+        const duration = parseFloat(document.getElementById('duration-value').textContent) || 1;
+        document.getElementById('speed-value').textContent = (duration / elapsed).toFixed(1);
+        
+        document.getElementById('progressFill').style.width = '100%';
+        document.getElementById('resultArea').classList.remove('hidden');
+        document.querySelectorAll('.metric-card').forEach(c => c.classList.add('success'));
+        statusText.textContent = i18n[currentLang]['status.done'];
+        statusDot.classList.remove('loading');
+    } catch (err) {
+        statusText.textContent = i18n[currentLang]['status.error'] + ': ' + err.message;
+        statusDot.classList.remove('loading');
+        statusDot.style.background = 'var(--red)';
+    } finally {
+        btn.disabled = false;
+        setTimeout(() => progress.classList.add('hidden'), 1000);
+    }
+}
+
+function formatTime(s) {
+    const m = Math.floor(s / 60);
+    const sec = (s % 60).toFixed(2);
+    return `${m}:${sec.padStart(5, '0')}`;
+}
+
+function formatSrtTime(sec) {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = Math.floor(sec % 60);
+    const ms = Math.floor((sec % 1) * 1000);
+    return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')},${ms.toString().padStart(3,'0')}`;
+}
+
+function formatVttTime(sec) {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = Math.floor(sec % 60);
+    const ms = Math.floor((sec % 1) * 1000);
+    return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}.${ms.toString().padStart(3,'0')}`;
+}
+
+function downloadAs(format) {
+    let content, filename;
+    if (format === 'json') {
+        content = JSON.stringify(currentResult, null, 2);
+        filename = 'transcription.json';
+    } else if (format === 'txt') {
+        content = document.getElementById('textResult').textContent;
+        filename = 'transcription.txt';
+    } else if (format === 'srt') {
+        content = document.getElementById('srtResult').textContent;
+        filename = 'transcription.srt';
+    } else if (format === 'vtt') {
+        content = document.getElementById('vttResult').textContent;
+        filename = 'transcription.vtt';
+    }
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+}
+
+function downloadResult() {
+    const format = document.getElementById('outputFormat').value;
+    const ext = { json: 'json', text: 'txt', srt: 'srt', vtt: 'vtt' }[format];
+    const content = typeof currentResult === 'string' ? currentResult : JSON.stringify(currentResult, null, 2);
+    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `transcription.${ext}`;
+    a.click();
+}
+
+function copyResult() {
+    const text = currentResult?.text || (typeof currentResult === 'string' ? currentResult : JSON.stringify(currentResult));
+    navigator.clipboard.writeText(text).then(() => alert('已复制到剪贴板'));
+}
+
+async function offloadGPU() {
+    await fetch('/api/gpu/offload', { method: 'POST' });
+    updateStatus();
+}
+
+const modelInfo = {
+    'turbo': { size: '~1.5GB', speed: '最快', accuracy: '高', desc: 'large-v3-turbo，速度与精度最佳平衡' },
+    'large-v3': { size: '~3GB', speed: '慢', accuracy: '最高', desc: '最新最精确的模型' },
+    'large-v2': { size: '~3GB', speed: '慢', accuracy: '很高', desc: '经典高精度模型' },
+    'medium': { size: '~1.5GB', speed: '中等', accuracy: '较高', desc: '精度与速度平衡' },
+    'small': { size: '~500MB', speed: '快', accuracy: '中等', desc: '轻量级精确模型' },
+    'base': { size: '~150MB', speed: '很快', accuracy: '基础', desc: '快速基础转录' },
+    'tiny': { size: '~75MB', speed: '最快', accuracy: '基础', desc: '最小最快模型' },
+    'distil-large-v3': { size: '~1.5GB', speed: '快', accuracy: '高', desc: '蒸馏版，英语优化' },
+    'distil-large-v2': { size: '~1.5GB', speed: '快', accuracy: '高', desc: '蒸馏版v2' },
+};
+
+function onModelChange() {
+    const model = document.getElementById('modelSelect').value;
+    const info = modelInfo[model] || modelInfo[model.replace('.en', '')] || {};
+    const hint = document.getElementById('modelHint');
+    if (info.desc) {
+        hint.innerHTML = `📊 显存: ${info.size || '?'} | 速度: ${info.speed || '?'} | 精度: ${info.accuracy || '?'}<br>💡 ${info.desc}`;
+    }
+}
+
+async function updateStatus() {
+    try {
+        const res = await fetch('/health');
+        const data = await res.json();
+        const loadedModels = data.models_loaded || [];
+        document.getElementById('modelName').textContent = loadedModels.length > 0 ? loadedModels.join(', ') : '未加载';
+        if (data.gpu) {
+            const gpu = data.gpu;
+            const usedPct = Math.round(gpu.memory_used_mb / gpu.memory_total_mb * 100);
+            document.getElementById('gpuMemory').textContent = `${gpu.memory_used_mb}/${gpu.memory_total_mb} MB (${usedPct}%) | ${gpu.utilization_percent}% | ${gpu.temperature_c}°C`;
+        } else {
+            document.getElementById('gpuMemory').textContent = data.device === 'cuda' ? '获取中...' : 'CPU模式';
+        }
+    } catch(e) {
+        document.getElementById('gpuMemory').textContent = '连接失败';
+    }
+}
+
+// Initialize
+setLanguage(currentLang);
+updateStatus();
+onModelChange();
+setInterval(updateStatus, 5000);
+</script>
+</body>
+</html>

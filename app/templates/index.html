@@ -785,35 +785,123 @@
             const file = document.getElementById('fileInput').files[0];
             if (!file) return;
 
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('model', currentModel);
-            formData.append('language', currentLanguage);
-
             document.getElementById('transcript').textContent = '';
             document.getElementById('transcript').classList.remove('empty');
-            showStatus('📝 Uploading and transcribing...', 'info');
+            document.getElementById('copyBtn').style.display = 'none';
+            document.getElementById('exportBtn').style.display = 'none';
+            showStatus('📝 Loading file...', 'info');
 
             try {
-                const response = await fetch('/v1/audio/transcriptions', {
-                    method: 'POST',
-                    body: formData
-                });
+                const arrayBuffer = await file.arrayBuffer();
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const totalSeconds = Math.ceil(audioBuffer.duration);
+                const numChunks = Math.ceil(totalSeconds / (30 * 60));
 
-                const data = await response.json();
-                if (data.text && data.text.trim()) {
-                    document.getElementById('transcript').textContent = data.text;
+                showStatus(`✓ File loaded. Preparing ${numChunks} chunk(s)...`, 'success');
+                await transcribeUploadedChunks(audioBuffer, totalSeconds, numChunks);
+            } catch (err) {
+                showStatus(`❌ Failed to load file: ${err.message}`, 'error');
+            }
+        }
+
+        async function transcribeUploadedChunks(audioBuffer, totalSeconds, numChunks) {
+            document.getElementById('progressSection').classList.add('active');
+            document.getElementById('chunkProgress').innerHTML = '';
+
+            for (let i = 0; i < numChunks; i++) {
+                const div = document.createElement('div');
+                div.className = 'chunk-item';
+                div.id = `chunk-${i}`;
+                div.innerHTML = `
+                    <div class="chunk-header">
+                        <div class="chunk-status pending" id="status-${i}">
+                            <span class="dot"></span>
+                        </div>
+                        <div class="chunk-info">Chunk ${i + 1}/${numChunks}</div>
+                        <div class="chunk-eta" id="eta-${i}"></div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="fill-${i}"></div>
+                    </div>
+                `;
+                document.getElementById('chunkProgress').appendChild(div);
+            }
+
+            let fullTranscript = '';
+
+            for (let i = 0; i < numChunks; i++) {
+                updateChunkStatus(i, 'processing');
+                updateProgressBar(i, 0);
+
+                try {
+                    const startMs = i * CHUNK_DURATION;
+                    const endMs = Math.min((i + 1) * CHUNK_DURATION, totalSeconds * 1000);
+
+                    updateProgressBar(i, 25);
+                    const chunkBlob = await extractAudioChunkFromBuffer(audioBuffer, startMs, endMs);
+
+                    updateProgressBar(i, 50);
+                    const formData = new FormData();
+                    formData.append('file', chunkBlob, `chunk-${i}.wav`);
+                    formData.append('model', currentModel);
+                    formData.append('language', currentLanguage);
+
+                    const startFetch = Date.now();
+                    const response = await fetch('/v1/audio/transcriptions', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                    const data = await response.json();
+                    const elapsed = Date.now() - startFetch;
+
+                    updateProgressBar(i, 100);
+
+                    if (data.text && data.text.trim()) {
+                        fullTranscript += data.text + ' ';
+                    }
+
+                    updateChunkStatus(i, 'done');
+                    updateChunkETA(i, elapsed, i + 1, numChunks);
+
+                    document.getElementById('transcript').textContent = fullTranscript.trim();
+                    document.getElementById('transcript').classList.remove('empty');
                     document.getElementById('copyBtn').style.display = 'flex';
                     document.getElementById('exportBtn').style.display = 'flex';
-                    showStatus('✓ Transcription complete!', 'success');
-                } else {
-                    showStatus('⚠️ No speech detected', 'error');
+
+                } catch (err) {
+                    updateChunkStatus(i, 'error');
+                    showStatus(`Error on chunk ${i + 1}: ${err.message}`, 'error');
+                    return;
                 }
-            } catch (err) {
-                showStatus(`❌ Upload failed: ${err.message}`, 'error');
             }
+
+            showStatus('✓ All chunks transcribed!', 'success');
+        }
+
+        async function extractAudioChunkFromBuffer(audioBuffer, startMs, endMs) {
+            const sampleRate = audioBuffer.sampleRate;
+            const startSample = Math.floor(startMs * sampleRate / 1000);
+            const endSample = Math.floor(endMs * sampleRate / 1000);
+
+            const length = endSample - startSample;
+            const offlineContext = new OfflineAudioContext(
+                audioBuffer.numberOfChannels,
+                length,
+                sampleRate
+            );
+
+            const source = offlineContext.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(offlineContext.destination);
+            source.start(0, startMs / 1000, (endMs - startMs) / 1000);
+
+            const renderedBuffer = await offlineContext.startRendering();
+            return audioBufferToWav(renderedBuffer);
         }
 
         function copyToClipboard() {

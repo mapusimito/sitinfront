@@ -598,7 +598,7 @@
         }
 
         async function transcribeInChunks(audioBlob, totalSeconds) {
-            const numChunks = Math.ceil(totalSeconds / (15 * 60));
+            const numChunks = Math.ceil(totalSeconds / (10 * 60));
 
             document.getElementById('progressSection').classList.add('active');
             document.getElementById('chunkProgress').innerHTML = '';
@@ -798,10 +798,10 @@
 
                 const totalSeconds = Math.ceil(audioBuffer.duration);
                 const totalMinutes = (totalSeconds / 60).toFixed(1);
-                const numChunks = Math.ceil(totalSeconds / (15 * 60));
+                const numChunks = Math.ceil(totalSeconds / (10 * 60));
 
                 console.log(`File duration: ${totalMinutes} min → ${numChunks} chunks`);
-                showStatus(`✓ File loaded: ${totalMinutes} min → ${numChunks} chunks of 15 min...`, 'success');
+                showStatus(`✓ File loaded: ${totalMinutes} min → ${numChunks} chunks of 10 min...`, 'success');
                 await transcribeUploadedChunks(audioBuffer, totalSeconds, numChunks);
             } catch (err) {
                 showStatus(`❌ Failed to load file: ${err.message}`, 'error');

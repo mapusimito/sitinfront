@@ -524,7 +524,7 @@
         let currentModel = 'base';
         let currentLanguage = 'en';
 
-        const CHUNK_DURATION = 30 * 60 * 1000; // 30 minutes
+        const CHUNK_DURATION = 15 * 60 * 1000; // 15 minutes - smaller chunks prevent Whisper context loss
 
         document.getElementById('modelSelect').addEventListener('change', (e) => {
             currentModel = e.target.value;
@@ -660,8 +660,7 @@
                     updateChunkStatus(i, 'done');
                     updateChunkETA(i, elapsed, i + 1, numChunks);
 
-                    const cleanedTranscript = removeRepeatedPhrases(fullTranscript.trim());
-                    document.getElementById('transcript').textContent = cleanedTranscript;
+                    document.getElementById('transcript').textContent = fullTranscript.trim();
                     document.getElementById('transcript').classList.remove('empty');
 
                     document.getElementById('copyBtn').style.display = 'flex';
@@ -800,7 +799,7 @@
                 const totalSeconds = Math.ceil(audioBuffer.duration);
                 const numChunks = Math.ceil(totalSeconds / (30 * 60));
 
-                showStatus(`✓ File loaded. Preparing ${numChunks} chunk(s)...`, 'success');
+                showStatus(`✓ File loaded. Splitting into ${numChunks} chunk(s) of 15 min each...`, 'success');
                 await transcribeUploadedChunks(audioBuffer, totalSeconds, numChunks);
             } catch (err) {
                 showStatus(`❌ Failed to load file: ${err.message}`, 'error');
@@ -869,8 +868,7 @@
                     updateChunkStatus(i, 'done');
                     updateChunkETA(i, elapsed, i + 1, numChunks);
 
-                    const cleanedTranscript = removeRepeatedPhrases(fullTranscript.trim());
-                    document.getElementById('transcript').textContent = cleanedTranscript;
+                    document.getElementById('transcript').textContent = fullTranscript.trim();
                     document.getElementById('transcript').classList.remove('empty');
                     document.getElementById('copyBtn').style.display = 'flex';
                     document.getElementById('exportBtn').style.display = 'flex';
@@ -942,37 +940,6 @@
             document.getElementById('statusBox').classList.remove('show');
             document.getElementById('copyBtn').style.display = 'none';
             document.getElementById('exportBtn').style.display = 'none';
-        }
-
-        function removeRepeatedPhrases(text) {
-            // Split into sentences (including question marks, periods, exclamation marks)
-            const sentences = text.match(/[^.!?]+[.!?]+/g) || [];
-            if (sentences.length === 0) return text;
-
-            const result = [];
-            let lastSentence = '';
-            let repeatCount = 0;
-            const maxRepeats = 2; // Allow up to 2 repetitions, remove 3+
-
-            for (let i = 0; i < sentences.length; i++) {
-                const sentence = sentences[i].trim();
-
-                // Check if this sentence is the same as the last one
-                if (sentence === lastSentence) {
-                    repeatCount++;
-                    // Skip if we've already seen this sentence multiple times
-                    if (repeatCount > maxRepeats) {
-                        continue;
-                    }
-                } else {
-                    repeatCount = 0;
-                    lastSentence = sentence;
-                }
-
-                result.push(sentence);
-            }
-
-            return result.join(' ');
         }
 
         function showStatus(msg, type) {

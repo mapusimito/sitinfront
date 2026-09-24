@@ -20,7 +20,7 @@
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
         }
 
@@ -44,18 +44,34 @@
             font-size: 14px;
         }
 
-        .main-card {
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%);
-            border: 1px solid rgba(71, 85, 105, 0.3);
-            border-radius: 16px;
-            padding: 40px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
             margin-bottom: 24px;
         }
 
+        @media (max-width: 1024px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%);
+            border: 1px solid rgba(71, 85, 105, 0.3);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .card.full {
+            grid-column: 1 / -1;
+        }
+
         .section {
-            margin-bottom: 32px;
+            margin-bottom: 24px;
         }
 
         .section:last-child {
@@ -111,24 +127,30 @@
         .controls {
             display: flex;
             gap: 12px;
-            margin-bottom: 20px;
             flex-wrap: wrap;
         }
 
+        .control-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
         button {
-            padding: 14px 28px;
+            padding: 12px 20px;
             border: none;
             border-radius: 8px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             flex: 1;
-            min-width: 140px;
+            min-width: 100px;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .btn-start {
@@ -165,14 +187,21 @@
             background: rgba(71, 85, 105, 0.3);
             color: #cbd5e1;
             border: 1px solid rgba(71, 85, 105, 0.5);
+            font-size: 13px;
+            padding: 10px 16px;
         }
 
         .btn-secondary:hover:not(:disabled) {
             background: rgba(71, 85, 105, 0.5);
         }
 
-        .model-select {
-            padding: 12px 16px;
+        .btn-secondary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        select {
+            padding: 10px 12px;
             background: rgba(30, 41, 59, 0.5);
             border: 1px solid rgba(71, 85, 105, 0.3);
             border-radius: 8px;
@@ -181,7 +210,7 @@
             cursor: pointer;
         }
 
-        .model-select:hover {
+        select:hover {
             border-color: rgba(96, 165, 250, 0.5);
         }
 
@@ -232,29 +261,29 @@
             background: rgba(71, 85, 105, 0.2);
             border: 1px solid rgba(71, 85, 105, 0.3);
             border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+
+        .chunk-header {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
+            margin-bottom: 8px;
         }
 
         .chunk-status {
             display: flex;
             align-items: center;
-            gap: 8px;
-            font-size: 13px;
-            min-width: 120px;
+            gap: 6px;
+            font-size: 12px;
+            min-width: 100px;
         }
 
         .chunk-status .dot {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
-            background: #64748b;
-        }
-
-        .chunk-status.pending .dot {
             background: #64748b;
         }
 
@@ -276,29 +305,54 @@
             50% { opacity: 0.4; }
         }
 
-        .chunk-text {
+        .chunk-info {
             flex: 1;
             font-size: 13px;
             color: #cbd5e1;
         }
 
-        .chunk-time {
+        .chunk-eta {
             font-size: 12px;
             color: #94a3b8;
-            min-width: 60px;
-            text-align: right;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(71, 85, 105, 0.3);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #60a5fa 0%, #34d399 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .transcript-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .transcript-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .transcript-box {
-            background: rgba(15, 23, 42, 0.5);
+            background: rgba(15, 23, 42, 0.8);
             border: 1px solid rgba(71, 85, 105, 0.3);
             border-radius: 8px;
             padding: 20px;
-            min-height: 200px;
-            max-height: 500px;
+            min-height: 250px;
+            max-height: 600px;
             overflow-y: auto;
             font-size: 15px;
-            line-height: 1.6;
+            line-height: 1.7;
             font-family: 'Courier New', monospace;
             color: #cbd5e1;
             white-space: pre-wrap;
@@ -357,6 +411,30 @@
         ::-webkit-scrollbar-thumb:hover {
             background: rgba(96, 165, 250, 0.5);
         }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(34, 197, 94, 0.9);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            animation: slideIn 0.3s ease;
+            z-index: 1000;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
     </style>
 </head>
 <body>
@@ -366,47 +444,72 @@
             <p>Record lectures and get instant transcription with chunk verification</p>
         </div>
 
-        <div class="main-card">
-            <div id="statusBox" class="status-box"></div>
+        <div class="grid">
+            <div class="card">
+                <div id="statusBox" class="status-box"></div>
 
-            <div class="section">
-                <div class="section-title">Settings</div>
-                <div class="controls">
-                    <select id="modelSelect" class="model-select">
-                        <option value="tiny">Tiny (fastest)</option>
-                        <option value="base" selected>Base (balanced)</option>
-                        <option value="small">Small (most accurate)</option>
-                    </select>
+                <div class="section">
+                    <div class="section-title">Settings</div>
+                    <div class="control-row">
+                        <select id="modelSelect">
+                            <option value="tiny">Tiny (fastest)</option>
+                            <option value="base" selected>Base (balanced)</option>
+                            <option value="small">Small (most accurate)</option>
+                        </select>
+                        <select id="languageSelect">
+                            <option value="en">English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="it">Italian</option>
+                            <option value="pt">Portuguese</option>
+                            <option value="nl">Dutch</option>
+                            <option value="pl">Polish</option>
+                            <option value="ja">Japanese</option>
+                            <option value="zh">Chinese</option>
+                            <option value="ko">Korean</option>
+                            <option value="ru">Russian</option>
+                            <option value="ar">Arabic</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Record</div>
+                    <div class="timer" id="timer">00:00</div>
+                    <div class="controls">
+                        <button id="recordBtn" class="btn-start" onclick="startRecording()">⏺️ Start</button>
+                        <button id="stopBtn" class="btn-stop" onclick="stopRecording()" disabled>⏹️ Stop</button>
+                        <button class="btn-secondary" onclick="clearAll()">Clear</button>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">Upload</div>
+                    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                        <input type="file" id="fileInput" accept="audio/*" onchange="uploadFile()">
+                        <div class="upload-icon">📁</div>
+                        <div class="upload-text">Click to upload audio</div>
+                        <div class="upload-text" style="font-size: 12px; margin-top: 8px;">Any length supported</div>
+                    </div>
                 </div>
             </div>
 
-            <div class="section">
-                <div class="section-title">Record Lecture</div>
-                <div class="timer" id="timer">00:00</div>
-                <div class="controls">
-                    <button id="recordBtn" class="btn-start" onclick="startRecording()">⏺️ Start Recording</button>
-                    <button id="stopBtn" class="btn-stop" onclick="stopRecording()" disabled>⏹️ Stop & Transcribe</button>
-                    <button class="btn-secondary" onclick="clearAll()">✕ Clear</button>
-                </div>
-            </div>
-
-            <div id="progressSection" class="progress-section">
-                <div class="section-title">Transcription Progress</div>
+            <div id="progressSection" class="card progress-section">
+                <div class="section-title">Progress</div>
                 <div id="chunkProgress" class="chunk-progress"></div>
             </div>
 
-            <div class="section">
-                <div class="section-title">Transcript</div>
-                <div id="transcript" class="transcript-box empty">Transcript will appear here...</div>
-            </div>
-
-            <div class="section">
-                <div class="section-title">Upload File</div>
-                <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-                    <input type="file" id="fileInput" accept="audio/*" onchange="uploadFile()">
-                    <div class="upload-icon">📁</div>
-                    <div class="upload-text">Click to upload or drag audio file</div>
-                    <div class="upload-text" style="font-size: 12px; margin-top: 8px;">MP3, WAV, M4A, FLAC, OGG — any length</div>
+            <div class="card full">
+                <div class="section">
+                    <div class="section-title">Transcript</div>
+                    <div class="transcript-container">
+                        <div class="transcript-actions">
+                            <button class="btn-secondary" id="copyBtn" onclick="copyToClipboard()" style="display: none;">📋 Copy</button>
+                            <button class="btn-secondary" id="exportBtn" onclick="exportAsFile()" style="display: none;">💾 Export</button>
+                        </div>
+                        <div id="transcript" class="transcript-box empty">Transcript will appear here...</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -419,8 +522,17 @@
         let recordingStart = null;
         let recordingTimer = null;
         let currentModel = 'base';
+        let currentLanguage = 'en';
 
-        const CHUNK_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
+        const CHUNK_DURATION = 30 * 60 * 1000; // 30 minutes
+
+        document.getElementById('modelSelect').addEventListener('change', (e) => {
+            currentModel = e.target.value;
+        });
+
+        document.getElementById('languageSelect').addEventListener('change', (e) => {
+            currentLanguage = e.target.value;
+        });
 
         async function startRecording() {
             try {
@@ -447,7 +559,7 @@
                 document.getElementById('stopBtn').disabled = false;
                 document.getElementById('timer').classList.add('active');
 
-                showStatus('🎤 Recording started... speak clearly', 'info');
+                showStatus('🎤 Recording started...', 'info');
 
                 recordingTimer = setInterval(() => {
                     const elapsed = Date.now() - recordingStart;
@@ -475,13 +587,12 @@
             const audioBlob = new Blob(recordedChunks, { type: 'audio/wav' });
             const audioUrl = URL.createObjectURL(audioBlob);
 
-            // Calculate duration
             const audioElement = new Audio(audioUrl);
             audioElement.onloadedmetadata = async () => {
                 const totalSeconds = Math.ceil(audioElement.duration);
                 const totalMinutes = Math.ceil(totalSeconds / 60);
 
-                showStatus(`✓ Recording complete: ${totalMinutes} min(s). Preparing chunks...`, 'success');
+                showStatus(`✓ Recording complete: ${totalMinutes} min(s)`, 'success');
                 await transcribeInChunks(audioBlob, totalSeconds);
             };
         }
@@ -492,41 +603,44 @@
             document.getElementById('progressSection').classList.add('active');
             document.getElementById('chunkProgress').innerHTML = '';
 
-            // Add chunk items
             for (let i = 0; i < numChunks; i++) {
                 const div = document.createElement('div');
                 div.className = 'chunk-item';
                 div.id = `chunk-${i}`;
-                const startTime = (i * 30) % 60 > 30 ? '30s' : '0m';
                 div.innerHTML = `
-                    <div class="chunk-status pending" id="status-${i}">
-                        <span class="dot"></span>
+                    <div class="chunk-header">
+                        <div class="chunk-status pending" id="status-${i}">
+                            <span class="dot"></span>
+                        </div>
+                        <div class="chunk-info">Chunk ${i + 1}/${numChunks}</div>
+                        <div class="chunk-eta" id="eta-${i}"></div>
                     </div>
-                    <div class="chunk-text">Chunk ${i + 1} of ${numChunks}</div>
-                    <div class="chunk-time">${formatTime(i * 30 * 60)}</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="fill-${i}"></div>
+                    </div>
                 `;
                 document.getElementById('chunkProgress').appendChild(div);
             }
 
             let fullTranscript = '';
+            let chunkStartTimes = [];
 
-            // Process chunks sequentially
             for (let i = 0; i < numChunks; i++) {
                 updateChunkStatus(i, 'processing');
+                chunkStartTimes[i] = Date.now();
 
                 try {
                     const startMs = i * CHUNK_DURATION;
                     const endMs = Math.min((i + 1) * CHUNK_DURATION, totalSeconds * 1000);
 
-                    // Extract chunk using Web Audio API
                     const chunkBlob = await extractAudioChunk(audioBlob, startMs, endMs);
 
-                    // Transcribe chunk
                     const formData = new FormData();
                     formData.append('file', chunkBlob, `chunk-${i}.wav`);
                     formData.append('model', currentModel);
-                    formData.append('language', 'en');
+                    formData.append('language', currentLanguage);
 
+                    const startFetch = Date.now();
                     const response = await fetch('/v1/audio/transcriptions', {
                         method: 'POST',
                         body: formData
@@ -535,13 +649,22 @@
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
                     const data = await response.json();
+                    const elapsed = Date.now() - startFetch;
+
+                    updateProgressBar(i, 100);
+
                     if (data.text && data.text.trim()) {
                         fullTranscript += data.text + ' ';
                     }
 
                     updateChunkStatus(i, 'done');
+                    updateChunkETA(i, elapsed, i + 1, numChunks);
+
                     document.getElementById('transcript').textContent = fullTranscript.trim();
                     document.getElementById('transcript').classList.remove('empty');
+
+                    document.getElementById('copyBtn').style.display = 'flex';
+                    document.getElementById('exportBtn').style.display = 'flex';
 
                 } catch (err) {
                     updateChunkStatus(i, 'error');
@@ -550,7 +673,7 @@
                 }
             }
 
-            showStatus('✓ All chunks transcribed successfully!', 'success');
+            showStatus('✓ All chunks transcribed!', 'success');
         }
 
         async function extractAudioChunk(audioBlob, startMs, endMs) {
@@ -581,7 +704,7 @@
         function audioBufferToWav(audioBuffer) {
             const numberOfChannels = audioBuffer.numberOfChannels;
             const sampleRate = audioBuffer.sampleRate;
-            const format = 1; // PCM
+            const format = 1;
             const bitDepth = 16;
 
             const bytesPerSample = bitDepth / 8;
@@ -632,16 +755,30 @@
             const statusEl = document.getElementById(`status-${index}`);
             if (statusEl) {
                 statusEl.className = `chunk-status ${status}`;
-                const text = status === 'done' ? '✓' : status === 'error' ? '✕' : '◷';
-                statusEl.innerHTML = `<span class="dot"></span>`;
             }
         }
 
-        function formatTime(seconds) {
-            const hrs = Math.floor(seconds / 3600);
-            const mins = Math.floor((seconds % 3600) / 60);
-            if (hrs > 0) return `${hrs}h ${mins}m`;
-            return `${mins}m`;
+        function updateProgressBar(index, percent) {
+            const fill = document.getElementById(`fill-${index}`);
+            if (fill) {
+                fill.style.width = percent + '%';
+            }
+        }
+
+        function updateChunkETA(index, elapsedMs, chunkNum, totalChunks) {
+            const etaEl = document.getElementById(`eta-${index}`);
+            if (etaEl) {
+                const seconds = (elapsedMs / 1000).toFixed(1);
+                etaEl.textContent = `${seconds}s`;
+
+                const remainingChunks = totalChunks - chunkNum;
+                if (remainingChunks > 0) {
+                    const estimatedTotal = (elapsedMs * totalChunks) / 1000;
+                    const eta = (estimatedTotal - elapsedMs / 1000).toFixed(0);
+                    document.querySelector('.status-box').textContent =
+                        `Chunk ${chunkNum}/${totalChunks} done. ETA: ~${eta}s remaining`;
+                }
+            }
         }
 
         async function uploadFile() {
@@ -651,7 +788,7 @@
             const formData = new FormData();
             formData.append('file', file);
             formData.append('model', currentModel);
-            formData.append('language', 'en');
+            formData.append('language', currentLanguage);
 
             document.getElementById('transcript').textContent = '';
             document.getElementById('transcript').classList.remove('empty');
@@ -668,13 +805,42 @@
                 const data = await response.json();
                 if (data.text && data.text.trim()) {
                     document.getElementById('transcript').textContent = data.text;
+                    document.getElementById('copyBtn').style.display = 'flex';
+                    document.getElementById('exportBtn').style.display = 'flex';
                     showStatus('✓ Transcription complete!', 'success');
                 } else {
-                    showStatus('⚠️ No speech detected in file', 'error');
+                    showStatus('⚠️ No speech detected', 'error');
                 }
             } catch (err) {
                 showStatus(`❌ Upload failed: ${err.message}`, 'error');
             }
+        }
+
+        function copyToClipboard() {
+            const text = document.getElementById('transcript').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard!');
+            });
+        }
+
+        function exportAsFile() {
+            const text = document.getElementById('transcript').textContent;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `transcript-${new Date().toISOString().slice(0, 10)}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('File downloaded!');
+        }
+
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
         }
 
         function clearAll() {
@@ -684,6 +850,8 @@
             document.getElementById('fileInput').value = '';
             document.getElementById('progressSection').classList.remove('active');
             document.getElementById('statusBox').classList.remove('show');
+            document.getElementById('copyBtn').style.display = 'none';
+            document.getElementById('exportBtn').style.display = 'none';
         }
 
         function showStatus(msg, type) {

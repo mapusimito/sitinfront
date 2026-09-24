@@ -253,7 +253,6 @@
         let currentModel = 'base';
         let recordingStart = null;
         let recordingTimer = null;
-        let chunkTimer = null;
 
         async function startRecording() {
             try {
@@ -291,24 +290,16 @@
 
                 mediaRecorder.onstop = () => {
                     if (recordingTimer) clearInterval(recordingTimer);
-                    if (chunkTimer) clearInterval(chunkTimer);
                     showStatus('✓ Recording complete!', 'success');
                 };
 
-                mediaRecorder.start();
+                mediaRecorder.start(5000);
                 document.getElementById('recordBtn').disabled = true;
                 document.getElementById('stopBtn').disabled = false;
                 document.getElementById('recordingIndicator').classList.add('active');
                 document.getElementById('transcript').textContent = '';
                 document.getElementById('transcript').classList.remove('empty');
-                showStatus('🎙️ Recording started... (next chunk in 20 sec)', 'info');
-
-                // Request chunks every 20 seconds
-                chunkTimer = setInterval(() => {
-                    if (mediaRecorder && isRecording) {
-                        mediaRecorder.requestData();
-                    }
-                }, 20000);
+                showStatus('🎙️ Recording started... (🔄 Live chunks every 5 sec)', 'info');
 
                 // Show recording timer
                 recordingTimer = setInterval(() => {
@@ -326,16 +317,12 @@
         function stopRecording() {
             if (mediaRecorder && isRecording) {
                 if (recordingTimer) clearInterval(recordingTimer);
-                if (chunkTimer) clearInterval(chunkTimer);
-                mediaRecorder.requestData();
-                setTimeout(() => {
-                    mediaRecorder.stop();
-                    mediaRecorder.stream.getTracks().forEach(t => t.stop());
-                    isRecording = false;
-                    document.getElementById('recordBtn').disabled = false;
-                    document.getElementById('stopBtn').disabled = true;
-                    document.getElementById('recordingIndicator').classList.remove('active');
-                }, 100);
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(t => t.stop());
+                isRecording = false;
+                document.getElementById('recordBtn').disabled = false;
+                document.getElementById('stopBtn').disabled = true;
+                document.getElementById('recordingIndicator').classList.remove('active');
             }
         }
 

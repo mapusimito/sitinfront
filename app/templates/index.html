@@ -453,8 +453,8 @@
                     <div class="control-row">
                         <select id="modelSelect">
                             <option value="tiny">Tiny (fastest)</option>
-                            <option value="base" selected>Base (balanced)</option>
-                            <option value="small">Small (most accurate)</option>
+                            <option value="base">Base (balanced)</option>
+                            <option value="small" selected>Small (most accurate)</option>
                         </select>
                         <select id="languageSelect">
                             <option value="en">English</option>
@@ -521,10 +521,10 @@
         let isRecording = false;
         let recordingStart = null;
         let recordingTimer = null;
-        let currentModel = 'base';
+        let currentModel = 'small';
         let currentLanguage = 'en';
 
-        const CHUNK_DURATION = 15 * 60 * 1000; // 15 minutes - smaller chunks prevent Whisper context loss
+        const CHUNK_DURATION = 10 * 60 * 1000; // 10 minutes - smaller chunks prevent Whisper context loss
 
         document.getElementById('modelSelect').addEventListener('change', (e) => {
             currentModel = e.target.value;

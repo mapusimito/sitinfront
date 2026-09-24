@@ -191,10 +191,10 @@ async def openai_transcribe(
     batch_size: int = Form(16),
     stream: bool = Form(False),  # NEW: streaming support
     condition_on_previous_text: bool = Form(True),
-    compression_ratio_threshold: float = Form(2.4),
-    log_prob_threshold: float = Form(-1.0),
-    no_speech_threshold: float = Form(0.6),
-    hallucination_silence_threshold: Optional[float] = Form(None),
+    compression_ratio_threshold: float = Form(1.8),  # Lower = more aggressive at detecting repetitions
+    log_prob_threshold: float = Form(-0.5),  # Stricter = reject low-confidence segments
+    no_speech_threshold: float = Form(0.75),  # Higher = skip more silence/noise
+    hallucination_silence_threshold: float = Form(1.0),  # Prevent hallucinating during silence
 ):
     """OpenAI-compatible transcription with streaming support."""
     effective_prompt = prompt if prompt else DEFAULT_PROMPT

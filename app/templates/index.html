@@ -51,6 +51,34 @@
             display: flex;
             align-items: center;
             gap: 20px;
+            justify-content: space-between;
+        }
+
+        .header-log {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-left: auto;
+            font-size: 13px;
+            color: var(--secondary-text);
+        }
+
+        .header-log-toggle {
+            background: none;
+            border: 1px solid #2A2A27;
+            color: var(--papel);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .header-log-toggle:hover {
+            border-color: var(--foco);
+            color: var(--foco);
         }
 
         .header-logo {
@@ -120,9 +148,13 @@
             background: var(--panel);
             border: 1px solid #2A2A27;
             border-radius: 16px;
-            padding: 32px;
+            padding: 24px;
             margin-bottom: 32px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .grid > .card:first-child {
+            padding: 18px;
         }
 
         .card.full {
@@ -337,10 +369,15 @@
 
         .progress-section {
             display: none;
+            grid-column: 1 / -1;
         }
 
         .progress-section.active {
             display: block;
+        }
+
+        .progress-section.drawer-open {
+            display: block !important;
         }
 
         .chunk-progress {
@@ -920,6 +957,12 @@
             <div class="header-text">
                 <p>Tú atiende. Nosotros escribimos.</p>
             </div>
+            <div class="header-log">
+                <span id="headerStatus">Listo para grabar</span>
+                <button class="header-log-toggle" id="progressToggle" onclick="toggleProgressDrawer()" style="display: none;">
+                    <span id="toggleIcon">▼</span> Progreso
+                </button>
+            </div>
         </div>
 
         <div class="grid">
@@ -959,10 +1002,19 @@
                     <div class="section-title">Grabar</div>
                     <div class="timer" id="timer">00:00</div>
                     <span class="rec-dot"></span>
-                    <div class="controls">
-                        <button id="recordBtn" class="btn-start" onclick="startRecording()">Empezar a grabar</button>
-                        <button id="stopBtn" class="btn-stop" onclick="stopRecording()" disabled>Parar</button>
-                        <button class="btn-secondary" onclick="clearAll()">Borrar transcripción</button>
+                    <div class="controls" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button id="recordBtn" class="btn-start" onclick="startRecording()" style="display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="mic" style="width: 16px; height: 16px;"></i>
+                            <span>Grabar</span>
+                        </button>
+                        <button id="stopBtn" class="btn-stop" onclick="stopRecording()" disabled style="display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="square" style="width: 16px; height: 16px;"></i>
+                            <span>Parar</span>
+                        </button>
+                        <button class="btn-secondary" onclick="clearAll()" style="display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
+                            <span>Borrar</span>
+                        </button>
                     </div>
                 </div>
 
@@ -998,8 +1050,14 @@
                         <div class="upload-text" style="font-size: 12px; margin-top: 8px;">Audio de cualquier duración</div>
                     </div>
                     <div id="uploadButtonGroup" class="upload-button-group">
-                        <button class="btn-upload" onclick="confirmUpload()">Subir archivo</button>
-                        <button class="btn-cancel-upload" onclick="cancelFileSelection()">Cancelar</button>
+                        <button class="btn-upload" onclick="confirmUpload()" style="display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="upload" style="width: 16px; height: 16px;"></i>
+                            <span>Subir</span>
+                        </button>
+                        <button class="btn-cancel-upload" onclick="cancelFileSelection()" style="display: flex; align-items: center; gap: 6px;">
+                            <i data-lucide="x" style="width: 16px; height: 16px;"></i>
+                            <span>Cancelar</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1638,6 +1696,8 @@
                 document.getElementById('recordBtn').disabled = true;
                 document.getElementById('stopBtn').disabled = false;
                 document.getElementById('timer').classList.add('active');
+                document.getElementById('progressToggle').style.display = 'flex';
+                updateHeaderStatus('🔴 Grabando...');
 
                 showStatus('Grabación iniciada...', 'info');
 
@@ -1665,6 +1725,7 @@
                 document.getElementById('stopBtn').disabled = true;
                 document.getElementById('timer').classList.remove('active');
                 document.title = 'sitinfront';
+                updateHeaderStatus('Procesando transcripción...');
             }
         }
 
@@ -2354,6 +2415,33 @@
             el.textContent = msg;
             el.className = `status-box show ${type}`;
         }
+
+        function updateHeaderStatus(msg) {
+            document.getElementById('headerStatus').textContent = msg;
+        }
+
+        function toggleProgressDrawer() {
+            const toggle = document.getElementById('progressToggle');
+            const toggleIcon = document.getElementById('toggleIcon');
+            const progressSection = document.getElementById('progressSection');
+
+            if (progressSection.classList.contains('drawer-open')) {
+                progressSection.classList.remove('drawer-open');
+                toggleIcon.textContent = '▼';
+            } else {
+                progressSection.classList.add('drawer-open');
+                toggleIcon.textContent = '▲';
+            }
+        }
+
+        function initializeLucideIcons() {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeLucideIcons);
+        document.addEventListener('click', initializeLucideIcons);
     </script>
 </body>
 </html>

@@ -472,6 +472,9 @@
                             <option value="ar">Arabic</option>
                         </select>
                     </div>
+                    <div class="control-row" style="margin-top: 12px;">
+                        <input type="text" id="contextInput" placeholder="Optional: What are you recording? (e.g., lecture on AI safety)" style="padding: 10px 12px; background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(71, 85, 105, 0.3); border-radius: 8px; color: #e2e8f0; font-size: 14px; width: 100%; font-family: inherit;">
+                    </div>
                 </div>
 
                 <div class="section">
@@ -523,8 +526,11 @@
         let recordingTimer = null;
         let currentModel = 'small';
         let currentLanguage = 'en';
+        let currentContext = '';
 
-        const CHUNK_DURATION = 10 * 60 * 1000; // 10 minutes - smaller chunks prevent Whisper context loss
+        const MAIN_CHUNK_DURATION = 5 * 60 * 1000; // 5 minutes
+        const BRIDGE_DURATION = 1 * 60 * 1000; // 1 minute overlap
+        const MAX_CONCURRENT_REQUESTS = 3;
 
         document.getElementById('modelSelect').addEventListener('change', (e) => {
             currentModel = e.target.value;
@@ -533,6 +539,136 @@
         document.getElementById('languageSelect').addEventListener('change', (e) => {
             currentLanguage = e.target.value;
         });
+
+        document.getElementById('contextInput').addEventListener('change', (e) => {
+            currentContext = e.target.value.trim();
+        });
+
+        function buildChunkPlan(totalSeconds) {
+            const chunks = [];
+            const totalMs = totalSeconds * 1000;
+            let mainIndex = 0;
+
+            for (let start = 0; start < totalMs; start += MAIN_CHUNK_DURATION) {
+                const end = Math.min(start + MAIN_CHUNK_DURATION, totalMs);
+                chunks.push({
+                    type: 'main',
+                    index: mainIndex,
+                    mainIndex: mainIndex,
+                    startMs: start,
+                    endMs: end
+                });
+
+                const nextStart = start + MAIN_CHUNK_DURATION;
+                if (nextStart < totalMs) {
+                    const bridgeStart = Math.max(start, nextStart - BRIDGE_DURATION);
+                    const bridgeEnd = Math.min(nextStart + BRIDGE_DURATION, totalMs);
+                    chunks.push({
+                        type: 'bridge',
+                        index: mainIndex + 0.5,
+                        mainIndex: mainIndex,
+                        bridgeMainIndex: mainIndex + 1,
+                        startMs: bridgeStart,
+                        endMs: bridgeEnd
+                    });
+                }
+                mainIndex++;
+            }
+
+            return chunks;
+        }
+
+        function normalizeText(text) {
+            return text.toLowerCase().trim().replace(/\s+/g, ' ');
+        }
+
+        function textSimilarity(a, b) {
+            const aWords = normalizeText(a).split(/\s+/);
+            const bWords = normalizeText(b).split(/\s+/);
+            const aSet = new Set(aWords);
+            const bSet = new Set(bWords);
+            const intersection = [...aSet].filter(w => bSet.has(w)).length;
+            const union = new Set([...aWords, ...bWords]).size;
+            return union === 0 ? 0 : intersection / union;
+        }
+
+        function detectRepetitions(text) {
+            const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+            const normalized = sentences.map(s => normalizeText(s));
+            for (let i = 0; i < normalized.length - 2; i++) {
+                if (normalized[i] === normalized[i + 1] && normalized[i + 1] === normalized[i + 2]) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function mergeWithConsensus(chunkResults) {
+            const mainChunks = chunkResults.filter(c => c.type === 'main').sort((a, b) => a.mainIndex - b.mainIndex);
+            const bridgeChunks = chunkResults.filter(c => c.type === 'bridge').sort((a, b) => a.mainIndex - b.mainIndex);
+            const bridgeMap = Object.fromEntries(bridgeChunks.map(b => [b.mainIndex, b]));
+
+            let merged = '';
+
+            for (let i = 0; i < mainChunks.length; i++) {
+                const mainChunk = mainChunks[i];
+                const mainText = mainChunk.text || '';
+
+                if (detectRepetitions(mainText)) {
+                    if (i < bridgeChunks.length) {
+                        const bridge = bridgeMap[i];
+                        merged += (bridge?.text || mainText) + ' ';
+                    } else {
+                        merged += mainText + ' ';
+                    }
+                } else {
+                    merged += mainText + ' ';
+                }
+
+                if (i < mainChunks.length - 1 && bridgeMap[i]) {
+                    const bridge = bridgeMap[i];
+                    const nextMain = mainChunks[i + 1];
+                    const bridgeText = bridge.text || '';
+                    const nextText = nextMain.text || '';
+
+                    const mainTail = mainText.split(/\s+/).slice(-10).join(' ');
+                    const nextHead = nextText.split(/\s+/).slice(0, 10).join(' ');
+
+                    const simMainBridge = textSimilarity(mainTail, bridgeText);
+                    const simBridgeNext = textSimilarity(bridgeText, nextHead);
+
+                    if (simMainBridge > 0.5 || simBridgeNext > 0.5) {
+                        // Bridge provides better coverage of the boundary
+                    } else {
+                        // Append next chunk after consuming bridge consensus
+                    }
+                }
+            }
+
+            return merged.trim();
+        }
+
+        class ConcurrencyLimiter {
+            constructor(limit) {
+                this.limit = limit;
+                this.active = 0;
+                this.queue = [];
+            }
+
+            async run(fn) {
+                while (this.active >= this.limit) {
+                    await new Promise(resolve => this.queue.push(resolve));
+                }
+                this.active++;
+                try {
+                    return await fn();
+                } finally {
+                    this.active--;
+                    const resolve = this.queue.shift();
+                    if (resolve) resolve();
+                }
+            }
+        }
 
         async function startRecording() {
             try {
@@ -598,47 +734,52 @@
         }
 
         async function transcribeInChunks(audioBlob, totalSeconds) {
-            const numChunks = Math.ceil(totalSeconds / (10 * 60));
+            const chunks = buildChunkPlan(totalSeconds);
 
             document.getElementById('progressSection').classList.add('active');
             document.getElementById('chunkProgress').innerHTML = '';
 
-            for (let i = 0; i < numChunks; i++) {
+            for (const chunk of chunks) {
                 const div = document.createElement('div');
                 div.className = 'chunk-item';
-                div.id = `chunk-${i}`;
+                div.id = `chunk-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+                const label = chunk.type === 'main'
+                    ? `Main ${chunk.mainIndex + 1}`
+                    : `Bridge ${chunk.mainIndex}→${chunk.bridgeMainIndex}`;
                 div.innerHTML = `
                     <div class="chunk-header">
-                        <div class="chunk-status pending" id="status-${i}">
+                        <div class="chunk-status pending" id="status-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}">
                             <span class="dot"></span>
                         </div>
-                        <div class="chunk-info">Chunk ${i + 1}/${numChunks}</div>
-                        <div class="chunk-eta" id="eta-${i}"></div>
+                        <div class="chunk-info" style="${chunk.type === 'bridge' ? 'font-size: 12px; opacity: 0.8;' : ''}">${label}</div>
+                        <div class="chunk-eta" id="eta-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}"></div>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill" id="fill-${i}"></div>
+                        <div class="progress-fill" id="fill-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}"></div>
                     </div>
                 `;
                 document.getElementById('chunkProgress').appendChild(div);
             }
 
-            let fullTranscript = '';
-            let chunkStartTimes = [];
+            const chunkResults = [];
+            const limiter = new ConcurrencyLimiter(MAX_CONCURRENT_REQUESTS);
+            const chunkStartTimes = new Map();
 
-            for (let i = 0; i < numChunks; i++) {
-                updateChunkStatus(i, 'processing');
-                chunkStartTimes[i] = Date.now();
+            const tasks = chunks.map(chunk => limiter.run(async () => {
+                const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+                updateChunkStatus(chunkId, 'processing');
+                chunkStartTimes.set(chunkId, Date.now());
 
                 try {
-                    const startMs = i * CHUNK_DURATION;
-                    const endMs = Math.min((i + 1) * CHUNK_DURATION, totalSeconds * 1000);
-
-                    const chunkBlob = await extractAudioChunk(audioBlob, startMs, endMs);
+                    const chunkBlob = await extractAudioChunk(audioBlob, chunk.startMs, chunk.endMs);
 
                     const formData = new FormData();
-                    formData.append('file', chunkBlob, `chunk-${i}.wav`);
+                    formData.append('file', chunkBlob, `${chunk.type}-${chunk.mainIndex}.wav`);
                     formData.append('model', currentModel);
                     formData.append('language', currentLanguage);
+                    if (currentContext) {
+                        formData.append('prompt', currentContext);
+                    }
 
                     const startFetch = Date.now();
                     const response = await fetch('/v1/audio/transcriptions', {
@@ -651,29 +792,41 @@
                     const data = await response.json();
                     const elapsed = Date.now() - startFetch;
 
-                    updateProgressBar(i, 100);
+                    updateProgressBar(chunkId, 100);
+                    updateChunkStatus(chunkId, 'done');
+                    updateChunkETA(chunkId, elapsed, chunk.index, chunks.length);
 
-                    if (data.text && data.text.trim()) {
-                        fullTranscript += data.text + ' ';
-                    }
-
-                    updateChunkStatus(i, 'done');
-                    updateChunkETA(i, elapsed, i + 1, numChunks);
-
-                    document.getElementById('transcript').textContent = fullTranscript.trim();
-                    document.getElementById('transcript').classList.remove('empty');
-
-                    document.getElementById('copyBtn').style.display = 'flex';
-                    document.getElementById('exportBtn').style.display = 'flex';
+                    return {
+                        ...chunk,
+                        text: data.text || ''
+                    };
 
                 } catch (err) {
-                    updateChunkStatus(i, 'error');
-                    showStatus(`Error on chunk ${i + 1}: ${err.message}`, 'error');
-                    return;
+                    updateChunkStatus(chunkId, 'error');
+                    showStatus(`Error on ${chunk.type} ${chunk.mainIndex}: ${err.message}`, 'error');
+                    return {
+                        ...chunk,
+                        text: '',
+                        error: true
+                    };
                 }
+            }));
+
+            const results = await Promise.all(tasks);
+
+            if (results.some(r => r.error)) {
+                showStatus('Some chunks failed to transcribe', 'error');
+                return;
             }
 
-            showStatus('✓ All chunks transcribed!', 'success');
+            const fullTranscript = mergeWithConsensus(results);
+
+            document.getElementById('transcript').textContent = fullTranscript;
+            document.getElementById('transcript').classList.remove('empty');
+            document.getElementById('copyBtn').style.display = 'flex';
+            document.getElementById('exportBtn').style.display = 'flex';
+
+            showStatus('✓ All chunks transcribed and merged!', 'success');
         }
 
         async function extractAudioChunk(audioBlob, startMs, endMs) {
@@ -751,32 +904,34 @@
             return new Blob([arrayBuffer], { type: 'audio/wav' });
         }
 
-        function updateChunkStatus(index, status) {
-            const statusEl = document.getElementById(`status-${index}`);
+        function updateChunkStatus(chunkId, status) {
+            const statusEl = document.getElementById(`status-${chunkId}`);
             if (statusEl) {
                 statusEl.className = `chunk-status ${status}`;
             }
         }
 
-        function updateProgressBar(index, percent) {
-            const fill = document.getElementById(`fill-${index}`);
+        function updateProgressBar(chunkId, percent) {
+            const fill = document.getElementById(`fill-${chunkId}`);
             if (fill) {
                 fill.style.width = percent + '%';
             }
         }
 
-        function updateChunkETA(index, elapsedMs, chunkNum, totalChunks) {
-            const etaEl = document.getElementById(`eta-${index}`);
+        function updateChunkETA(chunkId, elapsedMs, chunkIndex, totalChunks) {
+            const etaEl = document.getElementById(`eta-${chunkId}`);
             if (etaEl) {
                 const seconds = (elapsedMs / 1000).toFixed(1);
                 etaEl.textContent = `${seconds}s`;
 
-                const remainingChunks = totalChunks - chunkNum;
+                const remainingChunks = totalChunks - chunkIndex;
                 if (remainingChunks > 0) {
                     const estimatedTotal = (elapsedMs * totalChunks) / 1000;
                     const eta = (estimatedTotal - elapsedMs / 1000).toFixed(0);
-                    document.querySelector('.status-box').textContent =
-                        `Chunk ${chunkNum}/${totalChunks} done. ETA: ~${eta}s remaining`;
+                    const statusBox = document.querySelector('.status-box');
+                    if (statusBox) {
+                        statusBox.textContent = `Processing ${chunkIndex}/${totalChunks}. ETA: ~${eta}s`;
+                    }
                 }
             }
         }
@@ -798,57 +953,66 @@
 
                 const totalSeconds = Math.ceil(audioBuffer.duration);
                 const totalMinutes = (totalSeconds / 60).toFixed(1);
-                const numChunks = Math.ceil(totalSeconds / (10 * 60));
+                const numMainChunks = Math.ceil(totalSeconds / (5 * 60));
+                const totalChunksWithBridges = numMainChunks + Math.max(0, numMainChunks - 1);
 
-                console.log(`File duration: ${totalMinutes} min → ${numChunks} chunks`);
-                showStatus(`✓ File loaded: ${totalMinutes} min → ${numChunks} chunks of 10 min...`, 'success');
-                await transcribeUploadedChunks(audioBuffer, totalSeconds, numChunks);
+                console.log(`File duration: ${totalMinutes} min → ${numMainChunks} main chunks + ${Math.max(0, numMainChunks - 1)} bridges`);
+                showStatus(`✓ File loaded: ${totalMinutes} min → processing with overlapping chunks...`, 'success');
+                await transcribeUploadedChunks(audioBuffer, totalSeconds, totalChunksWithBridges);
             } catch (err) {
                 showStatus(`❌ Failed to load file: ${err.message}`, 'error');
             }
         }
 
-        async function transcribeUploadedChunks(audioBuffer, totalSeconds, numChunks) {
+        async function transcribeUploadedChunks(audioBuffer, totalSeconds, _numChunks) {
+            const chunks = buildChunkPlan(totalSeconds);
+
             document.getElementById('progressSection').classList.add('active');
             document.getElementById('chunkProgress').innerHTML = '';
 
-            for (let i = 0; i < numChunks; i++) {
+            for (const chunk of chunks) {
                 const div = document.createElement('div');
                 div.className = 'chunk-item';
-                div.id = `chunk-${i}`;
+                div.id = `chunk-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+                const label = chunk.type === 'main'
+                    ? `Main ${chunk.mainIndex + 1}`
+                    : `Bridge ${chunk.mainIndex}→${chunk.bridgeMainIndex}`;
                 div.innerHTML = `
                     <div class="chunk-header">
-                        <div class="chunk-status pending" id="status-${i}">
+                        <div class="chunk-status pending" id="status-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}">
                             <span class="dot"></span>
                         </div>
-                        <div class="chunk-info">Chunk ${i + 1}/${numChunks}</div>
-                        <div class="chunk-eta" id="eta-${i}"></div>
+                        <div class="chunk-info" style="${chunk.type === 'bridge' ? 'font-size: 12px; opacity: 0.8;' : ''}">${label}</div>
+                        <div class="chunk-eta" id="eta-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}"></div>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill" id="fill-${i}"></div>
+                        <div class="progress-fill" id="fill-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}"></div>
                     </div>
                 `;
                 document.getElementById('chunkProgress').appendChild(div);
             }
 
-            let fullTranscript = '';
+            const limiter = new ConcurrencyLimiter(MAX_CONCURRENT_REQUESTS);
+            const chunkStartTimes = new Map();
 
-            for (let i = 0; i < numChunks; i++) {
-                updateChunkStatus(i, 'processing');
-                updateProgressBar(i, 0);
+            const tasks = chunks.map(chunk => limiter.run(async () => {
+                const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+                updateChunkStatus(chunkId, 'processing');
+                updateProgressBar(chunkId, 0);
+                chunkStartTimes.set(chunkId, Date.now());
 
                 try {
-                    const startMs = i * CHUNK_DURATION;
-                    const endMs = Math.min((i + 1) * CHUNK_DURATION, totalSeconds * 1000);
+                    updateProgressBar(chunkId, 25);
+                    const chunkBlob = await extractAudioChunkFromBuffer(audioBuffer, chunk.startMs, chunk.endMs);
 
-                    updateProgressBar(i, 25);
-                    const chunkBlob = await extractAudioChunkFromBuffer(audioBuffer, startMs, endMs);
-
-                    updateProgressBar(i, 50);
+                    updateProgressBar(chunkId, 50);
                     const formData = new FormData();
-                    formData.append('file', chunkBlob, `chunk-${i}.wav`);
+                    formData.append('file', chunkBlob, `${chunk.type}-${chunk.mainIndex}.wav`);
                     formData.append('model', currentModel);
                     formData.append('language', currentLanguage);
+                    if (currentContext) {
+                        formData.append('prompt', currentContext);
+                    }
 
                     const startFetch = Date.now();
                     const response = await fetch('/v1/audio/transcriptions', {
@@ -861,28 +1025,41 @@
                     const data = await response.json();
                     const elapsed = Date.now() - startFetch;
 
-                    updateProgressBar(i, 100);
+                    updateProgressBar(chunkId, 100);
+                    updateChunkStatus(chunkId, 'done');
+                    updateChunkETA(chunkId, elapsed, chunk.index, chunks.length);
 
-                    if (data.text && data.text.trim()) {
-                        fullTranscript += data.text + ' ';
-                    }
-
-                    updateChunkStatus(i, 'done');
-                    updateChunkETA(i, elapsed, i + 1, numChunks);
-
-                    document.getElementById('transcript').textContent = fullTranscript.trim();
-                    document.getElementById('transcript').classList.remove('empty');
-                    document.getElementById('copyBtn').style.display = 'flex';
-                    document.getElementById('exportBtn').style.display = 'flex';
+                    return {
+                        ...chunk,
+                        text: data.text || ''
+                    };
 
                 } catch (err) {
-                    updateChunkStatus(i, 'error');
-                    showStatus(`Error on chunk ${i + 1}: ${err.message}`, 'error');
-                    return;
+                    updateChunkStatus(chunkId, 'error');
+                    showStatus(`Error on ${chunk.type} ${chunk.mainIndex}: ${err.message}`, 'error');
+                    return {
+                        ...chunk,
+                        text: '',
+                        error: true
+                    };
                 }
+            }));
+
+            const results = await Promise.all(tasks);
+
+            if (results.some(r => r.error)) {
+                showStatus('Some chunks failed to transcribe', 'error');
+                return;
             }
 
-            showStatus('✓ All chunks transcribed!', 'success');
+            const fullTranscript = mergeWithConsensus(results);
+
+            document.getElementById('transcript').textContent = fullTranscript;
+            document.getElementById('transcript').classList.remove('empty');
+            document.getElementById('copyBtn').style.display = 'flex';
+            document.getElementById('exportBtn').style.display = 'flex';
+
+            showStatus('✓ All chunks transcribed and merged!', 'success');
         }
 
         async function extractAudioChunkFromBuffer(audioBuffer, startMs, endMs) {

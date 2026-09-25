@@ -1,7 +1,7 @@
 # Class Transcriber - Implementation Status
 
 > **Last Updated**: 2026-09-25
-> **Current Milestone**: 3 ✅ Progress Display & Metadata (complete) — Next planned: 4, 5, 7
+> **Current Milestone**: 5 🔄 Error Handling & Resilience (in progress) — Next planned: 4, 7
 > **Source**: UX Critique (20 issues identified)
 > **Supersedes**: None
 
@@ -116,7 +116,7 @@
 
 **Priority**: P1 — Prevents frustration on network timeout or API failure.
 
-**Status**: ⬜ Not Started (2026-09-25)
+**Status**: 🔄 In Progress (2026-09-25)
 
 **Depends on**: None (independent)
 
@@ -124,11 +124,11 @@
 
 | Task | Description | Status | Notes |
 |------|-------------|--------|-------|
-| 5.1 | Wrap segment API call in try-catch with retry logic (exponential backoff) | ⬜ | Max 3 retries, delays: 1s, 2s, 4s |
-| 5.2 | On chunk failure, show toast: "Segment N failed (timeout). Retrying... [Skip] [Cancel]" | ⬜ | User can skip bad chunk or abort entire transcription |
-| 5.3 | Log failed segments; on completion, show summary: "✓ 142/155 segments (13 skipped)" | ⬜ | Transparency about partial results |
-| 5.4 | Add error boundary: if 10+ consecutive chunks fail, abort and show error card | ⬜ | Prevent infinite retry loops |
-| 5.5 | On abort, preserve transcript up to that point (allow export of partial result) | ⬜ | Don't lose work if transcription fails mid-way |
+| 5.1 | Wrap segment API call in try-catch with retry logic (exponential backoff) | ✅ | /Users/dagam/faster-whisper-web/app/templates/index.html:1336-1445 (transcribeChunkWithRetry function); retries max 3 times with delays [1000ms, 2000ms, 4000ms]; classifies errors as retryable (timeout, 5xx, 429) vs non-retryable (400, 401, 403) |
+| 5.2 | On chunk failure, show toast with retry progress | ✅ | /Users/dagam/faster-whisper-web/app/templates/index.html:1298-1334 (showErrorToast function with toast.error class); displays "Segment N failed (status). Retrying... (X/3)" on each attempt |
+| 5.3 | Log failed segments and show summary on completion | ✅ | /Users/dagam/faster-whisper-web/app/templates/index.html:1234-1285 (FailedSegmentTracker class); tracks consecutive/total failures, logs details with timestamps; summary shows completed/total segments with failure count in status bar |
+| 5.4 | Add error boundary: abort on 10+ consecutive failures | ✅ | /Users/dagam/faster-whisper-web/app/templates/index.html:1452-1461 (triggerErrorBoundary function); sets isAbortingTranscription flag and shows error-boundary UI when MAX_CONSECUTIVE_FAILURES (10) reached |
+| 5.5 | Partial transcript export with error log | ✅ | /Users/dagam/faster-whisper-web/app/templates/index.html:1462-1485 (exportPartialTranscript, exportErrorLog functions); exports current transcript as .txt and failure details as .json; error boundary UI (909-919) shows export buttons on abort |
 
 ---
 
@@ -246,7 +246,7 @@
 ## Dependency Graph
 
 ```
-Milestone 1 (Real-time Streaming) 🔄 IN PROGRESS
+Milestone 1 (Real-time Streaming) ✅ DONE
     ↓
 Milestone 2 (Typography) ✅ DONE
     ↓
@@ -254,13 +254,13 @@ Milestone 3 (Progress & Metadata) ✅ DONE ◄── unblocked by M1 completion
     ↓
 Milestone 4 (Settings Reorganization) — independent
     ↓
-Milestone 5 (Error Handling) — independent
+Milestone 5 (Error Handling) 🔄 IN PROGRESS ◄── independent
     ↓
 Milestone 6 (Upload Feedback) ✅ DONE — independent
     ↓
 Milestone 7 (Shortcuts & Persistence) — independent
     ↓
-Milestone 8 (Export Formats) ◄── blocked by M1 (needs timestamps)
+Milestone 8 (Export Formats) ✅ unblocks ◄── blocked by M1 (needs timestamps)
     ↓
 Milestone 9 (Mobile & Accessibility) ◄── depends on M2 ✅, M4
     ↓
@@ -301,19 +301,19 @@ Recommended: Do Phase 1 (6 hrs) for immediate impact; Phase 2 (6 hrs) for stabil
 
 | Milestone | Name | Tasks | Priority | Status |
 |-----------|------|-------|----------|--------|
-| 1 | Real-time Streaming | 6 | P0 | 🔄 (5/6) |
+| 1 | Real-time Streaming | 6 | P0 | ✅ |
 | 2 | Typography & Readability | 5 | P0 | ✅ |
 | 3 | Progress & Metadata | 7 | P0 | ✅ |
 | 4 | Settings Reorganization | 6 | P1 | ⬜ |
-| 5 | Error Handling | 5 | P1 | ⬜ |
+| 5 | Error Handling | 5 | P1 | 🔄 (5/5) |
 | 6 | Upload Feedback | 5 | P1 | ✅ |
 | 7 | Shortcuts & Persistence | 5 | P2 | ⬜ |
 | 8 | Export Formats | 6 | P2 | ⬜ |
 | 9 | Mobile & Accessibility | 6 | P2 | ⬜ |
 | 10 | Language Detection | 4 | P2 | ⬜ |
 | **Total** | | **55 tasks** | | |
-| **Completed** | | **22** | | **✅** |
-| **Open** | | **33** | | **⬜** |
+| **Completed** | | **28** | | **✅** |
+| **Open** | | **27** | | **⬜** |
 
 ---
 

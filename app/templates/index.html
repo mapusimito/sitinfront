@@ -2009,35 +2009,30 @@
         }
 
         function uploadFileWithProgress(file) {
-            return new Promise((resolve, reject) => {
-                const formData = new FormData();
-                formData.append('file', file);
-                formData.append('model', currentModel);
-                formData.append('language', currentLanguage);
-                if (currentContext) {
-                    formData.append('prompt', currentContext);
-                }
-
-                uploadXhr = new XMLHttpRequest();
+            return new Promise(async (resolve, reject) => {
                 uploadStartTime = Date.now();
                 let lastUpdateTime = uploadStartTime;
 
-                uploadXhr.upload.addEventListener('progress', (event) => {
-                    if (event.lengthComputable) {
-                        const loaded = event.loaded;
-                        const total = event.total;
-                        const percent = Math.round((loaded / total) * 100);
+                try {
+                    const totalBytes = file.size;
+                    const fileBlob = file;
+                    let bytesProcessed = 0;
 
-                        const now = Date.now();
-                        if (now - lastUpdateTime >= UPLOAD_PROGRESS_INTERVAL) {
-                            const elapsedSeconds = (now - uploadStartTime) / 1000;
-                            const uploadSpeed = loaded / elapsedSeconds; // bytes per second
-                            const remainingBytes = total - loaded;
+                    // Simulate reading progress
+                    const progressInterval = setInterval(() => {
+                        if (bytesProcessed < totalBytes) {
+                            bytesProcessed += Math.random() * totalBytes * 0.3; // Gradually increase
+                            bytesProcessed = Math.min(bytesProcessed, totalBytes * 0.9); // Cap at 90%
+
+                            const percent = Math.round((bytesProcessed / totalBytes) * 100);
+                            const elapsedSeconds = (Date.now() - uploadStartTime) / 1000;
+                            const uploadSpeed = bytesProcessed / elapsedSeconds;
+                            const remainingBytes = totalBytes - bytesProcessed;
                             const etaSeconds = Math.ceil(remainingBytes / uploadSpeed);
 
-                            const loadedMb = (loaded / (1024 * 1024)).toFixed(1);
-                            const totalMb = (total / (1024 * 1024)).toFixed(1);
-                            document.getElementById('uploadProgressLabel').textContent = `Uploading: ${loadedMb} MB / ${totalMb} MB`;
+                            const loadedMb = (bytesProcessed / (1024 * 1024)).toFixed(1);
+                            const totalMb = (totalBytes / (1024 * 1024)).toFixed(1);
+                            document.getElementById('uploadProgressLabel').textContent = `Loading: ${loadedMb} MB / ${totalMb} MB`;
                             document.getElementById('uploadProgressPercent').textContent = `${percent}%`;
                             document.getElementById('uploadProgressFill').style.width = percent + '%';
 
@@ -2048,51 +2043,35 @@
                                 const etaSecs = etaSeconds % 60;
                                 document.getElementById('uploadEta').textContent = `ETA: ${etaMinutes}m ${etaSecs}s`;
                             }
-
-                            lastUpdateTime = now;
                         }
-                    }
-                });
+                    }, 100);
 
-                uploadXhr.addEventListener('load', async () => {
-                    if (uploadXhr.status === 200) {
-                        try {
-                            const arrayBuffer = await file.arrayBuffer();
-                            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    // Read and decode file
+                    const arrayBuffer = await fileBlob.arrayBuffer();
+                    bytesProcessed = totalBytes * 0.95;
+                    document.getElementById('uploadProgressFill').style.width = '95%';
 
-                            const totalSeconds = Math.ceil(audioBuffer.duration);
-                            const totalMinutes = (totalSeconds / 60).toFixed(1);
-                            const numMainChunks = Math.ceil(totalSeconds / (5 * 60));
-                            const totalChunksWithBridges = numMainChunks + Math.max(0, numMainChunks - 1);
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-                            console.log(`File duration: ${totalMinutes} min → ${numMainChunks} main chunks + ${Math.max(0, numMainChunks - 1)} bridges`);
-                            showStatus(`✓ File loaded: ${totalMinutes} min → processing with overlapping chunks...`, 'success');
-                            await transcribeUploadedChunks(audioBuffer, totalSeconds, totalChunksWithBridges);
-                            resolve();
-                        } catch (err) {
-                            reject(err);
-                        }
-                    } else {
-                        reject(new Error(`Upload failed with status ${uploadXhr.status}`));
-                    }
-                });
+                    clearInterval(progressInterval);
+                    document.getElementById('uploadProgressFill').style.width = '100%';
+                    document.getElementById('uploadProgressPercent').textContent = '100%';
 
-                uploadXhr.addEventListener('error', () => {
-                    reject(new Error('Upload failed: network error'));
-                });
+                    const totalSeconds = Math.ceil(audioBuffer.duration);
+                    const totalMinutes = (totalSeconds / 60).toFixed(1);
+                    const numMainChunks = Math.ceil(totalSeconds / (5 * 60));
+                    const totalChunksWithBridges = numMainChunks + Math.max(0, numMainChunks - 1);
 
-                uploadXhr.addEventListener('abort', () => {
-                    reject(new Error('Upload cancelled'));
-                });
-
-                uploadTimeoutId = setTimeout(() => {
-                    uploadXhr.abort();
-                    reject(new Error('Upload timeout. Please try again with a slower connection or smaller file.'));
-                }, UPLOAD_TIMEOUT);
-
-                uploadXhr.open('POST', '/v1/audio/upload', true);
-                uploadXhr.send(formData);
+                    console.log(`File duration: ${totalMinutes} min → ${numMainChunks} main chunks + ${Math.max(0, numMainChunks - 1)} bridges`);
+                    showStatus(`✓ File loaded: ${totalMinutes} min → processing with overlapping chunks...`, 'success');
+                    await transcribeUploadedChunks(audioBuffer, totalSeconds, totalChunksWithBridges);
+                    resolve();
+                } catch (err) {
+                    reject(err);
+                } finally {
+                    if (uploadTimeoutId) clearTimeout(uploadTimeoutId);
+                }
             });
         }
 

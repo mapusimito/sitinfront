@@ -1,0 +1,47 @@
+- generic [ref=f1e2]:
+  - generic [ref=f1e3]:
+    - generic [ref=f1e4]: sitinfront
+    - paragraph [ref=f1e7]: Tú atiende. Nosotros escribimos.
+    - generic [ref=f1e8]: Listo para grabar
+  - generic [ref=f1e10]:
+    - generic [ref=f1e11]:
+      - generic [ref=f1e12]:
+        - generic [ref=f1e13]: Ajustes
+        - generic [ref=f1e14]:
+          - combobox [ref=f1e15] [cursor=pointer]:
+            - option "Tiny (fastest)"
+            - option "Base (balanced)"
+            - option "Small (most accurate)" [selected]
+          - combobox [ref=f1e16] [cursor=pointer]:
+            - option "English" [selected]
+            - option "Spanish"
+            - option "French"
+            - option "German"
+            - option "Italian"
+            - option "Portuguese"
+            - option "Dutch"
+            - option "Polish"
+            - option "Japanese"
+            - option "Chinese"
+            - option "Korean"
+            - option "Russian"
+            - option "Arabic"
+        - 'textbox "Opcional: ¿de qué es la clase? (p. ej., Historia Contemporánea)" [ref=f1e18]'
+      - generic [ref=f1e19]:
+        - generic [ref=f1e20]: Grabar
+        - generic [ref=f1e21]:
+          - button "Grabar" [ref=f1e22] [cursor=pointer]
+          - button "Parar" [disabled] [ref=f1e24]
+          - button "Borrar" [ref=f1e26] [cursor=pointer]
+      - generic [ref=f1e28]:
+        - generic [ref=f1e29]: Subir archivo
+        - generic [ref=f1e30] [cursor=pointer]:
+          - generic [ref=f1e31]: Sube la grabación de una clase
+          - generic [ref=f1e32]: Audio de cualquier duración
+    - generic [ref=f1e34]:
+      - generic [ref=f1e35]: Transcripción
+      - generic [ref=f1e36]: Aún no hay transcripción. Graba o sube una clase para empezar.
+  - generic [ref=f1e38]:
+    - generic [ref=f1e39]: Historial de Procesos
+    - generic [ref=f1e40]: ✓ 11:13:58 PM | University of Alicante 2.m4a | tiny (19.5s)
+    - button "Actualizar" [ref=f1e43] [cursor=pointer]

@@ -6,9 +6,12 @@ import time
 import uuid
 import asyncio
 import json
+import logging
 from pathlib import Path
 from typing import Optional, List, Dict, AsyncGenerator
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from collections import deque
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -19,6 +22,26 @@ from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 from faster_whisper import WhisperModel, BatchedInferencePipeline
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+@dataclass
+class TranscriptionLog:
+    timestamp: str
+    request_id: str
+    filename: str
+    model: str
+    status: str
+    duration: float = 0.0
+    error: str = None
+
+    def to_dict(self):
+        return asdict(self)
 
 # Configuration
 DEFAULT_MODEL = os.environ.get("MODEL_SIZE", "base")
@@ -42,6 +65,53 @@ DEFAULT_PROMPT = """标点：Hello, hi! Yes? No. Thank you. 你好，谢谢！�
 
 app = FastAPI(title="Faster Whisper API", description="High-performance STT API with streaming & multi-model support", version="2.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+
+
+class TranscriptionLogManager:
+    def __init__(self, max_entries=100):
+        self.logs: deque = deque(maxlen=max_entries)
+
+    def log_request(self, request_id: str, filename: str, model: str):
+        entry = TranscriptionLog(
+            timestamp=datetime.now().isoformat(),
+            request_id=request_id,
+            filename=filename,
+            model=model,
+            status="started"
+        )
+        logger.info(f"[{request_id}] Transcription started: {filename} (model: {model})")
+        return entry
+
+    def log_success(self, request_id: str, duration: float, filename: str):
+        entry = TranscriptionLog(
+            timestamp=datetime.now().isoformat(),
+            request_id=request_id,
+            filename=filename,
+            model="",
+            status="success",
+            duration=duration
+        )
+        self.logs.append(entry)
+        logger.info(f"[{request_id}] Transcription completed in {duration:.2f}s: {filename}")
+
+    def log_error(self, request_id: str, filename: str, model: str, error: str, duration: float = 0.0):
+        entry = TranscriptionLog(
+            timestamp=datetime.now().isoformat(),
+            request_id=request_id,
+            filename=filename,
+            model=model,
+            status="error",
+            duration=duration,
+            error=error
+        )
+        self.logs.append(entry)
+        logger.error(f"[{request_id}] Transcription failed: {error}")
+
+    def get_logs(self, limit: int = 50):
+        return [log.to_dict() for log in list(self.logs)[-limit:]]
+
+
+transcription_log_manager = TranscriptionLogManager()
 
 
 class ModelProvider:
@@ -197,16 +267,22 @@ async def openai_transcribe(
     hallucination_silence_threshold: float = Form(1.0),  # Prevent hallucinating during silence
 ):
     """OpenAI-compatible transcription with streaming support."""
+    request_id = str(uuid.uuid4())[:8]
+    start_time = time.time()
     effective_prompt = prompt if prompt else DEFAULT_PROMPT
     tmp_path = f"/tmp/whisper_{uuid.uuid4()}{Path(file.filename).suffix}"
-    
+
+    transcription_log_manager.log_request(request_id, file.filename, model)
+
     try:
         content = await file.read()
         with open(tmp_path, "wb") as f:
             f.write(content)
+        logger.info(f"[{request_id}] File saved: {tmp_path} ({len(content)} bytes)")
         
         # Streaming mode
         if stream:
+            logger.info(f"[{request_id}] Using streaming mode")
             return StreamingResponse(
                 stream_transcription(tmp_path, model, language, effective_prompt, beam_size, vad_filter, word_timestamps),
                 media_type="application/x-ndjson",
@@ -237,7 +313,9 @@ async def openai_transcribe(
             )
         
         segments = list(segments)
-        
+        duration = time.time() - start_time
+        transcription_log_manager.log_success(request_id, duration, file.filename)
+
         if response_format == "text":
             return JSONResponse({"text": " ".join(s.text.strip() for s in segments)})
         elif response_format == "srt":
@@ -259,9 +337,16 @@ async def openai_transcribe(
         else:
             return {"text": " ".join(s.text.strip() for s in segments), "language": info.language,
                 "duration": info.duration, "segments": [{"id": i, "start": s.start, "end": s.end, "text": s.text.strip()} for i, s in enumerate(segments)]}
+    except Exception as e:
+        duration = time.time() - start_time
+        error_msg = str(e)
+        transcription_log_manager.log_error(request_id, file.filename, model, error_msg, duration)
+        logger.exception(f"[{request_id}] Transcription failed with exception")
+        raise
     finally:
         if not stream and os.path.exists(tmp_path):
             os.remove(tmp_path)
+            logger.debug(f"[{request_id}] Cleaned up temp file: {tmp_path}")
 
 
 @app.get("/v1/models")
@@ -305,6 +390,12 @@ async def gpu_status():
 async def gpu_offload():
     await model_provider.unload()
     return {"status": "offloaded"}
+
+
+@app.get("/api/logs/transcriptions")
+async def get_transcription_logs(limit: int = Query(50, ge=1, le=100)):
+    """Get transcription request logs."""
+    return {"logs": transcription_log_manager.get_logs(limit), "total": len(transcription_log_manager.logs)}
 
 
 @app.post("/api/transcribe")

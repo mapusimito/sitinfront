@@ -409,6 +409,13 @@ Key implementation details:
 Time to completion: ~1 hour
 Impact: Critical for file-based workflow; users now see upload progress and have drag-and-drop support
 
+**Implementation refinement (after initial review):**
+- Corrected uploadFileWithProgress() to use client-side file decoding instead of POSTing to non-existent /v1/audio/upload endpoint
+- Progress bar now shows file reading/decoding progress (simulated during blob read and audio decode)
+- After decoding completes (100%), seamlessly transitions to transcribeUploadedChunks() for per-chunk transcription
+- This aligns with actual server architecture (only /v1/audio/transcriptions endpoint exists)
+- User experience remains unchanged: metadata display → click Upload → progress bar → transcription with chunks
+
 ---
 
 ## Session: Milestone 5 In Progress (2026-09-25)

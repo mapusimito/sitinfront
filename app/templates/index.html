@@ -1697,7 +1697,7 @@
                 document.getElementById('stopBtn').disabled = false;
                 document.getElementById('timer').classList.add('active');
                 document.getElementById('progressToggle').style.display = 'flex';
-                updateHeaderStatus('🔴 Grabando...');
+                updateHeaderStatus('Grabando...');
 
                 showStatus('Grabación iniciada...', 'info');
 
@@ -1710,7 +1710,7 @@
                         ? `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
                         : `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
                     document.getElementById('timer').textContent = timeStr;
-                    document.title = `⏱️ ${timeStr} — sitinfront`;
+                    document.title = `${timeStr} — sitinfront`;
                 }, 100);
             } catch (err) {
                 showStatus('Acceso al micrófono denegado', 'error');

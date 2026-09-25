@@ -133,8 +133,8 @@
 
         .grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 32px;
+            grid-template-columns: 1fr 2.5fr;
+            gap: 20px;
             margin-bottom: 40px;
         }
 
@@ -1002,15 +1002,15 @@
                     <div class="section-title">Grabar</div>
                     <div class="timer" id="timer">00:00</div>
                     <span class="rec-dot"></span>
-                    <div id="recordingControls" class="controls" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px;">
-                        <button id="recordBtn" class="btn-start" onclick="startRecording()" title="Grabar" style="display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 1; padding: 0; font-size: 0;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                    <div id="recordingControls" class="controls" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 8px;">
+                        <button id="recordBtn" class="btn-start" onclick="startRecording()" title="Grabar" style="display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 6px; font-size: 0; min-height: 32px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
                         </button>
-                        <button id="stopBtn" class="btn-stop" onclick="stopRecording()" disabled title="Parar" style="display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 1; padding: 0; font-size: 0;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="2.18"/></svg>
+                        <button id="stopBtn" class="btn-stop" onclick="stopRecording()" disabled title="Parar" style="display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 6px; font-size: 0; min-height: 32px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="2.18"/></svg>
                         </button>
-                        <button id="clearBtn" class="btn-secondary" onclick="clearAll()" title="Borrar" style="display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 1; padding: 0; font-size: 0;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                        <button id="clearBtn" class="btn-secondary" onclick="clearAll()" title="Borrar" style="display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 6px; font-size: 0; min-height: 32px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                         </button>
                     </div>
                     <div id="uploadActionButton" style="display: none; margin-top: 8px;">

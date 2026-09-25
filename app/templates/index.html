@@ -1091,6 +1091,20 @@
                 </div>
             </div>
         </div>
+
+        <div id="progressSection" class="card progress-section">
+            <div class="section-title">Progreso</div>
+            <div id="simpleProgress" class="simple-progress">
+                <div class="progress-text">
+                    <span id="progressLabel">Procesando...</span>
+                    <span id="progressEta" style="color: var(--foco);"></span>
+                </div>
+                <div class="progress-bar-simple">
+                    <div id="progressFill" class="progress-fill-simple"></div>
+                </div>
+            </div>
+            <div id="chunkProgress" class="chunk-progress"></div>
+        </div>
     </div>
 
     <script>
@@ -2424,6 +2438,8 @@
             const toggle = document.getElementById('progressToggle');
             const toggleIcon = document.getElementById('toggleIcon');
             const progressSection = document.getElementById('progressSection');
+
+            if (!progressSection || !toggleIcon) return;
 
             if (progressSection.classList.contains('drawer-open')) {
                 progressSection.classList.remove('drawer-open');

@@ -82,12 +82,12 @@ class TranscriptionLogManager:
         logger.info(f"[{request_id}] Transcription started: {filename} (model: {model})")
         return entry
 
-    def log_success(self, request_id: str, duration: float, filename: str):
+    def log_success(self, request_id: str, duration: float, filename: str, model: str = ""):
         entry = TranscriptionLog(
             timestamp=datetime.now().isoformat(),
             request_id=request_id,
             filename=filename,
-            model="",
+            model=model,
             status="success",
             duration=duration
         )
@@ -314,7 +314,7 @@ async def openai_transcribe(
         
         segments = list(segments)
         duration = time.time() - start_time
-        transcription_log_manager.log_success(request_id, duration, file.filename)
+        transcription_log_manager.log_success(request_id, duration, file.filename, model)
 
         if response_format == "text":
             return JSONResponse({"text": " ".join(s.text.strip() for s in segments)})

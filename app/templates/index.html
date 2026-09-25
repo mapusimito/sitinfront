@@ -9,6 +9,19 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Schibsted+Grotesk:wght@400;500;700;900&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --foco: #F2FF00;
+            --foco-2: #DDE000;
+            --sala: #000000;
+            --papel: #F4F4EE;
+            --grafito: #3B3B38;
+            --tiza: #E6E6DF;
+            --rec: #FF3B30;
+            --secondary-text: #A3A39A;
+            --secondary-text-2: #8C8C84;
+            --panel: #141412;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -16,11 +29,11 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            font-family: 'Schibsted Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #000000;
             min-height: 100vh;
             padding: 20px;
-            color: #e2e8f0;
+            color: var(--papel);
         }
 
         .container {
@@ -29,23 +42,60 @@
         }
 
         .header {
-            text-align: center;
+            text-align: left;
             margin-bottom: 40px;
             padding-top: 20px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
         }
 
-        .header h1 {
-            font-size: 36px;
-            margin-bottom: 8px;
-            background: linear-gradient(135deg, #60a5fa 0%, #34d399 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header-mark {
+            width: 48px;
+            height: 48px;
+            flex-shrink: 0;
+        }
+
+        .header-wordmark {
+            font-family: 'Silkscreen', monospace;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--foco);
+            letter-spacing: -1px;
+            position: relative;
+        }
+
+        .header-wordmark::after {
+            content: '';
+            display: inline-block;
+            width: 3px;
+            height: 24px;
+            background: var(--foco);
+            margin-left: 4px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 49%, 100% { opacity: 1; }
+            50%, 99% { opacity: 0; }
+        }
+
+        .header-text {
+            display: flex;
+            flex-direction: column;
         }
 
         .header p {
-            color: #94a3b8;
-            font-size: 14px;
+            color: var(--secondary-text);
+            font-size: 13px;
+            margin: 0;
+            padding: 0;
         }
 
         .grid {

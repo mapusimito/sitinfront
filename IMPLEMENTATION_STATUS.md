@@ -329,6 +329,8 @@ Recommended: Do Phase 1 (6 hrs) for immediate impact; Phase 2 (6 hrs) for stabil
 
 *Last updated: 2026-09-25*
 
+---
+
 ## Session: Milestone 1 In Progress (2026-09-25)
 
 Implemented real-time segment streaming architecture:
@@ -406,3 +408,80 @@ Key implementation details:
 
 Time to completion: ~1 hour
 Impact: Critical for file-based workflow; users now see upload progress and have drag-and-drop support
+
+---
+
+## Session: Milestone 5 In Progress (2026-09-25)
+
+Implemented comprehensive error handling and resilience features:
+
+**Error Handling Architecture:**
+- Created FailedSegmentTracker class (lines 1234-1285) to track:
+  - Individual failure details (timestamp, error message, attempt count)
+  - Consecutive failure count (reset on success)
+  - Total failure count and getSummary() for status display
+- Added isRetryableError() function (lines 1287-1296) to classify errors:
+  - Retryable: timeout, network errors, 429 (rate limit), 5xx (server errors)
+  - Non-retryable: 400, 401, 403, 404 (client errors)
+
+**Retry Logic:**
+- Created transcribeChunkWithRetry() wrapper (lines 1336-1445) with:
+  - Max 3 retries per chunk (MAX_RETRIES_PER_CHUNK = 3)
+  - Exponential backoff delays: [1000ms, 2000ms, 4000ms]
+  - FormData factory pattern for clean re-submission
+  - Success/failure callbacks for UI updates
+  - Proper error classification and early exit for non-retryable errors
+
+**Error Boundary & Safety:**
+- Added MAX_CONSECUTIVE_FAILURES constant = 10
+- Created triggerErrorBoundary() function (lines 1452-1461) to:
+  - Set isAbortingTranscription flag
+  - Show error-boundary UI with failure summary
+  - Prevent infinite retry loops
+- Updated both transcribeInChunks() and transcribeUploadedChunks():
+  - Initialize failedSegmentTracker at start
+  - Replace raw API calls with transcribeChunkWithRetry()
+  - Check error boundary condition on each failure
+  - Show partial completion message instead of failing silently
+
+**User-Facing Error UI:**
+- Enhanced toast system (CSS lines 705-750):
+  - Added .toast.error and .toast.warning classes
+  - Created toast-content flex layout with message + action buttons
+  - Styled toast-button with hover effects and min-width
+- Created showErrorToast() function (lines 1298-1334) displaying:
+  - Error message with segment ID and HTTP status code
+  - Progress indicator: "Retrying... (X/3)"
+  - Auto-dismisses after 8 seconds
+
+**Partial Transcript Export:**
+- Created error-boundary HTML card (lines 909-919) showing:
+  - Error summary: "X/Y segments transcribed (Z failed)"
+  - Export buttons: "Export Partial" (transcription), "Error Log" (JSON)
+- Implemented exportPartialTranscript() (lines 1462-1472):
+  - Downloads current transcript as .txt with date stamp
+  - Preserves what was successfully transcribed
+- Implemented exportErrorLog() (lines 1474-1484):
+  - Downloads failure details as JSON with timestamps
+  - Useful for debugging and support
+
+**Integration Points:**
+- Modified clearAll() function (lines 2239-2260) to reset:
+  - Error boundary visibility
+  - Abort flag and tracker instance
+- Updated error checking post-transcription (lines 1699-1730):
+  - Shows abort message if error boundary triggered
+  - Shows partial completion summary if failures occurred
+  - Displays normal completion message only if zero failures
+
+**Key Features Implemented:**
+✅ 5.1 — Exponential backoff retry logic (max 3 retries, 1s/2s/4s delays)
+✅ 5.2 — Toast error UI with progress "Retrying... (X/3)" indicator
+✅ 5.3 — Failed segment tracking with console-ready JSON export
+✅ 5.4 — Error boundary (abort on 10+ consecutive failures)
+✅ 5.5 — Partial transcript export + error log download
+
+All 5 tasks fully implemented. Ready for testing with network throttling and error simulation.
+
+Time to completion: ~45 minutes
+Impact: Prevents frustration on network timeouts; users can now recover partial transcripts and export error logs for debugging

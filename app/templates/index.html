@@ -43,28 +43,30 @@
 
         .header {
             text-align: left;
-            margin-bottom: 40px;
-            padding-top: 20px;
+            margin-bottom: 60px;
+            padding-top: 30px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #1A1A18;
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 20px;
         }
 
         .header-logo {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 16px;
         }
 
         .header-mark {
-            width: 48px;
-            height: 48px;
+            width: 64px;
+            height: 64px;
             flex-shrink: 0;
         }
 
         .header-wordmark {
             font-family: 'Silkscreen', monospace;
-            font-size: 28px;
+            font-size: 32px;
             font-weight: 700;
             color: var(--foco);
             letter-spacing: -1px;
@@ -103,8 +105,8 @@
         .grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            margin-bottom: 24px;
+            gap: 32px;
+            margin-bottom: 40px;
         }
 
         @media (max-width: 1024px) {
@@ -117,16 +119,18 @@
             background: var(--panel);
             border: 1px solid #2A2A27;
             border-radius: 16px;
-            padding: 24px;
+            padding: 32px;
+            margin-bottom: 32px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
         }
 
         .card.full {
             grid-column: 1 / -1;
+            margin-bottom: 0;
         }
 
         .section {
-            margin-bottom: 24px;
+            margin-bottom: 28px;
         }
 
         .section:last-child {
@@ -134,10 +138,11 @@
         }
 
         .section-title {
-            font-size: 14px;
-            font-weight: 600;
+            font-size: 16px;
+            font-weight: 700;
             color: var(--papel);
-            margin-bottom: 16px;
+            margin-bottom: 20px;
+            text-transform: capitalize;
         }
 
         .section-title::before {

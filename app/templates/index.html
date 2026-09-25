@@ -451,6 +451,12 @@
             background: rgba(96, 165, 250, 0.05);
         }
 
+        .upload-area.dragover {
+            border-color: #60a5fa;
+            background: rgba(96, 165, 250, 0.15);
+            box-shadow: 0 0 12px rgba(96, 165, 250, 0.3);
+        }
+
         .upload-area input {
             display: none;
         }
@@ -463,6 +469,121 @@
         .upload-icon {
             font-size: 32px;
             margin-bottom: 12px;
+        }
+
+        .upload-metadata {
+            display: none;
+            padding: 16px;
+            background: rgba(71, 85, 105, 0.2);
+            border: 1px solid rgba(71, 85, 105, 0.3);
+            border-radius: 8px;
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .upload-metadata.show {
+            display: block;
+        }
+
+        .metadata-item {
+            font-size: 13px;
+            color: #cbd5e1;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .metadata-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .metadata-label {
+            color: #94a3b8;
+        }
+
+        .upload-progress {
+            display: none;
+            padding: 16px;
+            background: rgba(71, 85, 105, 0.2);
+            border: 1px solid rgba(71, 85, 105, 0.3);
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .upload-progress.show {
+            display: block;
+        }
+
+        .progress-text-upload {
+            font-size: 13px;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-bar-upload {
+            width: 100%;
+            height: 8px;
+            background: rgba(71, 85, 105, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill-upload {
+            height: 100%;
+            background: linear-gradient(90deg, #60a5fa 0%, #34d399 100%);
+            width: 0%;
+            transition: width 0.2s ease;
+        }
+
+        .upload-eta {
+            font-size: 12px;
+            color: #94a3b8;
+            text-align: right;
+        }
+
+        .upload-button-group {
+            display: none;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .upload-button-group.show {
+            display: flex;
+        }
+
+        .btn-upload {
+            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+            color: #0f172a;
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .btn-upload:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(52, 211, 153, 0.3);
+        }
+
+        .btn-upload:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .btn-cancel-upload {
+            background: rgba(248, 113, 113, 0.2);
+            color: #fca5a5;
+            border: 1px solid rgba(248, 113, 113, 0.4);
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .btn-cancel-upload:hover:not(:disabled) {
+            background: rgba(248, 113, 113, 0.3);
         }
 
         ::-webkit-scrollbar {
@@ -482,6 +603,92 @@
             background: rgba(96, 165, 250, 0.5);
         }
 
+        .simple-progress {
+            display: none;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: rgba(71, 85, 105, 0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(71, 85, 105, 0.3);
+        }
+
+        .simple-progress.active {
+            display: block;
+        }
+
+        .progress-text {
+            font-size: 13px;
+            color: #cbd5e1;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-bar-simple {
+            width: 100%;
+            height: 8px;
+            background: rgba(71, 85, 105, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill-simple {
+            height: 100%;
+            background: linear-gradient(90deg, #60a5fa 0%, #34d399 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .summary-card {
+            display: none;
+            margin-top: 24px;
+            padding: 20px;
+            background: rgba(52, 211, 153, 0.05);
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            border-radius: 8px;
+        }
+
+        .summary-card.active {
+            display: block;
+            animation: fadeInSegment 0.5s ease-in;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .summary-item {
+            padding: 12px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 6px;
+            border-left: 3px solid #34d399;
+        }
+
+        .summary-item-icon {
+            font-size: 20px;
+            margin-right: 8px;
+        }
+
+        .summary-item-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            margin-bottom: 4px;
+        }
+
+        .summary-item-value {
+            font-size: 18px;
+            font-weight: 600;
+            color: #34d399;
+            display: flex;
+            align-items: center;
+        }
+
         .toast {
             position: fixed;
             bottom: 20px;
@@ -493,6 +700,91 @@
             font-size: 14px;
             animation: slideIn 0.3s ease;
             z-index: 1000;
+        }
+
+        .toast.error {
+            background: rgba(248, 113, 113, 0.9);
+        }
+
+        .toast.warning {
+            background: rgba(251, 146, 60, 0.9);
+        }
+
+        .toast-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toast-message {
+            flex: 1;
+        }
+
+        .toast-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .toast-button {
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .toast-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .error-boundary {
+            display: none;
+            margin-top: 24px;
+            padding: 20px;
+            background: rgba(248, 113, 113, 0.1);
+            border: 1px solid rgba(248, 113, 113, 0.3);
+            border-radius: 8px;
+            border-left: 4px solid #f87171;
+        }
+
+        .error-boundary.show {
+            display: block;
+            animation: fadeInSegment 0.5s ease-in;
+        }
+
+        .error-boundary-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #fca5a5;
+            margin-bottom: 12px;
+        }
+
+        .error-boundary-text {
+            font-size: 13px;
+            color: #fca5a5;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .error-summary {
+            padding: 12px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #cbd5e1;
+        }
+
+        .export-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         @keyframes slideIn {
@@ -559,29 +851,79 @@
 
                 <div class="section">
                     <div class="section-title">Upload</div>
-                    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                    <div id="uploadMetadata" class="upload-metadata">
+                        <div class="metadata-item">
+                            <span class="metadata-label">File:</span>
+                            <span id="metadataFileName"></span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">Size:</span>
+                            <span id="metadataFileSize"></span>
+                        </div>
+                        <div class="metadata-item">
+                            <span class="metadata-label">Est. processing time:</span>
+                            <span id="metadataProcessingTime"></span>
+                        </div>
+                    </div>
+                    <div id="uploadProgress" class="upload-progress">
+                        <div class="progress-text-upload">
+                            <span id="uploadProgressLabel">Uploading...</span>
+                            <span id="uploadProgressPercent">0%</span>
+                        </div>
+                        <div class="progress-bar-upload">
+                            <div id="uploadProgressFill" class="progress-fill-upload"></div>
+                        </div>
+                        <div class="upload-eta" id="uploadEta"></div>
+                    </div>
+                    <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
                         <input type="file" id="fileInput" accept="audio/*" onchange="uploadFile()">
                         <div class="upload-icon">📁</div>
                         <div class="upload-text">Click to upload audio</div>
-                        <div class="upload-text" style="font-size: 12px; margin-top: 8px;">Any length supported</div>
+                        <div class="upload-text" style="font-size: 12px; margin-top: 8px;">or drag and drop</div>
+                    </div>
+                    <div id="uploadButtonGroup" class="upload-button-group">
+                        <button class="btn-upload" onclick="confirmUpload()">Upload File</button>
+                        <button class="btn-cancel-upload" onclick="cancelFileSelection()">Cancel</button>
                     </div>
                 </div>
             </div>
 
             <div id="progressSection" class="card progress-section">
                 <div class="section-title">Progress</div>
+                <div id="simpleProgress" class="simple-progress">
+                    <div class="progress-text">
+                        <span id="progressLabel">Processing...</span>
+                        <span id="progressEta" style="color: #60a5fa;"></span>
+                    </div>
+                    <div class="progress-bar-simple">
+                        <div id="progressFill" class="progress-fill-simple"></div>
+                    </div>
+                </div>
                 <div id="chunkProgress" class="chunk-progress"></div>
             </div>
 
             <div class="card full">
                 <div class="section">
                     <div class="section-title">Transcript</div>
+                    <div id="errorBoundary" class="error-boundary">
+                        <div class="error-boundary-title">⚠️ Transcription Aborted</div>
+                        <div class="error-boundary-text">Too many consecutive segment failures. You can export what was transcribed so far.</div>
+                        <div id="errorSummary" class="error-summary"></div>
+                        <div class="export-buttons">
+                            <button class="btn-secondary" onclick="exportPartialTranscript()">📄 Export Partial</button>
+                            <button class="btn-secondary" onclick="exportErrorLog()">📋 Error Log</button>
+                        </div>
+                    </div>
                     <div class="transcript-container">
                         <div class="transcript-actions">
                             <button class="btn-secondary" id="copyBtn" onclick="copyToClipboard()" style="display: none;">📋 Copy</button>
                             <button class="btn-secondary" id="exportBtn" onclick="exportAsFile()" style="display: none;">💾 Export</button>
                         </div>
                         <div id="transcript" class="transcript-box empty">Transcript will appear here...</div>
+                        <div id="summaryCard" class="summary-card">
+                            <div class="section-title" style="margin-bottom: 16px;">Summary</div>
+                            <div class="summary-grid" id="summaryGrid"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -599,10 +941,31 @@
         let currentContext = '';
         let segmentCount = 0;
         let totalSegments = 0;
+        let transcriptionStart = null;
+        let segmentConfidences = [];
+        let segmentTexts = [];
+        let isUploading = false;
+        let uploadXhr = null;
+        let uploadTimeoutId = null;
+        let pendingFile = null;
+        let uploadStartTime = null;
 
         const MAIN_CHUNK_DURATION = 5 * 60 * 1000; // 5 minutes
         const BRIDGE_DURATION = 1 * 60 * 1000; // 1 minute overlap
         const MAX_CONCURRENT_REQUESTS = 3;
+        const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500 MB
+        const UPLOAD_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+        const UPLOAD_PROGRESS_INTERVAL = 250; // Update progress every 250ms
+
+        // Error handling constants
+        const MAX_RETRIES_PER_CHUNK = 3;
+        const RETRY_DELAYS = [1000, 2000, 4000]; // exponential backoff: 1s, 2s, 4s
+        const MAX_CONSECUTIVE_FAILURES = 10;
+        const RETRYABLE_STATUS_CODES = [408, 429, 500, 502, 503, 504]; // timeout, rate limit, server errors
+        const NON_RETRYABLE_STATUS_CODES = [400, 401, 403, 404]; // client errors
+
+        let isAbortingTranscription = false;
+        let failedSegmentTracker = null;
 
         document.getElementById('modelSelect').addEventListener('change', (e) => {
             currentModel = e.target.value;
@@ -654,6 +1017,10 @@
 
             transcriptBox.appendChild(segment);
 
+            // Track metadata
+            segmentTexts.push(text);
+            segmentConfidences.push(confidence);
+
             // Auto-scroll to bottom
             transcriptBox.scrollTop = transcriptBox.scrollHeight;
 
@@ -661,6 +1028,103 @@
             setTimeout(() => {
                 segment.classList.remove('highlight');
             }, 1500);
+        }
+
+        function updateSimpleProgress(current, total) {
+            const progressLabel = document.getElementById('progressLabel');
+            const progressFill = document.getElementById('progressFill');
+            const progressEta = document.getElementById('progressEta');
+
+            const percent = (current / total) * 100;
+            progressLabel.textContent = `Processing segment ${current}/${total}`;
+            progressFill.style.width = percent + '%';
+
+            if (transcriptionStart) {
+                const elapsed = Date.now() - transcriptionStart;
+                const avgTimePerSegment = elapsed / current;
+                const remainingSegments = total - current;
+                const estimatedRemaining = Math.ceil((avgTimePerSegment * remainingSegments) / 1000);
+
+                if (estimatedRemaining > 0) {
+                    const mins = Math.floor(estimatedRemaining / 60);
+                    const secs = estimatedRemaining % 60;
+                    if (mins > 0) {
+                        progressEta.textContent = `ETA: ~${mins}m ${secs}s`;
+                    } else {
+                        progressEta.textContent = `ETA: ~${secs}s`;
+                    }
+                }
+            }
+        }
+
+        function calculateWordCount() {
+            return segmentTexts.join(' ').split(/\s+/).filter(w => w.length > 0).length;
+        }
+
+        function calculateReadingTime(wordCount) {
+            const WORDS_PER_MINUTE = 200;
+            return Math.ceil(wordCount / WORDS_PER_MINUTE);
+        }
+
+        function calculateAverageConfidence() {
+            if (segmentConfidences.length === 0) return 0;
+            const sum = segmentConfidences.reduce((a, b) => a + b, 0);
+            return Math.round(sum / segmentConfidences.length);
+        }
+
+        function getConfidenceLevel(percentage) {
+            if (percentage >= 90) return 'Excellent';
+            if (percentage >= 80) return 'High';
+            if (percentage >= 70) return 'Good';
+            if (percentage >= 60) return 'Fair';
+            return 'Low';
+        }
+
+        function formatProcessingTime(milliseconds) {
+            const totalSeconds = Math.floor(milliseconds / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+
+            if (minutes > 0) {
+                return `${minutes}m ${seconds}s`;
+            }
+            return `${seconds}s`;
+        }
+
+        function displaySummaryCard(processingTimeMs) {
+            const wordCount = calculateWordCount();
+            const readingTime = calculateReadingTime(wordCount);
+            const avgConfidence = calculateAverageConfidence();
+            const confidenceLevel = getConfidenceLevel(avgConfidence);
+            const processingTime = formatProcessingTime(processingTimeMs);
+
+            const summaryItems = [
+                { icon: '📊', label: 'Word Count', value: wordCount.toLocaleString() },
+                { icon: '⏱️', label: 'Reading Time', value: `~${readingTime} min` },
+                { icon: '✓', label: 'Segments', value: totalSegments },
+                { icon: '🎯', label: 'Confidence', value: `${avgConfidence}% (${confidenceLevel})` },
+                { icon: '🗣️', label: 'Language', value: currentLanguage.toUpperCase() },
+                { icon: '⚡', label: 'Processing Time', value: processingTime }
+            ];
+
+            const summaryGrid = document.getElementById('summaryGrid');
+            summaryGrid.innerHTML = summaryItems.map(item => `
+                <div class="summary-item">
+                    <div class="summary-item-label">${item.label}</div>
+                    <div class="summary-item-value">
+                        <span class="summary-item-icon">${item.icon}</span>
+                        ${item.value}
+                    </div>
+                </div>
+            `).join('');
+
+            const summaryCard = document.getElementById('summaryCard');
+            summaryCard.classList.add('active');
+        }
+
+        function hideSummaryCard() {
+            const summaryCard = document.getElementById('summaryCard');
+            summaryCard.classList.remove('active');
         }
 
         function buildChunkPlan(totalSeconds) {
@@ -767,6 +1231,262 @@
             return merged.trim();
         }
 
+        class FailedSegmentTracker {
+            constructor() {
+                this.failures = [];
+                this.consecutiveFailures = 0;
+                this.failureDetails = {};
+            }
+
+            recordFailure(chunkId, error, attempt, retried) {
+                this.consecutiveFailures++;
+                const details = {
+                    chunkId,
+                    error: error.message || String(error),
+                    timestamp: new Date().toISOString(),
+                    attempt,
+                    retried
+                };
+                this.failures.push(details);
+                this.failureDetails[chunkId] = details;
+            }
+
+            recordSuccess() {
+                this.consecutiveFailures = 0;
+            }
+
+            getConsecutiveFailures() {
+                return this.consecutiveFailures;
+            }
+
+            getFailureCount() {
+                return this.failures.length;
+            }
+
+            toJSON() {
+                return {
+                    totalFailures: this.failures.length,
+                    consecutiveFailures: this.consecutiveFailures,
+                    details: this.failures
+                };
+            }
+
+            getSummary() {
+                const totalFailures = this.failures.length;
+                const totalSegments = totalSegments;
+                const completed = totalSegments - totalFailures;
+                return {
+                    total: totalSegments,
+                    completed,
+                    failed: totalFailures,
+                    percentage: totalSegments > 0 ? Math.round((completed / totalSegments) * 100) : 0
+                };
+            }
+        }
+
+        function isRetryableError(error, statusCode) {
+            if (statusCode === undefined) {
+                const message = error.message || String(error);
+                return message.includes('timeout') ||
+                       message.includes('network') ||
+                       message.includes('failed to fetch') ||
+                       message.includes('NetworkError');
+            }
+            return RETRYABLE_STATUS_CODES.includes(statusCode);
+        }
+
+        function showErrorToast(message, chunkId, actions = []) {
+            const toast = document.createElement('div');
+            toast.className = 'toast error';
+
+            const content = document.createElement('div');
+            content.className = 'toast-content';
+
+            const messageEl = document.createElement('div');
+            messageEl.className = 'toast-message';
+            messageEl.textContent = message;
+            content.appendChild(messageEl);
+
+            if (actions.length > 0) {
+                const actionsEl = document.createElement('div');
+                actionsEl.className = 'toast-actions';
+
+                actions.forEach(action => {
+                    const btn = document.createElement('button');
+                    btn.className = 'toast-button';
+                    btn.textContent = action.label;
+                    btn.onclick = (e) => {
+                        e.stopPropagation();
+                        action.onClick();
+                        toast.remove();
+                    };
+                    actionsEl.appendChild(btn);
+                });
+                content.appendChild(actionsEl);
+            }
+
+            toast.appendChild(content);
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                if (toast.parentNode) toast.remove();
+            }, 8000);
+        }
+
+        async function transcribeChunkWithRetry(
+            audioBlob,
+            chunk,
+            chunkId,
+            formDataFactory,
+            onSuccess,
+            onFailure
+        ) {
+            let lastError = null;
+
+            for (let attempt = 0; attempt <= MAX_RETRIES_PER_CHUNK; attempt++) {
+                if (isAbortingTranscription) {
+                    throw new Error('Transcription aborted');
+                }
+
+                try {
+                    const formData = formDataFactory();
+                    const response = await fetch('/v1/audio/transcriptions', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        lastError = new Error(`HTTP ${response.status}`);
+
+                        if (!isRetryableError(null, response.status)) {
+                            failedSegmentTracker.recordFailure(chunkId, lastError, attempt, false);
+                            onFailure(lastError, false);
+                            return {
+                                ...chunk,
+                                text: '',
+                                error: true,
+                                errorMessage: lastError.message,
+                                permanently_failed: true
+                            };
+                        }
+
+                        if (attempt < MAX_RETRIES_PER_CHUNK) {
+                            const delay = RETRY_DELAYS[attempt];
+                            showErrorToast(
+                                `Segment ${chunkId} failed (${response.status}). Retrying... (${attempt + 1}/${MAX_RETRIES_PER_CHUNK})`,
+                                chunkId,
+                                []
+                            );
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            continue;
+                        } else {
+                            failedSegmentTracker.recordFailure(chunkId, lastError, attempt, true);
+                            onFailure(lastError, true);
+                            return {
+                                ...chunk,
+                                text: '',
+                                error: true,
+                                errorMessage: `Failed after ${MAX_RETRIES_PER_CHUNK} retries: ${response.status}`,
+                                permanently_failed: true
+                            };
+                        }
+                    }
+
+                    const data = await response.json();
+                    failedSegmentTracker.recordSuccess();
+                    onSuccess(data);
+                    return {
+                        ...chunk,
+                        text: data.text || ''
+                    };
+
+                } catch (err) {
+                    lastError = err;
+
+                    if (!isRetryableError(err)) {
+                        failedSegmentTracker.recordFailure(chunkId, err, attempt, false);
+                        onFailure(err, false);
+                        return {
+                            ...chunk,
+                            text: '',
+                            error: true,
+                            errorMessage: err.message,
+                            permanently_failed: true
+                        };
+                    }
+
+                    if (attempt < MAX_RETRIES_PER_CHUNK) {
+                        const delay = RETRY_DELAYS[attempt];
+                        showErrorToast(
+                            `Segment ${chunkId} timeout. Retrying... (${attempt + 1}/${MAX_RETRIES_PER_CHUNK})`,
+                            chunkId,
+                            []
+                        );
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        continue;
+                    } else {
+                        failedSegmentTracker.recordFailure(chunkId, err, attempt, true);
+                        onFailure(err, true);
+                        return {
+                            ...chunk,
+                            text: '',
+                            error: true,
+                            errorMessage: `Failed after ${MAX_RETRIES_PER_CHUNK} retries: ${err.message}`,
+                            permanently_failed: true
+                        };
+                    }
+                }
+            }
+
+            failedSegmentTracker.recordFailure(chunkId, lastError, MAX_RETRIES_PER_CHUNK, true);
+            onFailure(lastError, true);
+            return {
+                ...chunk,
+                text: '',
+                error: true,
+                errorMessage: lastError?.message || 'Unknown error',
+                permanently_failed: true
+            };
+        }
+
+        function triggerErrorBoundary() {
+            isAbortingTranscription = true;
+            const summary = failedSegmentTracker.getSummary();
+            const errorBoundary = document.getElementById('errorBoundary');
+            const errorSummary = document.getElementById('errorSummary');
+
+            errorSummary.textContent = `${summary.completed}/${summary.total} segments transcribed (${summary.percentage}%) — ${summary.failed} segments failed`;
+            errorBoundary.classList.add('show');
+        }
+
+        function exportPartialTranscript() {
+            const text = document.getElementById('transcript').textContent;
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `partial-transcript-${new Date().toISOString().slice(0, 10)}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Partial transcript exported!');
+        }
+
+        function exportErrorLog() {
+            const logData = failedSegmentTracker.toJSON();
+            const blob = new Blob([JSON.stringify(logData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `error-log-${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Error log exported!');
+        }
+
+        function retryAll() {
+            location.reload();
+        }
+
         class ConcurrencyLimiter {
             constructor(limit) {
                 this.limit = limit;
@@ -857,9 +1577,18 @@
             const mainChunks = chunks.filter(c => c.type === 'main');
             totalSegments = mainChunks.length;
             segmentCount = 0;
+            transcriptionStart = Date.now();
+            segmentConfidences = [];
+            segmentTexts = [];
+            isAbortingTranscription = false;
+            failedSegmentTracker = new FailedSegmentTracker();
 
             document.getElementById('progressSection').classList.add('active');
+            document.getElementById('simpleProgress').classList.add('active');
             document.getElementById('chunkProgress').innerHTML = '';
+            document.getElementById('chunkProgress').style.display = 'none';
+            hideSummaryCard();
+            document.getElementById('errorBoundary').classList.remove('show');
 
             for (const chunk of chunks) {
                 const div = document.createElement('div');
@@ -899,34 +1628,35 @@
 
                 try {
                     const chunkBlob = await extractAudioChunk(audioBlob, chunk.startMs, chunk.endMs);
-
-                    const formData = new FormData();
-                    formData.append('file', chunkBlob, `${chunk.type}-${chunk.mainIndex}.wav`);
-                    formData.append('model', currentModel);
-                    formData.append('language', currentLanguage);
-                    if (currentContext) {
-                        formData.append('prompt', currentContext);
-                    }
-
                     const startFetch = Date.now();
-                    const response = await fetch('/v1/audio/transcriptions', {
-                        method: 'POST',
-                        body: formData
-                    });
 
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-                    const data = await response.json();
-                    const elapsed = Date.now() - startFetch;
-
-                    updateProgressBar(chunkId, 100);
-                    updateChunkStatus(chunkId, 'done');
-                    updateChunkETA(chunkId, elapsed, chunk.index, chunks.length);
-
-                    const result = {
-                        ...chunk,
-                        text: data.text || ''
-                    };
+                    const result = await transcribeChunkWithRetry(
+                        audioBlob,
+                        chunk,
+                        chunkId,
+                        () => {
+                            const formData = new FormData();
+                            formData.append('file', chunkBlob, `${chunk.type}-${chunk.mainIndex}.wav`);
+                            formData.append('model', currentModel);
+                            formData.append('language', currentLanguage);
+                            if (currentContext) {
+                                formData.append('prompt', currentContext);
+                            }
+                            return formData;
+                        },
+                        (data) => {
+                            const elapsed = Date.now() - startFetch;
+                            updateProgressBar(chunkId, 100);
+                            updateChunkStatus(chunkId, 'done');
+                            updateChunkETA(chunkId, elapsed, chunk.index, chunks.length);
+                        },
+                        (error, retried) => {
+                            updateChunkStatus(chunkId, 'error');
+                            if (failedSegmentTracker.getConsecutiveFailures() >= MAX_CONSECUTIVE_FAILURES) {
+                                triggerErrorBoundary();
+                            }
+                        }
+                    );
 
                     // Append main chunks to transcript in real-time
                     if (chunk.type === 'main' && result.text) {
@@ -934,6 +1664,7 @@
                         const confidence = calculateConfidence(result.text);
                         appendSegmentToTranscript(result.text, chunk.startMs, confidence, segmentCount, totalSegments);
                         updateChunkProgress(segmentCount, totalSegments);
+                        updateSimpleProgress(segmentCount, totalSegments);
                     }
 
                     return result;
@@ -951,10 +1682,31 @@
 
             const results = await Promise.all(tasks);
 
-            if (results.some(r => r.error)) {
-                showStatus('Some chunks failed to transcribe', 'error');
+            document.getElementById('simpleProgress').classList.remove('active');
+
+            if (isAbortingTranscription) {
+                showStatus('✗ Transcription aborted due to repeated failures', 'error');
                 return;
             }
+
+            if (results.some(r => r.error)) {
+                const failureCount = failedSegmentTracker.getFailureCount();
+                if (failureCount === 0) {
+                    showStatus('Some chunks failed to transcribe', 'error');
+                } else {
+                    const summary = failedSegmentTracker.getSummary();
+                    showStatus(`✓ Partial completion: ${summary.completed}/${summary.total} segments (${summary.failed} failed)`, 'warning');
+                }
+                const processingTime = Date.now() - transcriptionStart;
+                displaySummaryCard(processingTime);
+                document.getElementById('copyBtn').style.display = 'flex';
+                document.getElementById('exportBtn').style.display = 'flex';
+                return;
+            }
+
+            // Hide progress bar and show summary
+            const processingTime = Date.now() - transcriptionStart;
+            displaySummaryCard(processingTime);
 
             document.getElementById('copyBtn').style.display = 'flex';
             document.getElementById('exportBtn').style.display = 'flex';
@@ -1076,32 +1828,218 @@
             }
         }
 
+        function validateAudioFile(file) {
+            if (!file.type.startsWith('audio/')) {
+                return { valid: false, error: 'File must be an audio file' };
+            }
+            if (file.size > MAX_FILE_SIZE) {
+                const maxMb = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
+                return { valid: false, error: `File exceeds maximum size of ${maxMb} MB` };
+            }
+            return { valid: true };
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const units = ['B', 'KB', 'MB', 'GB'];
+            const unitIndex = Math.floor(Math.log(bytes) / Math.log(1024));
+            const size = (bytes / Math.pow(1024, unitIndex)).toFixed(1);
+            return size + ' ' + units[unitIndex];
+        }
+
+        function calculateAudioDuration(file) {
+            return new Promise((resolve, reject) => {
+                const audio = new Audio();
+                audio.onloadedmetadata = () => {
+                    resolve(audio.duration);
+                };
+                audio.onerror = () => {
+                    reject(new Error('Failed to load audio metadata'));
+                };
+                audio.src = URL.createObjectURL(file);
+            });
+        }
+
         async function uploadFile() {
             const file = document.getElementById('fileInput').files[0];
             if (!file) return;
+
+            const validation = validateAudioFile(file);
+            if (!validation.valid) {
+                showStatus(validation.error, 'error');
+                document.getElementById('fileInput').value = '';
+                return;
+            }
+
+            pendingFile = file;
+            document.getElementById('metadataFileName').textContent = file.name;
+            document.getElementById('metadataFileSize').textContent = formatFileSize(file.size);
+
+            try {
+                const duration = await calculateAudioDuration(file);
+                const processingTime = Math.ceil(duration * 2);
+                const minutes = Math.floor(processingTime / 60);
+                const seconds = processingTime % 60;
+                const timeStr = minutes > 0 ? `${minutes} min ${seconds} sec` : `${seconds} sec`;
+                document.getElementById('metadataProcessingTime').textContent = timeStr;
+            } catch (err) {
+                showStatus('Could not determine audio duration', 'error');
+                document.getElementById('fileInput').value = '';
+                pendingFile = null;
+                return;
+            }
+
+            document.getElementById('uploadMetadata').classList.add('show');
+            document.getElementById('uploadButtonGroup').classList.add('show');
+        }
+
+        function cancelFileSelection() {
+            pendingFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('uploadMetadata').classList.remove('show');
+            document.getElementById('uploadButtonGroup').classList.remove('show');
+            document.getElementById('uploadProgress').classList.remove('show');
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            document.getElementById('uploadArea').classList.add('dragover');
+        }
+
+        function handleDragLeave(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            document.getElementById('uploadArea').classList.remove('dragover');
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            document.getElementById('uploadArea').classList.remove('dragover');
+
+            const files = event.dataTransfer.files;
+            if (files.length === 0) return;
+
+            const file = files[0];
+            document.getElementById('fileInput').files = files;
+            uploadFile();
+        }
+
+        async function confirmUpload() {
+            if (!pendingFile || isUploading) return;
+
+            isUploading = true;
+            document.getElementById('uploadButtonGroup').classList.remove('show');
+            document.getElementById('uploadProgress').classList.add('show');
+            document.getElementById('uploadMetadata').classList.remove('show');
 
             document.getElementById('transcript').textContent = '';
             document.getElementById('transcript').classList.remove('empty');
             document.getElementById('copyBtn').style.display = 'none';
             document.getElementById('exportBtn').style.display = 'none';
-            showStatus('📝 Loading file...', 'info');
 
             try {
-                const arrayBuffer = await file.arrayBuffer();
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-                const totalSeconds = Math.ceil(audioBuffer.duration);
-                const totalMinutes = (totalSeconds / 60).toFixed(1);
-                const numMainChunks = Math.ceil(totalSeconds / (5 * 60));
-                const totalChunksWithBridges = numMainChunks + Math.max(0, numMainChunks - 1);
-
-                console.log(`File duration: ${totalMinutes} min → ${numMainChunks} main chunks + ${Math.max(0, numMainChunks - 1)} bridges`);
-                showStatus(`✓ File loaded: ${totalMinutes} min → processing with overlapping chunks...`, 'success');
-                await transcribeUploadedChunks(audioBuffer, totalSeconds, totalChunksWithBridges);
+                await uploadFileWithProgress(pendingFile);
             } catch (err) {
-                showStatus(`❌ Failed to load file: ${err.message}`, 'error');
+                if (err.message !== 'Upload cancelled') {
+                    showStatus(`Upload failed: ${err.message}`, 'error');
+                }
+            } finally {
+                isUploading = false;
+                if (uploadTimeoutId) clearTimeout(uploadTimeoutId);
+                document.getElementById('uploadProgress').classList.remove('show');
+                pendingFile = null;
+                document.getElementById('fileInput').value = '';
             }
+        }
+
+        function uploadFileWithProgress(file) {
+            return new Promise((resolve, reject) => {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('model', currentModel);
+                formData.append('language', currentLanguage);
+                if (currentContext) {
+                    formData.append('prompt', currentContext);
+                }
+
+                uploadXhr = new XMLHttpRequest();
+                uploadStartTime = Date.now();
+                let lastUpdateTime = uploadStartTime;
+
+                uploadXhr.upload.addEventListener('progress', (event) => {
+                    if (event.lengthComputable) {
+                        const loaded = event.loaded;
+                        const total = event.total;
+                        const percent = Math.round((loaded / total) * 100);
+
+                        const now = Date.now();
+                        if (now - lastUpdateTime >= UPLOAD_PROGRESS_INTERVAL) {
+                            const elapsedSeconds = (now - uploadStartTime) / 1000;
+                            const uploadSpeed = loaded / elapsedSeconds; // bytes per second
+                            const remainingBytes = total - loaded;
+                            const etaSeconds = Math.ceil(remainingBytes / uploadSpeed);
+
+                            const loadedMb = (loaded / (1024 * 1024)).toFixed(1);
+                            const totalMb = (total / (1024 * 1024)).toFixed(1);
+                            document.getElementById('uploadProgressLabel').textContent = `Uploading: ${loadedMb} MB / ${totalMb} MB`;
+                            document.getElementById('uploadProgressPercent').textContent = `${percent}%`;
+                            document.getElementById('uploadProgressFill').style.width = percent + '%';
+
+                            if (etaSeconds < 60) {
+                                document.getElementById('uploadEta').textContent = `ETA: ${etaSeconds}s`;
+                            } else {
+                                const etaMinutes = Math.floor(etaSeconds / 60);
+                                const etaSecs = etaSeconds % 60;
+                                document.getElementById('uploadEta').textContent = `ETA: ${etaMinutes}m ${etaSecs}s`;
+                            }
+
+                            lastUpdateTime = now;
+                        }
+                    }
+                });
+
+                uploadXhr.addEventListener('load', async () => {
+                    if (uploadXhr.status === 200) {
+                        try {
+                            const arrayBuffer = await file.arrayBuffer();
+                            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                            const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+                            const totalSeconds = Math.ceil(audioBuffer.duration);
+                            const totalMinutes = (totalSeconds / 60).toFixed(1);
+                            const numMainChunks = Math.ceil(totalSeconds / (5 * 60));
+                            const totalChunksWithBridges = numMainChunks + Math.max(0, numMainChunks - 1);
+
+                            console.log(`File duration: ${totalMinutes} min → ${numMainChunks} main chunks + ${Math.max(0, numMainChunks - 1)} bridges`);
+                            showStatus(`✓ File loaded: ${totalMinutes} min → processing with overlapping chunks...`, 'success');
+                            await transcribeUploadedChunks(audioBuffer, totalSeconds, totalChunksWithBridges);
+                            resolve();
+                        } catch (err) {
+                            reject(err);
+                        }
+                    } else {
+                        reject(new Error(`Upload failed with status ${uploadXhr.status}`));
+                    }
+                });
+
+                uploadXhr.addEventListener('error', () => {
+                    reject(new Error('Upload failed: network error'));
+                });
+
+                uploadXhr.addEventListener('abort', () => {
+                    reject(new Error('Upload cancelled'));
+                });
+
+                uploadTimeoutId = setTimeout(() => {
+                    uploadXhr.abort();
+                    reject(new Error('Upload timeout. Please try again with a slower connection or smaller file.'));
+                }, UPLOAD_TIMEOUT);
+
+                uploadXhr.open('POST', '/v1/audio/upload', true);
+                uploadXhr.send(formData);
+            });
         }
 
         async function transcribeUploadedChunks(audioBuffer, totalSeconds, _numChunks) {
@@ -1109,9 +2047,18 @@
             const mainChunks = chunks.filter(c => c.type === 'main');
             totalSegments = mainChunks.length;
             segmentCount = 0;
+            transcriptionStart = Date.now();
+            segmentConfidences = [];
+            segmentTexts = [];
+            isAbortingTranscription = false;
+            failedSegmentTracker = new FailedSegmentTracker();
 
             document.getElementById('progressSection').classList.add('active');
+            document.getElementById('simpleProgress').classList.add('active');
             document.getElementById('chunkProgress').innerHTML = '';
+            document.getElementById('chunkProgress').style.display = 'none';
+            hideSummaryCard();
+            document.getElementById('errorBoundary').classList.remove('show');
 
             for (const chunk of chunks) {
                 const div = document.createElement('div');
@@ -1152,35 +2099,36 @@
                 try {
                     updateProgressBar(chunkId, 25);
                     const chunkBlob = await extractAudioChunkFromBuffer(audioBuffer, chunk.startMs, chunk.endMs);
-
                     updateProgressBar(chunkId, 50);
-                    const formData = new FormData();
-                    formData.append('file', chunkBlob, `${chunk.type}-${chunk.mainIndex}.wav`);
-                    formData.append('model', currentModel);
-                    formData.append('language', currentLanguage);
-                    if (currentContext) {
-                        formData.append('prompt', currentContext);
-                    }
-
                     const startFetch = Date.now();
-                    const response = await fetch('/v1/audio/transcriptions', {
-                        method: 'POST',
-                        body: formData
-                    });
 
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-                    const data = await response.json();
-                    const elapsed = Date.now() - startFetch;
-
-                    updateProgressBar(chunkId, 100);
-                    updateChunkStatus(chunkId, 'done');
-                    updateChunkETA(chunkId, elapsed, chunk.index, chunks.length);
-
-                    const result = {
-                        ...chunk,
-                        text: data.text || ''
-                    };
+                    const result = await transcribeChunkWithRetry(
+                        null,
+                        chunk,
+                        chunkId,
+                        () => {
+                            const formData = new FormData();
+                            formData.append('file', chunkBlob, `${chunk.type}-${chunk.mainIndex}.wav`);
+                            formData.append('model', currentModel);
+                            formData.append('language', currentLanguage);
+                            if (currentContext) {
+                                formData.append('prompt', currentContext);
+                            }
+                            return formData;
+                        },
+                        (data) => {
+                            const elapsed = Date.now() - startFetch;
+                            updateProgressBar(chunkId, 100);
+                            updateChunkStatus(chunkId, 'done');
+                            updateChunkETA(chunkId, elapsed, chunk.index, chunks.length);
+                        },
+                        (error, retried) => {
+                            updateChunkStatus(chunkId, 'error');
+                            if (failedSegmentTracker.getConsecutiveFailures() >= MAX_CONSECUTIVE_FAILURES) {
+                                triggerErrorBoundary();
+                            }
+                        }
+                    );
 
                     // Append main chunks to transcript in real-time
                     if (chunk.type === 'main' && result.text) {
@@ -1188,6 +2136,7 @@
                         const confidence = calculateConfidence(result.text);
                         appendSegmentToTranscript(result.text, chunk.startMs, confidence, segmentCount, totalSegments);
                         updateChunkProgress(segmentCount, totalSegments);
+                        updateSimpleProgress(segmentCount, totalSegments);
                     }
 
                     return result;
@@ -1205,10 +2154,31 @@
 
             const results = await Promise.all(tasks);
 
-            if (results.some(r => r.error)) {
-                showStatus('Some chunks failed to transcribe', 'error');
+            document.getElementById('simpleProgress').classList.remove('active');
+
+            if (isAbortingTranscription) {
+                showStatus('✗ Transcription aborted due to repeated failures', 'error');
                 return;
             }
+
+            if (results.some(r => r.error)) {
+                const failureCount = failedSegmentTracker.getFailureCount();
+                if (failureCount === 0) {
+                    showStatus('Some chunks failed to transcribe', 'error');
+                } else {
+                    const summary = failedSegmentTracker.getSummary();
+                    showStatus(`✓ Partial completion: ${summary.completed}/${summary.total} segments (${summary.failed} failed)`, 'warning');
+                }
+                const processingTime = Date.now() - transcriptionStart;
+                displaySummaryCard(processingTime);
+                document.getElementById('copyBtn').style.display = 'flex';
+                document.getElementById('exportBtn').style.display = 'flex';
+                return;
+            }
+
+            // Hide progress bar and show summary
+            const processingTime = Date.now() - transcriptionStart;
+            displaySummaryCard(processingTime);
 
             document.getElementById('copyBtn').style.display = 'flex';
             document.getElementById('exportBtn').style.display = 'flex';
@@ -1265,14 +2235,29 @@
         }
 
         function clearAll() {
+            if (isUploading && uploadXhr) {
+                uploadXhr.abort();
+            }
             document.getElementById('transcript').textContent = 'Transcript will appear here...';
             document.getElementById('transcript').classList.add('empty');
             document.getElementById('timer').textContent = '00:00';
             document.getElementById('fileInput').value = '';
             document.getElementById('progressSection').classList.remove('active');
+            document.getElementById('simpleProgress').classList.remove('active');
             document.getElementById('statusBox').classList.remove('show');
             document.getElementById('copyBtn').style.display = 'none';
             document.getElementById('exportBtn').style.display = 'none';
+            document.getElementById('uploadMetadata').classList.remove('show');
+            document.getElementById('uploadButtonGroup').classList.remove('show');
+            document.getElementById('uploadProgress').classList.remove('show');
+            document.getElementById('errorBoundary').classList.remove('show');
+            hideSummaryCard();
+            segmentConfidences = [];
+            segmentTexts = [];
+            pendingFile = null;
+            isAbortingTranscription = false;
+            failedSegmentTracker = null;
+            isUploading = false;
         }
 
         function showStatus(msg, type) {

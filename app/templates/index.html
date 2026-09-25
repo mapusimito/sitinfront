@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>sitinfront</title>
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Schibsted+Grotesk:wght@400;500;700;900&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
@@ -69,6 +69,7 @@
             color: var(--foco);
             letter-spacing: -1px;
             position: relative;
+            text-shadow: 0 0 28px rgba(242,255,0,.35);
         }
 
         .header-wordmark::after {
@@ -79,6 +80,7 @@
             background: var(--foco);
             margin-left: 4px;
             animation: blink 1s infinite;
+            box-shadow: 0 0 12px rgba(242,255,0,.6);
         }
 
         @keyframes blink {
@@ -112,12 +114,11 @@
         }
 
         .card {
-            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%);
-            border: 1px solid rgba(71, 85, 105, 0.3);
+            background: var(--panel);
+            border: 1px solid #2A2A27;
             border-radius: 16px;
             padding: 24px;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
         }
 
         .card.full {
@@ -135,42 +136,48 @@
         .section-title {
             font-size: 14px;
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #60a5fa;
+            color: var(--papel);
             margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
         .section-title::before {
-            content: '';
-            display: inline-block;
-            width: 3px;
-            height: 16px;
-            background: linear-gradient(135deg, #60a5fa 0%, #34d399 100%);
-            border-radius: 2px;
+            display: none;
         }
 
         .timer {
             font-size: 48px;
-            font-weight: 300;
+            font-weight: 500;
             letter-spacing: 2px;
             text-align: center;
-            font-family: 'Courier New', monospace;
-            color: #34d399;
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--papel);
             margin: 24px 0;
             padding: 20px;
-            background: rgba(52, 211, 153, 0.05);
+            background: var(--panel);
             border-radius: 12px;
-            border: 1px solid rgba(52, 211, 153, 0.2);
+            border: 1px solid #2A2A27;
             display: none;
         }
 
         .timer.active {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
             animation: pulse-timer 1s infinite;
+        }
+
+        .rec-dot {
+            display: none;
+            width: 9px;
+            height: 9px;
+            background: var(--rec);
+            border-radius: 1px;
+        }
+
+        .timer.active ~ .rec-dot,
+        .timer.active + .rec-dot {
+            display: inline-block;
         }
 
         @keyframes pulse-timer {
@@ -208,13 +215,19 @@
         }
 
         .btn-start {
-            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
-            color: #0f172a;
+            background: var(--foco);
+            color: var(--sala);
+            font-weight: 700;
         }
 
         .btn-start:hover:not(:disabled) {
+            background: var(--foco-2);
             transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(52, 211, 153, 0.3);
+        }
+
+        .btn-start:focus-visible {
+            outline: 3px solid var(--foco);
+            outline-offset: 3px;
         }
 
         .btn-start:disabled {
@@ -223,13 +236,19 @@
         }
 
         .btn-stop {
-            background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
-            color: white;
+            background: transparent;
+            color: var(--papel);
+            border: 1px solid var(--grafito);
         }
 
         .btn-stop:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(248, 113, 113, 0.3);
+            background: rgba(59, 59, 56, 0.2);
+            border-color: var(--papel);
+        }
+
+        .btn-stop:focus-visible {
+            outline: 3px solid var(--foco);
+            outline-offset: 3px;
         }
 
         .btn-stop:disabled {
@@ -238,15 +257,21 @@
         }
 
         .btn-secondary {
-            background: rgba(71, 85, 105, 0.3);
-            color: #cbd5e1;
-            border: 1px solid rgba(71, 85, 105, 0.5);
+            background: transparent;
+            color: var(--papel);
+            border: 1px solid var(--grafito);
             font-size: 13px;
             padding: 10px 16px;
         }
 
         .btn-secondary:hover:not(:disabled) {
-            background: rgba(71, 85, 105, 0.5);
+            background: rgba(59, 59, 56, 0.2);
+            border-color: var(--papel);
+        }
+
+        .btn-secondary:focus-visible {
+            outline: 3px solid var(--foco);
+            outline-offset: 3px;
         }
 
         .btn-secondary:disabled {
@@ -256,16 +281,21 @@
 
         select {
             padding: 10px 12px;
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid rgba(71, 85, 105, 0.3);
+            background: var(--panel);
+            border: 1px solid #2A2A27;
             border-radius: 8px;
-            color: #e2e8f0;
+            color: var(--papel);
             font-size: 14px;
             cursor: pointer;
         }
 
         select:hover {
-            border-color: rgba(96, 165, 250, 0.5);
+            border-color: var(--grafito);
+        }
+
+        select:focus-visible {
+            outline: 3px solid var(--foco);
+            outline-offset: 3px;
         }
 
         .status-box {
@@ -282,21 +312,21 @@
         }
 
         .status-box.info {
-            background: rgba(59, 130, 246, 0.1);
-            border-color: #3b82f6;
-            color: #93c5fd;
+            background: rgba(242, 255, 0, 0.05);
+            border-color: var(--foco);
+            color: var(--papel);
         }
 
         .status-box.success {
-            background: rgba(52, 211, 153, 0.1);
-            border-color: #34d399;
-            color: #6ee7b7;
+            background: rgba(242, 255, 0, 0.05);
+            border-color: var(--foco);
+            color: var(--papel);
         }
 
         .status-box.error {
-            background: rgba(248, 113, 113, 0.1);
-            border-color: #f87171;
-            color: #fca5a5;
+            background: rgba(59, 59, 56, 0.2);
+            border-color: var(--grafito);
+            color: var(--papel);
         }
 
         .progress-section {
@@ -312,8 +342,8 @@
         }
 
         .chunk-item {
-            background: rgba(71, 85, 105, 0.2);
-            border: 1px solid rgba(71, 85, 105, 0.3);
+            background: rgba(59, 59, 56, 0.2);
+            border: 1px solid #2A2A27;
             border-radius: 8px;
             padding: 12px;
             margin-bottom: 10px;
@@ -332,26 +362,27 @@
             gap: 6px;
             font-size: 12px;
             min-width: 100px;
+            color: var(--secondary-text);
         }
 
         .chunk-status .dot {
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: #64748b;
+            background: var(--grafito);
         }
 
         .chunk-status.processing .dot {
-            background: #60a5fa;
+            background: var(--foco);
             animation: pulse-dot 1.5s infinite;
         }
 
         .chunk-status.done .dot {
-            background: #34d399;
+            background: var(--foco);
         }
 
         .chunk-status.error .dot {
-            background: #f87171;
+            background: var(--grafito);
         }
 
         @keyframes pulse-dot {
@@ -362,25 +393,25 @@
         .chunk-info {
             flex: 1;
             font-size: 13px;
-            color: #cbd5e1;
+            color: var(--papel);
         }
 
         .chunk-eta {
             font-size: 12px;
-            color: #94a3b8;
+            color: var(--secondary-text);
         }
 
         .progress-bar {
             width: 100%;
             height: 4px;
-            background: rgba(71, 85, 105, 0.3);
+            background: #2A2A27;
             border-radius: 2px;
             overflow: hidden;
         }
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #60a5fa 0%, #34d399 100%);
+            background: var(--foco);
             width: 0%;
             transition: width 0.3s ease;
         }
@@ -398,23 +429,23 @@
         }
 
         .transcript-box {
-            background: rgba(15, 23, 42, 0.8);
-            border: 1px solid rgba(71, 85, 105, 0.3);
+            background: var(--panel);
+            border: 1px solid #2A2A27;
             border-radius: 8px;
             padding: 20px;
             min-height: 250px;
             max-height: 600px;
             overflow-y: auto;
-            font-size: 16px;
-            line-height: 1.8;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            color: #cbd5e1;
+            font-size: 18px;
+            line-height: 1.55;
+            max-width: 70ch;
+            color: var(--papel);
             white-space: normal;
             word-wrap: break-word;
         }
 
         .transcript-box.empty {
-            color: #64748b;
+            color: var(--secondary-text);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -424,25 +455,25 @@
         .segment {
             margin-bottom: 24px;
             padding: 12px;
-            border-left: 3px solid rgba(52, 211, 153, 0.3);
+            border-left: 3px solid #2A2A27;
             border-radius: 4px;
             animation: fadeInSegment 0.5s ease-in;
         }
 
         .segment.highlight {
-            background: rgba(52, 211, 153, 0.1);
-            border-left-color: #34d399;
+            background: rgba(242, 255, 0, 0.05);
+            border-left-color: var(--foco);
             animation: highlightSegment 1.5s ease-out forwards;
         }
 
         @keyframes highlightSegment {
             0% {
-                background: rgba(52, 211, 153, 0.2);
-                border-left-color: #34d399;
+                background: rgba(242, 255, 0, 0.1);
+                border-left-color: var(--foco);
             }
             100% {
-                background: rgba(52, 211, 153, 0.05);
-                border-left-color: rgba(52, 211, 153, 0.3);
+                background: rgba(242, 255, 0, 0.05);
+                border-left-color: #2A2A27;
             }
         }
 
@@ -463,20 +494,20 @@
             gap: 12px;
             margin-bottom: 8px;
             font-size: 13px;
-            color: #94a3b8;
+            color: var(--secondary-text);
             font-weight: 600;
         }
 
         .segment-timestamp {
-            font-family: 'Courier New', monospace;
-            color: #60a5fa;
+            font-family: 'IBM Plex Mono', monospace;
+            color: var(--grafito);
             min-width: 80px;
         }
 
         .segment-badge {
-            background: rgba(96, 165, 250, 0.15);
-            border: 1px solid rgba(96, 165, 250, 0.3);
-            color: #93c5fd;
+            background: rgba(59, 59, 56, 0.2);
+            border: 1px solid #2A2A27;
+            color: var(--secondary-text);
             padding: 2px 8px;
             border-radius: 4px;
             font-size: 11px;
@@ -485,30 +516,36 @@
         }
 
         .segment-text {
-            color: #cbd5e1;
+            color: var(--papel);
             line-height: 1.7;
             white-space: pre-wrap;
             word-wrap: break-word;
         }
 
         .upload-area {
-            border: 2px dashed rgba(96, 165, 250, 0.3);
+            border: 2px dashed var(--grafito);
             border-radius: 8px;
             padding: 32px;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s;
+            background: var(--panel);
         }
 
         .upload-area:hover {
-            border-color: rgba(96, 165, 250, 0.6);
-            background: rgba(96, 165, 250, 0.05);
+            border-color: var(--foco);
+            background: rgba(242, 255, 0, 0.05);
+        }
+
+        .upload-area:focus-visible {
+            outline: 3px solid var(--foco);
+            outline-offset: 3px;
         }
 
         .upload-area.dragover {
-            border-color: #60a5fa;
-            background: rgba(96, 165, 250, 0.15);
-            box-shadow: 0 0 12px rgba(96, 165, 250, 0.3);
+            border-color: var(--foco);
+            background: rgba(242, 255, 0, 0.1);
+            box-shadow: 0 0 12px rgba(242, 255, 0, 0.2);
         }
 
         .upload-area input {
@@ -516,20 +553,21 @@
         }
 
         .upload-text {
-            color: #94a3b8;
+            color: var(--secondary-text);
             font-size: 14px;
         }
 
         .upload-icon {
             font-size: 32px;
             margin-bottom: 12px;
+            display: none;
         }
 
         .upload-metadata {
             display: none;
             padding: 16px;
-            background: rgba(71, 85, 105, 0.2);
-            border: 1px solid rgba(71, 85, 105, 0.3);
+            background: rgba(59, 59, 56, 0.2);
+            border: 1px solid #2A2A27;
             border-radius: 8px;
             margin-bottom: 16px;
             text-align: left;
@@ -541,7 +579,7 @@
 
         .metadata-item {
             font-size: 13px;
-            color: #cbd5e1;
+            color: var(--papel);
             margin-bottom: 8px;
             display: flex;
             justify-content: space-between;
@@ -552,14 +590,14 @@
         }
 
         .metadata-label {
-            color: #94a3b8;
+            color: var(--secondary-text);
         }
 
         .upload-progress {
             display: none;
             padding: 16px;
-            background: rgba(71, 85, 105, 0.2);
-            border: 1px solid rgba(71, 85, 105, 0.3);
+            background: rgba(59, 59, 56, 0.2);
+            border: 1px solid #2A2A27;
             border-radius: 8px;
             margin-bottom: 16px;
         }
@@ -570,7 +608,7 @@
 
         .progress-text-upload {
             font-size: 13px;
-            color: #cbd5e1;
+            color: var(--papel);
             margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
@@ -580,7 +618,7 @@
         .progress-bar-upload {
             width: 100%;
             height: 8px;
-            background: rgba(71, 85, 105, 0.3);
+            background: #2A2A27;
             border-radius: 4px;
             overflow: hidden;
             margin-bottom: 8px;
@@ -588,14 +626,14 @@
 
         .progress-fill-upload {
             height: 100%;
-            background: linear-gradient(90deg, #60a5fa 0%, #34d399 100%);
+            background: var(--foco);
             width: 0%;
             transition: width 0.2s ease;
         }
 
         .upload-eta {
             font-size: 12px;
-            color: #94a3b8;
+            color: var(--secondary-text);
             text-align: right;
         }
 
@@ -611,15 +649,21 @@
         }
 
         .btn-upload {
-            background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
-            color: #0f172a;
+            background: var(--foco);
+            color: var(--sala);
             flex: 1;
             min-width: 100px;
+            font-weight: 700;
         }
 
         .btn-upload:hover:not(:disabled) {
+            background: var(--foco-2);
             transform: translateY(-2px);
-            box-shadow: 0 12px 24px rgba(52, 211, 153, 0.3);
+        }
+
+        .btn-upload:focus-visible {
+            outline: 3px solid var(--foco);
+            outline-offset: 3px;
         }
 
         .btn-upload:disabled {
@@ -629,15 +673,21 @@
         }
 
         .btn-cancel-upload {
-            background: rgba(248, 113, 113, 0.2);
-            color: #fca5a5;
-            border: 1px solid rgba(248, 113, 113, 0.4);
+            background: transparent;
+            color: var(--papel);
+            border: 1px solid var(--grafito);
             flex: 1;
             min-width: 100px;
         }
 
         .btn-cancel-upload:hover:not(:disabled) {
-            background: rgba(248, 113, 113, 0.3);
+            background: rgba(59, 59, 56, 0.2);
+            border-color: var(--papel);
+        }
+
+        .btn-cancel-upload:focus-visible {
+            outline: 3px solid var(--foco);
+            outline-offset: 3px;
         }
 
         ::-webkit-scrollbar {
@@ -645,25 +695,25 @@
         }
 
         ::-webkit-scrollbar-track {
-            background: rgba(71, 85, 105, 0.1);
+            background: var(--panel);
         }
 
         ::-webkit-scrollbar-thumb {
-            background: rgba(96, 165, 250, 0.3);
+            background: var(--grafito);
             border-radius: 4px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: rgba(96, 165, 250, 0.5);
+            background: #555552;
         }
 
         .simple-progress {
             display: none;
             margin-bottom: 20px;
             padding: 16px;
-            background: rgba(71, 85, 105, 0.2);
+            background: rgba(59, 59, 56, 0.2);
             border-radius: 8px;
-            border: 1px solid rgba(71, 85, 105, 0.3);
+            border: 1px solid #2A2A27;
         }
 
         .simple-progress.active {
@@ -672,7 +722,7 @@
 
         .progress-text {
             font-size: 13px;
-            color: #cbd5e1;
+            color: var(--papel);
             margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
@@ -682,7 +732,7 @@
         .progress-bar-simple {
             width: 100%;
             height: 8px;
-            background: rgba(71, 85, 105, 0.3);
+            background: #2A2A27;
             border-radius: 4px;
             overflow: hidden;
             margin-bottom: 8px;
@@ -690,7 +740,7 @@
 
         .progress-fill-simple {
             height: 100%;
-            background: linear-gradient(90deg, #60a5fa 0%, #34d399 100%);
+            background: var(--foco);
             width: 0%;
             transition: width 0.3s ease;
         }
@@ -699,8 +749,8 @@
             display: none;
             margin-top: 24px;
             padding: 20px;
-            background: rgba(52, 211, 153, 0.05);
-            border: 1px solid rgba(52, 211, 153, 0.3);
+            background: rgba(242, 255, 0, 0.05);
+            border: 1px solid #2A2A27;
             border-radius: 8px;
         }
 
@@ -717,28 +767,27 @@
 
         .summary-item {
             padding: 12px;
-            background: rgba(15, 23, 42, 0.5);
+            background: rgba(59, 59, 56, 0.2);
             border-radius: 6px;
-            border-left: 3px solid #34d399;
+            border-left: 3px solid var(--foco);
         }
 
         .summary-item-icon {
             font-size: 20px;
             margin-right: 8px;
+            display: none;
         }
 
         .summary-item-label {
             font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: #94a3b8;
+            color: var(--secondary-text);
             margin-bottom: 4px;
         }
 
         .summary-item-value {
             font-size: 18px;
             font-weight: 600;
-            color: #34d399;
+            color: var(--foco);
             display: flex;
             align-items: center;
         }
@@ -747,21 +796,24 @@
             position: fixed;
             bottom: 20px;
             right: 20px;
-            background: rgba(34, 197, 94, 0.9);
-            color: white;
+            background: rgba(242, 255, 0, 0.9);
+            color: var(--sala);
             padding: 12px 20px;
             border-radius: 8px;
             font-size: 14px;
             animation: slideIn 0.3s ease;
             z-index: 1000;
+            font-weight: 600;
         }
 
         .toast.error {
-            background: rgba(248, 113, 113, 0.9);
+            background: rgba(59, 59, 56, 0.9);
+            color: var(--papel);
         }
 
         .toast.warning {
-            background: rgba(251, 146, 60, 0.9);
+            background: rgba(242, 255, 0, 0.9);
+            color: var(--sala);
         }
 
         .toast-content {
@@ -784,7 +836,7 @@
             background: rgba(255, 255, 255, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 4px;
-            color: white;
+            color: inherit;
             font-size: 12px;
             font-weight: 600;
             cursor: pointer;
@@ -801,10 +853,9 @@
             display: none;
             margin-top: 24px;
             padding: 20px;
-            background: rgba(248, 113, 113, 0.1);
-            border: 1px solid rgba(248, 113, 113, 0.3);
+            background: rgba(59, 59, 56, 0.2);
+            border: 1px solid #2A2A27;
             border-radius: 8px;
-            border-left: 4px solid #f87171;
         }
 
         .error-boundary.show {
@@ -815,24 +866,24 @@
         .error-boundary-title {
             font-size: 16px;
             font-weight: 600;
-            color: #fca5a5;
+            color: var(--papel);
             margin-bottom: 12px;
         }
 
         .error-boundary-text {
             font-size: 13px;
-            color: #fca5a5;
+            color: var(--papel);
             margin-bottom: 16px;
             line-height: 1.5;
         }
 
         .error-summary {
             padding: 12px;
-            background: rgba(15, 23, 42, 0.5);
+            background: rgba(59, 59, 56, 0.2);
             border-radius: 6px;
             margin-bottom: 16px;
             font-size: 13px;
-            color: #cbd5e1;
+            color: var(--papel);
         }
 
         .export-buttons {
@@ -856,8 +907,13 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎓 Class Transcriber</h1>
-            <p>Record lectures and get instant transcription with chunk verification</p>
+            <div class="header-logo">
+                <img src="/static/brand/sitinfront-mark.svg" alt="" class="header-mark">
+                <span class="header-wordmark">sitinfront</span>
+            </div>
+            <div class="header-text">
+                <p>Tú atiende. Nosotros escribimos.</p>
+            </div>
         </div>
 
         <div class="grid">
@@ -865,7 +921,7 @@
                 <div id="statusBox" class="status-box"></div>
 
                 <div class="section">
-                    <div class="section-title">Settings</div>
+                    <div class="section-title">Ajustes</div>
                     <div class="control-row">
                         <select id="modelSelect">
                             <option value="tiny">Tiny (fastest)</option>
@@ -889,39 +945,40 @@
                         </select>
                     </div>
                     <div class="control-row" style="margin-top: 12px;">
-                        <input type="text" id="contextInput" placeholder="Optional: What are you recording? (e.g., lecture on AI safety)" style="padding: 10px 12px; background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(71, 85, 105, 0.3); border-radius: 8px; color: #e2e8f0; font-size: 14px; width: 100%; font-family: inherit;">
+                        <input type="text" id="contextInput" placeholder="Opcional: ¿de qué es la clase? (p. ej., Historia Contemporánea)" style="padding: 10px 12px; background: var(--panel); border: 1px solid #2A2A27; border-radius: 8px; color: var(--papel); font-size: 14px; width: 100%; font-family: inherit;">
                     </div>
                 </div>
 
                 <div class="section">
-                    <div class="section-title">Record</div>
+                    <div class="section-title">Grabar</div>
                     <div class="timer" id="timer">00:00</div>
+                    <span class="rec-dot"></span>
                     <div class="controls">
-                        <button id="recordBtn" class="btn-start" onclick="startRecording()">⏺️ Start</button>
-                        <button id="stopBtn" class="btn-stop" onclick="stopRecording()" disabled>⏹️ Stop</button>
-                        <button class="btn-secondary" onclick="clearAll()">Clear</button>
+                        <button id="recordBtn" class="btn-start" onclick="startRecording()">Empezar a grabar</button>
+                        <button id="stopBtn" class="btn-stop" onclick="stopRecording()" disabled>Parar</button>
+                        <button class="btn-secondary" onclick="clearAll()">Borrar transcripción</button>
                     </div>
                 </div>
 
                 <div class="section">
-                    <div class="section-title">Upload</div>
+                    <div class="section-title">Subir archivo</div>
                     <div id="uploadMetadata" class="upload-metadata">
                         <div class="metadata-item">
-                            <span class="metadata-label">File:</span>
+                            <span class="metadata-label">Archivo:</span>
                             <span id="metadataFileName"></span>
                         </div>
                         <div class="metadata-item">
-                            <span class="metadata-label">Size:</span>
+                            <span class="metadata-label">Tamaño:</span>
                             <span id="metadataFileSize"></span>
                         </div>
                         <div class="metadata-item">
-                            <span class="metadata-label">Est. processing time:</span>
+                            <span class="metadata-label">Tiempo estimado:</span>
                             <span id="metadataProcessingTime"></span>
                         </div>
                     </div>
                     <div id="uploadProgress" class="upload-progress">
                         <div class="progress-text-upload">
-                            <span id="uploadProgressLabel">Uploading...</span>
+                            <span id="uploadProgressLabel">Subiendo...</span>
                             <span id="uploadProgressPercent">0%</span>
                         </div>
                         <div class="progress-bar-upload">
@@ -931,23 +988,22 @@
                     </div>
                     <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
                         <input type="file" id="fileInput" accept="audio/*" onchange="uploadFile()">
-                        <div class="upload-icon">📁</div>
-                        <div class="upload-text">Click to upload audio</div>
-                        <div class="upload-text" style="font-size: 12px; margin-top: 8px;">or drag and drop</div>
+                        <div class="upload-text">Sube la grabación de una clase</div>
+                        <div class="upload-text" style="font-size: 12px; margin-top: 8px;">Audio de cualquier duración</div>
                     </div>
                     <div id="uploadButtonGroup" class="upload-button-group">
-                        <button class="btn-upload" onclick="confirmUpload()">Upload File</button>
-                        <button class="btn-cancel-upload" onclick="cancelFileSelection()">Cancel</button>
+                        <button class="btn-upload" onclick="confirmUpload()">Subir archivo</button>
+                        <button class="btn-cancel-upload" onclick="cancelFileSelection()">Cancelar</button>
                     </div>
                 </div>
             </div>
 
             <div id="progressSection" class="card progress-section">
-                <div class="section-title">Progress</div>
+                <div class="section-title">Progreso</div>
                 <div id="simpleProgress" class="simple-progress">
                     <div class="progress-text">
-                        <span id="progressLabel">Processing...</span>
-                        <span id="progressEta" style="color: #60a5fa;"></span>
+                        <span id="progressLabel">Procesando...</span>
+                        <span id="progressEta" style="color: var(--foco);"></span>
                     </div>
                     <div class="progress-bar-simple">
                         <div id="progressFill" class="progress-fill-simple"></div>
@@ -958,24 +1014,27 @@
 
             <div class="card full">
                 <div class="section">
-                    <div class="section-title">Transcript</div>
+                    <div class="section-title">Transcripción</div>
                     <div id="errorBoundary" class="error-boundary">
-                        <div class="error-boundary-title">⚠️ Transcription Aborted</div>
-                        <div class="error-boundary-text">Too many consecutive segment failures. You can export what was transcribed so far.</div>
+                        <div class="error-boundary-title">Transcripción interrumpida</div>
+                        <div class="error-boundary-text">Demasiados errores consecutivos. Puedes exportar lo transcrito hasta ahora.</div>
                         <div id="errorSummary" class="error-summary"></div>
                         <div class="export-buttons">
-                            <button class="btn-secondary" onclick="exportPartialTranscript()">📄 Export Partial</button>
-                            <button class="btn-secondary" onclick="exportErrorLog()">📋 Error Log</button>
+                            <button class="btn-secondary" onclick="exportPartialTranscript()">Exportar parcial</button>
+                            <button class="btn-secondary" onclick="exportErrorLog()">Registro de errores</button>
                         </div>
                     </div>
                     <div class="transcript-container">
                         <div class="transcript-actions">
-                            <button class="btn-secondary" id="copyBtn" onclick="copyToClipboard()" style="display: none;">📋 Copy</button>
-                            <button class="btn-secondary" id="exportBtn" onclick="exportAsFile()" style="display: none;">💾 Export</button>
+                            <button class="btn-secondary" id="copyBtn" onclick="copyToClipboard()" style="display: none;">Copiar</button>
+                            <button class="btn-secondary" id="exportBtn" onclick="exportAsFile()" style="display: none;">Exportar</button>
                         </div>
-                        <div id="transcript" class="transcript-box empty">Transcript will appear here...</div>
+                        <div id="transcript" class="transcript-box empty">Aún no hay transcripción. Graba o sube una clase para empezar.</div>
                         <div id="summaryCard" class="summary-card">
-                            <div class="section-title" style="margin-bottom: 16px;">Summary</div>
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                                <div style="width: 4px; height: 20px; background: var(--foco); border-radius: 2px;"></div>
+                                <div class="section-title" style="margin: 0;">Resumen</div>
+                            </div>
                             <div class="summary-grid" id="summaryGrid"></div>
                         </div>
                     </div>
@@ -1090,7 +1149,7 @@
             const progressEta = document.getElementById('progressEta');
 
             const percent = (current / total) * 100;
-            progressLabel.textContent = `Processing segment ${current}/${total}`;
+            progressLabel.textContent = `Procesando segmento ${current}/${total}`;
             progressFill.style.width = percent + '%';
 
             if (transcriptionStart) {
@@ -1127,11 +1186,11 @@
         }
 
         function getConfidenceLevel(percentage) {
-            if (percentage >= 90) return 'Excellent';
-            if (percentage >= 80) return 'High';
-            if (percentage >= 70) return 'Good';
-            if (percentage >= 60) return 'Fair';
-            return 'Low';
+            if (percentage >= 90) return 'Excelente';
+            if (percentage >= 80) return 'Muy buena';
+            if (percentage >= 70) return 'Buena';
+            if (percentage >= 60) return 'Regular';
+            return 'Baja';
         }
 
         function formatProcessingTime(milliseconds) {
@@ -1153,12 +1212,12 @@
             const processingTime = formatProcessingTime(processingTimeMs);
 
             const summaryItems = [
-                { icon: '📊', label: 'Word Count', value: wordCount.toLocaleString() },
-                { icon: '⏱️', label: 'Reading Time', value: `~${readingTime} min` },
-                { icon: '✓', label: 'Segments', value: totalSegments },
-                { icon: '🎯', label: 'Confidence', value: `${avgConfidence}% (${confidenceLevel})` },
-                { icon: '🗣️', label: 'Language', value: currentLanguage.toUpperCase() },
-                { icon: '⚡', label: 'Processing Time', value: processingTime }
+                { icon: '', label: 'Palabras', value: wordCount.toLocaleString() },
+                { icon: '', label: 'Tiempo de lectura', value: `~${readingTime} min` },
+                { icon: '', label: 'Segmentos', value: totalSegments },
+                { icon: '', label: 'Confianza', value: `${avgConfidence}% (${confidenceLevel})` },
+                { icon: '', label: 'Idioma', value: currentLanguage.toUpperCase() },
+                { icon: '', label: 'Tiempo de procesamiento', value: processingTime }
             ];
 
             const summaryGrid = document.getElementById('summaryGrid');
@@ -1472,7 +1531,7 @@
                     if (attempt < MAX_RETRIES_PER_CHUNK) {
                         const delay = RETRY_DELAYS[attempt];
                         showErrorToast(
-                            `Segment ${chunkId} timeout. Retrying... (${attempt + 1}/${MAX_RETRIES_PER_CHUNK})`,
+                            `Segmento ${chunkId} agotado. Reintentando... (${attempt + 1}/${MAX_RETRIES_PER_CHUNK})`,
                             chunkId,
                             []
                         );
@@ -1485,7 +1544,7 @@
                             ...chunk,
                             text: '',
                             error: true,
-                            errorMessage: `Failed after ${MAX_RETRIES_PER_CHUNK} retries: ${err.message}`,
+                            errorMessage: `Falló después de ${MAX_RETRIES_PER_CHUNK} intentos: ${err.message}`,
                             permanently_failed: true
                         };
                     }
@@ -1522,7 +1581,7 @@
             a.download = `partial-transcript-${new Date().toISOString().slice(0, 10)}.txt`;
             a.click();
             URL.revokeObjectURL(url);
-            showToast('Partial transcript exported!');
+            showToast('Transcripción parcial exportada');
         }
 
         function exportErrorLog() {
@@ -1534,7 +1593,7 @@
             a.download = `error-log-${new Date().toISOString().slice(0, 10)}.json`;
             a.click();
             URL.revokeObjectURL(url);
-            showToast('Error log exported!');
+            showToast('Registro de errores exportado');
         }
 
         function retryAll() {
@@ -1588,17 +1647,21 @@
                 document.getElementById('stopBtn').disabled = false;
                 document.getElementById('timer').classList.add('active');
 
-                showStatus('🎤 Recording started...', 'info');
+                showStatus('Grabación iniciada...', 'info');
 
                 recordingTimer = setInterval(() => {
                     const elapsed = Date.now() - recordingStart;
-                    const mins = Math.floor(elapsed / 60000);
+                    const hours = Math.floor(elapsed / 3600000);
+                    const mins = Math.floor((elapsed % 3600000) / 60000);
                     const secs = Math.floor((elapsed % 60000) / 1000);
-                    document.getElementById('timer').textContent =
-                        `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                    const timeStr = hours > 0
+                        ? `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+                        : `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                    document.getElementById('timer').textContent = timeStr;
+                    document.title = `⏱️ ${timeStr} — sitinfront`;
                 }, 100);
             } catch (err) {
-                showStatus('Microphone access denied', 'error');
+                showStatus('Acceso al micrófono denegado', 'error');
             }
         }
 
@@ -1609,6 +1672,7 @@
                 document.getElementById('recordBtn').disabled = false;
                 document.getElementById('stopBtn').disabled = true;
                 document.getElementById('timer').classList.remove('active');
+                document.title = 'sitinfront';
             }
         }
 
@@ -1621,7 +1685,7 @@
                 const totalSeconds = Math.ceil(audioElement.duration);
                 const totalMinutes = Math.ceil(totalSeconds / 60);
 
-                showStatus(`✓ Recording complete: ${totalMinutes} min(s)`, 'success');
+                showStatus(`Grabación completada: ${totalMinutes} min`, 'success');
                 await transcribeInChunks(audioBlob, totalSeconds);
             };
         }
@@ -1649,8 +1713,8 @@
                 div.className = 'chunk-item';
                 div.id = `chunk-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
                 const label = chunk.type === 'main'
-                    ? `Main ${chunk.mainIndex + 1}`
-                    : `Bridge ${chunk.mainIndex}→${chunk.bridgeMainIndex}`;
+                    ? `Principal ${chunk.mainIndex + 1}`
+                    : `Puente ${chunk.mainIndex}→${chunk.bridgeMainIndex}`;
                 div.innerHTML = `
                     <div class="chunk-header">
                         <div class="chunk-status pending" id="status-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}">
@@ -1725,7 +1789,7 @@
 
                 } catch (err) {
                     updateChunkStatus(chunkId, 'error');
-                    showStatus(`Error on ${chunk.type} ${chunk.mainIndex}: ${err.message}`, 'error');
+                    showStatus(`Error en ${chunk.type} ${chunk.mainIndex}: ${err.message}`, 'error');
                     return {
                         ...chunk,
                         text: '',
@@ -1739,17 +1803,17 @@
             document.getElementById('simpleProgress').classList.remove('active');
 
             if (isAbortingTranscription) {
-                showStatus('✗ Transcription aborted due to repeated failures', 'error');
+                showStatus('Transcripción interrumpida por errores repetidos', 'error');
                 return;
             }
 
             if (results.some(r => r.error)) {
                 const failureCount = failedSegmentTracker.getFailureCount();
                 if (failureCount === 0) {
-                    showStatus('Some chunks failed to transcribe', 'error');
+                    showStatus('Algunos segmentos fallaron en la transcripción', 'error');
                 } else {
                     const summary = failedSegmentTracker.getSummary();
-                    showStatus(`✓ Partial completion: ${summary.completed}/${summary.total} segments (${summary.failed} failed)`, 'warning');
+                    showStatus(`Completado parcialmente: ${summary.completed}/${summary.total} segmentos (${summary.failed} fallados)`, 'warning');
                 }
                 const processingTime = Date.now() - transcriptionStart;
                 displaySummaryCard(processingTime);
@@ -1765,7 +1829,7 @@
             document.getElementById('copyBtn').style.display = 'flex';
             document.getElementById('exportBtn').style.display = 'flex';
 
-            showStatus('✓ All segments transcribed!', 'success');
+            showStatus('Todos los segmentos transcriptos', 'success');
         }
 
         async function extractAudioChunk(audioBlob, startMs, endMs) {
@@ -1869,7 +1933,7 @@
                     const eta = (estimatedTotal - elapsedMs / 1000).toFixed(0);
                     const statusBox = document.querySelector('.status-box');
                     if (statusBox) {
-                        statusBox.textContent = `Processing ${chunkIndex}/${totalChunks}. ETA: ~${eta}s`;
+                        statusBox.textContent = `Procesando ${chunkIndex}/${totalChunks}. ETA: ~${eta}s`;
                     }
                 }
             }
@@ -1878,17 +1942,17 @@
         function updateChunkProgress(current, total) {
             const statusBox = document.getElementById('statusBox');
             if (statusBox && statusBox.classList.contains('show')) {
-                statusBox.textContent = `Processing segment ${current}/${total}...`;
+                statusBox.textContent = `Procesando segmento ${current}/${total}...`;
             }
         }
 
         function validateAudioFile(file) {
             if (!file.type.startsWith('audio/')) {
-                return { valid: false, error: 'File must be an audio file' };
+                return { valid: false, error: 'El archivo debe ser de audio' };
             }
             if (file.size > MAX_FILE_SIZE) {
                 const maxMb = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
-                return { valid: false, error: `File exceeds maximum size of ${maxMb} MB` };
+                return { valid: false, error: `El archivo excede el tamaño máximo de ${maxMb} MB` };
             }
             return { valid: true };
         }
@@ -1908,7 +1972,7 @@
                     resolve(audio.duration);
                 };
                 audio.onerror = () => {
-                    reject(new Error('Failed to load audio metadata'));
+                    reject(new Error('No se pudo cargar los metadatos del audio'));
                 };
                 audio.src = URL.createObjectURL(file);
             });
@@ -1934,10 +1998,10 @@
                 const processingTime = Math.ceil(duration * 2);
                 const minutes = Math.floor(processingTime / 60);
                 const seconds = processingTime % 60;
-                const timeStr = minutes > 0 ? `${minutes} min ${seconds} sec` : `${seconds} sec`;
+                const timeStr = minutes > 0 ? `${minutes} min ${seconds} seg` : `${seconds} seg`;
                 document.getElementById('metadataProcessingTime').textContent = timeStr;
             } catch (err) {
-                showStatus('Could not determine audio duration', 'error');
+                showStatus('No se pudo determinar la duración del audio', 'error');
                 document.getElementById('fileInput').value = '';
                 pendingFile = null;
                 return;
@@ -1997,7 +2061,7 @@
                 await uploadFileWithProgress(pendingFile);
             } catch (err) {
                 if (err.message !== 'Upload cancelled') {
-                    showStatus(`Upload failed: ${err.message}`, 'error');
+                    showStatus(`Carga fallida: ${err.message}`, 'error');
                 }
             } finally {
                 isUploading = false;
@@ -2032,7 +2096,7 @@
 
                             const loadedMb = (bytesProcessed / (1024 * 1024)).toFixed(1);
                             const totalMb = (totalBytes / (1024 * 1024)).toFixed(1);
-                            document.getElementById('uploadProgressLabel').textContent = `Loading: ${loadedMb} MB / ${totalMb} MB`;
+                            document.getElementById('uploadProgressLabel').textContent = `Cargando: ${loadedMb} MB / ${totalMb} MB`;
                             document.getElementById('uploadProgressPercent').textContent = `${percent}%`;
                             document.getElementById('uploadProgressFill').style.width = percent + '%';
 
@@ -2064,7 +2128,7 @@
                     const totalChunksWithBridges = numMainChunks + Math.max(0, numMainChunks - 1);
 
                     console.log(`File duration: ${totalMinutes} min → ${numMainChunks} main chunks + ${Math.max(0, numMainChunks - 1)} bridges`);
-                    showStatus(`✓ File loaded: ${totalMinutes} min → processing with overlapping chunks...`, 'success');
+                    showStatus(`Archivo cargado: ${totalMinutes} min → procesando...`, 'success');
                     await transcribeUploadedChunks(audioBuffer, totalSeconds, totalChunksWithBridges);
                     resolve();
                 } catch (err) {
@@ -2098,8 +2162,8 @@
                 div.className = 'chunk-item';
                 div.id = `chunk-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
                 const label = chunk.type === 'main'
-                    ? `Main ${chunk.mainIndex + 1}`
-                    : `Bridge ${chunk.mainIndex}→${chunk.bridgeMainIndex}`;
+                    ? `Principal ${chunk.mainIndex + 1}`
+                    : `Puente ${chunk.mainIndex}→${chunk.bridgeMainIndex}`;
                 div.innerHTML = `
                     <div class="chunk-header">
                         <div class="chunk-status pending" id="status-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}">
@@ -2176,7 +2240,7 @@
 
                 } catch (err) {
                     updateChunkStatus(chunkId, 'error');
-                    showStatus(`Error on ${chunk.type} ${chunk.mainIndex}: ${err.message}`, 'error');
+                    showStatus(`Error en ${chunk.type} ${chunk.mainIndex}: ${err.message}`, 'error');
                     return {
                         ...chunk,
                         text: '',
@@ -2190,17 +2254,17 @@
             document.getElementById('simpleProgress').classList.remove('active');
 
             if (isAbortingTranscription) {
-                showStatus('✗ Transcription aborted due to repeated failures', 'error');
+                showStatus('Transcripción interrumpida por errores repetidos', 'error');
                 return;
             }
 
             if (results.some(r => r.error)) {
                 const failureCount = failedSegmentTracker.getFailureCount();
                 if (failureCount === 0) {
-                    showStatus('Some chunks failed to transcribe', 'error');
+                    showStatus('Algunos segmentos fallaron en la transcripción', 'error');
                 } else {
                     const summary = failedSegmentTracker.getSummary();
-                    showStatus(`✓ Partial completion: ${summary.completed}/${summary.total} segments (${summary.failed} failed)`, 'warning');
+                    showStatus(`Completado parcialmente: ${summary.completed}/${summary.total} segmentos (${summary.failed} fallados)`, 'warning');
                 }
                 const processingTime = Date.now() - transcriptionStart;
                 displaySummaryCard(processingTime);
@@ -2216,7 +2280,7 @@
             document.getElementById('copyBtn').style.display = 'flex';
             document.getElementById('exportBtn').style.display = 'flex';
 
-            showStatus('✓ All segments transcribed!', 'success');
+            showStatus('Todos los segmentos transcriptos', 'success');
         }
 
         async function extractAudioChunkFromBuffer(audioBuffer, startMs, endMs) {
@@ -2243,7 +2307,7 @@
         function copyToClipboard() {
             const text = document.getElementById('transcript').textContent;
             navigator.clipboard.writeText(text).then(() => {
-                showToast('Copied to clipboard!');
+                showToast('Copiado al portapapeles');
             });
         }
 
@@ -2256,7 +2320,7 @@
             a.download = `transcript-${new Date().toISOString().slice(0, 10)}.txt`;
             a.click();
             URL.revokeObjectURL(url);
-            showToast('File downloaded!');
+            showToast('Archivo descargado');
         }
 
         function showToast(message) {
@@ -2271,7 +2335,7 @@
             if (isUploading && uploadXhr) {
                 uploadXhr.abort();
             }
-            document.getElementById('transcript').textContent = 'Transcript will appear here...';
+            document.getElementById('transcript').textContent = 'La transcripción aparecerá aquí...';
             document.getElementById('transcript').classList.add('empty');
             document.getElementById('timer').textContent = '00:00';
             document.getElementById('fileInput').value = '';

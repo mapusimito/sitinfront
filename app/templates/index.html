@@ -1002,18 +1002,21 @@
                     <div class="section-title">Grabar</div>
                     <div class="timer" id="timer">00:00</div>
                     <span class="rec-dot"></span>
-                    <div class="controls" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                        <button id="recordBtn" class="btn-start" onclick="startRecording()" style="display: flex; align-items: center; gap: 6px;">
-                            <i data-lucide="mic" style="width: 16px; height: 16px;"></i>
-                            <span>Grabar</span>
+                    <div id="recordingControls" class="controls" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <button id="recordBtn" class="btn-start" onclick="startRecording()" title="Grabar" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0;">
+                            <i data-lucide="mic" style="width: 20px; height: 20px;"></i>
                         </button>
-                        <button id="stopBtn" class="btn-stop" onclick="stopRecording()" disabled style="display: flex; align-items: center; gap: 6px;">
-                            <i data-lucide="square" style="width: 16px; height: 16px;"></i>
-                            <span>Parar</span>
+                        <button id="stopBtn" class="btn-stop" onclick="stopRecording()" disabled title="Parar" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0;">
+                            <i data-lucide="square" style="width: 20px; height: 20px;"></i>
                         </button>
-                        <button class="btn-secondary" onclick="clearAll()" style="display: flex; align-items: center; gap: 6px;">
-                            <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i>
-                            <span>Borrar</span>
+                        <button id="clearBtn" class="btn-secondary" onclick="clearAll()" title="Borrar" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0;">
+                            <i data-lucide="trash-2" style="width: 20px; height: 20px;"></i>
+                        </button>
+                    </div>
+                    <div id="uploadActionButton" style="display: none; margin-top: 12px;">
+                        <button class="btn-upload" onclick="confirmUpload()" style="display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 12px;">
+                            <i data-lucide="upload" style="width: 18px; height: 18px;"></i>
+                            <span>Subir archivo</span>
                         </button>
                     </div>
                 </div>
@@ -1050,13 +1053,8 @@
                         <div class="upload-text" style="font-size: 12px; margin-top: 8px;">Audio de cualquier duración</div>
                     </div>
                     <div id="uploadButtonGroup" class="upload-button-group">
-                        <button class="btn-upload" onclick="confirmUpload()" style="display: flex; align-items: center; gap: 6px;">
-                            <i data-lucide="upload" style="width: 16px; height: 16px;"></i>
-                            <span>Subir</span>
-                        </button>
-                        <button class="btn-cancel-upload" onclick="cancelFileSelection()" style="display: flex; align-items: center; gap: 6px;">
-                            <i data-lucide="x" style="width: 16px; height: 16px;"></i>
-                            <span>Cancelar</span>
+                        <button class="btn-cancel-upload" onclick="cancelFileSelection()" title="Cancelar" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0;">
+                            <i data-lucide="x" style="width: 20px; height: 20px;"></i>
                         </button>
                     </div>
                 </div>
@@ -2086,6 +2084,8 @@
 
             document.getElementById('uploadMetadata').classList.add('show');
             document.getElementById('uploadButtonGroup').classList.add('show');
+            document.getElementById('recordingControls').style.display = 'none';
+            document.getElementById('uploadActionButton').style.display = 'block';
         }
 
         function cancelFileSelection() {
@@ -2094,6 +2094,8 @@
             document.getElementById('uploadMetadata').classList.remove('show');
             document.getElementById('uploadButtonGroup').classList.remove('show');
             document.getElementById('uploadProgress').classList.remove('show');
+            document.getElementById('recordingControls').style.display = 'flex';
+            document.getElementById('uploadActionButton').style.display = 'none';
         }
 
         function handleDragOver(event) {
@@ -2146,6 +2148,8 @@
                 document.getElementById('uploadProgress').classList.remove('show');
                 pendingFile = null;
                 document.getElementById('fileInput').value = '';
+                document.getElementById('recordingControls').style.display = 'flex';
+                document.getElementById('uploadActionButton').style.display = 'none';
             }
         }
 
@@ -2425,6 +2429,8 @@
             document.getElementById('uploadButtonGroup').classList.remove('show');
             document.getElementById('uploadProgress').classList.remove('show');
             document.getElementById('errorBoundary').classList.remove('show');
+            document.getElementById('recordingControls').style.display = 'flex';
+            document.getElementById('uploadActionButton').style.display = 'none';
             hideSummaryCard();
             segmentConfidences = [];
             segmentTexts = [];

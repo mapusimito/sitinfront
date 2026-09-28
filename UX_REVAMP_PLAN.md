@@ -1,13 +1,13 @@
 # UX Revamp Plan
 
 > **Status**: DRAFT, awaiting user approval. No code has been changed.
-> **Date**: 2026-09-28
+> **Date**: 2026-09-28 (updated for ETA commit `71aae64`)
 > **Brand guide**: `docs/brand-guide.html` (byte-identical to `sitinfront — guía de marca.html` at repo root)
 > **Audit method**: real run on Playwright (desktop 1280 and 375px), tiny model on CPU, `tests/fixtures/sample_es_4min.m4a`. Screenshots in `docs/ux-revamp/audit/`.
 
 ## 0. Things I need you to decide or know first
 
-1. **Uncommitted work in `app/templates/index.html`** (ETA change, +25/-6 lines). The foundation split must start from a clean, committed state. Proposal: I run the tests, commit it on its own, then take the baseline. Say no if it is unfinished.
+1. **ETA change: now committed (`71aae64`, "make the ETA estimate precise instead of naively per-chunk-count").** The pre-revamp baseline commit is therefore `71aae64` (plus this plan), and the working tree of `index.html` is clean. What it does: the remaining time is weighted by remaining raw audio seconds (exact, from the chunk plan) and uses a recency-weighted rate over the last 3 main chunks (`ETA_RATE_WINDOW`), not an all-time average per chunk count. It builds on `bce61f1` (live countdown that ticks between chunk completions). The plan treats this as **engine code to preserve verbatim**, and the UI as a consumer of it (section 3, flow 3).
 2. **Your prompt contradicts itself on execution.** The intro says three parallel teams while I develop my own share. Phase 3 says a sequential relay, one agent at a time, with me only orchestrating. Parallel agents editing one product also conflict on tests and shared components. **This plan follows the relay** (Phase 3 is more specific). Confirm or correct.
 3. **"M4 work" in IMPLEMENTATION_STATUS.md**: in that file M4 is "Settings Reorganization" (not started). The real metric and run artifact work is **M15** (task spec "M4"). I read your instruction as M15. Confirm.
 4. **Existing tests read `index.html` as text** (`tests/test_server.py:98, 328, 341, 368, 402, 454`, some extract JS functions and run them in Node). Splitting the file breaks them. The split must repoint those tests to the new files with assertions unchanged. That is a test-only edit, but it touches tests that guard M15 fixes, so I want you to know.
@@ -25,10 +25,10 @@ Baseline facts (measured): desktop no horizontal overflow; **mobile 375px: page 
 | A4 | Idle | Empty state is one italic grey line; does not use the brand's empty pattern (title, one sentence, drop zone with accepted formats) | Brand guide (Aplicaciones), designed states |
 | A5 | Idle | Drop zone says "Audio de cualquier duración" but real limits exist (500 MB); guide promises formats and 4 h, which the app does not verify | Honesty, error prevention |
 | A6 | File selected | The **Subir** button appears under the "Grabar" heading, record buttons disappear, and an empty bordered box sits at the bottom (`audit-file-selected-desktop.png`) | Consistency, recognition over recall |
-| A7 | File selected | "Tiempo estimado: 8 min 0 seg" for a 4 min file. No measured rate exists before the run; this number is not backed by anything | **Honesty rule** |
+| A7 | File selected | "Tiempo estimado: 8 min 0 seg" for a 4 min file. No measured rate exists before the run; this number is not backed by anything. (Distinct from the in-run ETA in `71aae64`, which is measured and stays.) | **Honesty rule** |
 | A8 | Processing | Header status still says "Listo para grabar" while processing | Visibility of system status |
 | A9 | Processing | Upload panel shows "Listo 100%" (a local decode step) next to a separate empty progress bar; two bars with unrelated meanings | Honesty, status |
-| A10 | Processing | Transcript pane is a blank box until the first chunk completes (minutes for a long file); progress bar sits at 0% with no explanation and no elapsed time | Visibility of status; the exact failure the prompt calls out |
+| A10 | Processing | Transcript pane is a blank box until the first chunk completes (minutes for a long file); progress bar sits at 0% with no explanation and no elapsed time. The new ETA cannot help here: it needs at least one completed chunk, so nothing honest can be shown as remaining time until then | Visibility of status; the exact failure the prompt calls out |
 | A11 | Processing | No Cancel. No way to leave a run safely except reloading | User control and freedom |
 | A12 | Processing | Progress lives in a separate "Progreso" card below the fold on desktop | Visibility of status |
 | A13 | Done | Status bar text "Todos los segmentos transcriptos" (Rioplatense form; guide voice is Spain-neutral tuteo, "transcritos") and not saying what to do next | Brand voice, next-step copy |
@@ -88,7 +88,7 @@ Button (primary / secondary / ghost / danger, icon-only requires `aria-label`, 4
 
 1. **Record**: Empty state offers "Grabar" and "Subir" as two equal entry cards. Grabar: permission pre-explanation, then live level meter (real, from AnalyserNode), elapsed time (real), `--rec` dot only here, Stop with confirmation if under N seconds is not needed; Pause is not offered (does not exist). On stop, the recording is already saved locally (see T1-2). Then "Transcribir" or "Descartar" (with confirm dialog).
 2. **Upload**: drop or choose; validation before anything runs (type from `accept` and decode success, size vs `MAX_FILE_SIZE`, duration); each rejection names the file, the rule and the fix. File card shows name, size, real duration (from decode), and one primary "Transcribir". No invented time estimate (A7).
-3. **Follow progress**: one status region, always visible while a run is active: current phase (only phases that exist: "Preparando audio", "Transcribiendo fragmento N de M"), chunks done / failed / pending as a real chunk strip, elapsed time (measured), ETA only once the existing recency-weighted estimator has samples and labelled "estimado". For a single-chunk file: indeterminate activity plus elapsed time, never a fake percentage. Cancel with confirm. Finished chunks stream into the transcript as they do today.
+3. **Follow progress**: one status region, always visible while a run is active: current phase (only phases that exist: "Preparando audio", "Transcribiendo fragmento N de M"), chunks done / failed / pending as a real chunk strip, elapsed time (measured), and the ETA from the existing estimator (`71aae64`: remaining raw audio seconds x recent seconds-per-audio-second over the last 3 chunks, ticking down live between completions). The ETA is shown **only once at least one chunk has completed** (before that `etaChunkSamples` is empty and there is no rate), labelled "estimado", and is hidden again when nothing remains. The UI does not recompute it: it reads the value the engine already produces, via the event bus. For a single-chunk file: indeterminate activity plus elapsed time, never a fake percentage. Cancel with confirm. Finished chunks stream into the transcript as they do today.
 4. **Errors and failed chunks**: retrying shows "Fragmento 3 falló, reintentando (2/3)". A permanently failed chunk stays in the transcript as a visible gap marker with time range, reason and a per-chunk "Reintentar" only if the existing retry code can re-run a single chunk (otherwise "Reintentar todo", the existing `retryAll`); the run ends in a **partial** state, never "completo". Error boundary keeps the existing 10-consecutive-failures abort with partial export.
 5. **Read and check**: segment list with mono timestamps, 18px/1.55 Schibsted per the guide, honest metric badge "Prob. media de token" with explanatory tooltip and a low-value visual cue only if a threshold is a documented decision (Q5), in-page search with highlight (`--foco` mark, per guide), jump between matches, sticky toolbar.
 6. **Copy and export**: copy transcript, export `.txt` (existing), export error log / partial (existing). No new formats (SRT/VTT is M8, unstarted; see Q3).
@@ -152,7 +152,7 @@ Why this order: Team 3's progress and failure components consume events that Tea
 - **L3**: landmarks and one `h1`; theme switch persists and works with keyboard; no horizontal scroll at 375; verification script runs end to end in one command.
 - **T1-a**: keyboard-only record and stop; each mic failure has its own message and next step; `--rec` used only while recording; reduced-motion respected; 44px targets.
 - **T1-b**: each rejection case shows file, rule, fix; no invented estimate; a hard reload after "stop" or mid-run restores the recording and offers to continue; resume banner designed.
-- **T3-a**: every value shown is traced (table in HANDOFF: element, source variable); single-chunk file shows indeterminate plus measured elapsed, no percentage; cancel works and leaves finished segments.
+- **T3-a**: ETA shown only after the first completed chunk, counts down live, and is identical to what the engine computes (compare against `etaRemainingAtAnchor`); no ETA on a single-chunk file until it ends; every value shown is traced (table in HANDOFF: element, source variable); single-chunk file shows indeterminate plus measured elapsed, no percentage; cancel works and leaves finished segments.
 - **T3-b**: with a mocked failing endpoint: retry text, permanent failure, gap marker, partial state, and boundary abort are all screenshotted; a failed chunk is never hidden; Settings values reach the same request fields as before.
 - **T2-a**: all five states (empty, in progress, success, error, partial) screenshotted; metric label unchanged in meaning; readable at 375.
 - **T2-b**: search finds text in any segment and highlights; copy and export outputs byte-identical to current for the same transcript.
@@ -168,7 +168,8 @@ Why this order: Team 3's progress and failure components consume events that Tea
 | `phase` | `{name: 'decoding'|'transcribing'}` | only phases that exist |
 | `chunk:start` | `{index, total, startMs, endMs}` | chunk dispatch |
 | `chunk:retry` | `{index, attempt, max, status, reason}` | `transcribeChunkWithRetry` |
-| `chunk:done` | `{index, total, text, segments, wallSec, rawSec}` | chunk response |
+| `chunk:done` | `{index, total, text, segments, wallSec, rawSec}` | chunk response (`rawSec`/`wallSec` are the same numbers already passed to `recordChunkEtaSample`) |
+| `eta` | `{remainingSec|null, basedOnChunks}` | derived by the existing ETA code (`renderEtaTick`); `null` until one chunk has completed |
 | `chunk:fail` | `{index, status, reason, willAbort}` | tracker |
 | `segment` | `{index, chunkIndex, startMs, endMs, text, avgLogprob}` | **not emitted today**; reserved so future server streaming plugs in without UI changes |
 | `run:end` | `{outcome: 'complete'|'partial'|'aborted'|'cancelled', failedChunks[]}` | end of run |
@@ -179,6 +180,7 @@ Rule: the UI never invents an event. If `segment` events never arrive, the UI st
 
 **Risks**
 - R1: replacing direct DOM calls in engine code with `emit` is the one invasive edit. Mitigation: mechanical change, transcript diff, and review by reading `git diff -w`.
+- R7: the ETA state is a set of engine globals (`etaChunkSamples`, `etaCompletedRawSec`, `etaTotalRawSec`, `etaAnchorMs`, `etaRemainingAtAnchor`) written from four places in the two transcribe functions (`index.html` around 2054, 2112, 2160, 2551, 2608, 2659) and read by `updateSimpleProgress`/`renderEtaTick`, which also write the DOM. The ETA math moves verbatim into `engine/transcribe.js`; only the final DOM write in `renderEtaTick` becomes an `emit('eta', ...)`. The resume path adds already-done chunks to `etaCompletedRawSec` without a rate sample; the UI must therefore not assume `basedOnChunks > 0` implies a fresh rate. Verify with a resumed run.
 - R2: Node-based tests extract functions by name from `index.html`; a naive move can silently make them test nothing. Mitigation: tests keep failing-on-mutation checks; I will re-run the documented mutations.
 - R3: relay agents drifting from tokens. Mitigation: hardcoded-value grep in every handoff check.
 - R4: a 4 min file is one chunk, so the multi-chunk paths (bridges, ordering, retry) are not exercised by it. Mitigation: verification uses a 12 min file made by concatenating the fixture (local, gitignored) so it has 3 chunks.

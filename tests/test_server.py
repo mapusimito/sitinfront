@@ -581,3 +581,16 @@ def test_malicious_run_id_cannot_escape_runs_dir(server_module, client, monkeypa
     assert written, "expected a fallback-named artifact to be written inside RUNS_DIR"
     for path in written:
         assert server_module.RUNS_DIR in path.resolve().parents or path.resolve() == server_module.RUNS_DIR.resolve()
+
+
+# ---------------------------------------------------------------------------
+# Frontend: Spanish is the default language (lectures are Spanish)
+# ---------------------------------------------------------------------------
+
+def test_frontend_default_language_is_spanish():
+    html = (REPO_ROOT / "app" / "templates" / "index.html").read_text()
+    # The JS state and the <select> must agree, or the UI shows one language
+    # and sends another.
+    assert "let currentLanguage = 'es';" in html
+    assert '<option value="es" selected>' in html
+    assert '<option value="en" selected>' not in html

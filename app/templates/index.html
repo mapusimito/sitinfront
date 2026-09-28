@@ -674,6 +674,10 @@
             transition: width 0.2s ease;
         }
 
+        .progress-fill-upload.in-progress {
+            animation: pulse-progress 1.4s ease-in-out infinite;
+        }
+
         .upload-eta {
             font-size: 12px;
             color: var(--secondary-text);
@@ -1159,7 +1163,6 @@
         let uploadStartTime = null;
 
         const MAIN_CHUNK_DURATION = 5 * 60 * 1000; // 5 minutes
-        const BRIDGE_DURATION = 1 * 60 * 1000; // 1 minute overlap
         const MAX_CONCURRENT_REQUESTS = 3;
         const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500 MB
         const UPLOAD_TIMEOUT = 10 * 60 * 1000; // 10 minutes
@@ -1595,6 +1598,10 @@
         }
 
         function buildChunkPlan(totalSeconds) {
+            // Bridge (overlap) chunks were removed: their consensus-merge
+            // consumer (mergeWithConsensus) was never called, so they were
+            // pure wasted transcription compute competing with main chunks
+            // for the same concurrency slots.
             const chunks = [];
             const totalMs = totalSeconds * 1000;
             let mainIndex = 0;
@@ -1608,94 +1615,10 @@
                     startMs: start,
                     endMs: end
                 });
-
-                const nextStart = start + MAIN_CHUNK_DURATION;
-                if (nextStart < totalMs) {
-                    const bridgeStart = Math.max(start, nextStart - BRIDGE_DURATION);
-                    const bridgeEnd = Math.min(nextStart + BRIDGE_DURATION, totalMs);
-                    chunks.push({
-                        type: 'bridge',
-                        index: mainIndex + 0.5,
-                        mainIndex: mainIndex,
-                        bridgeMainIndex: mainIndex + 1,
-                        startMs: bridgeStart,
-                        endMs: bridgeEnd
-                    });
-                }
                 mainIndex++;
             }
 
             return chunks;
-        }
-
-        function normalizeText(text) {
-            return text.toLowerCase().trim().replace(/\s+/g, ' ');
-        }
-
-        function textSimilarity(a, b) {
-            const aWords = normalizeText(a).split(/\s+/);
-            const bWords = normalizeText(b).split(/\s+/);
-            const aSet = new Set(aWords);
-            const bSet = new Set(bWords);
-            const intersection = [...aSet].filter(w => bSet.has(w)).length;
-            const union = new Set([...aWords, ...bWords]).size;
-            return union === 0 ? 0 : intersection / union;
-        }
-
-        function detectRepetitions(text) {
-            const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
-            const normalized = sentences.map(s => normalizeText(s));
-            for (let i = 0; i < normalized.length - 2; i++) {
-                if (normalized[i] === normalized[i + 1] && normalized[i + 1] === normalized[i + 2]) {
-                    return true;
-                }
-            }
-            return false;
-        }
-
-        function mergeWithConsensus(chunkResults) {
-            const mainChunks = chunkResults.filter(c => c.type === 'main').sort((a, b) => a.mainIndex - b.mainIndex);
-            const bridgeChunks = chunkResults.filter(c => c.type === 'bridge').sort((a, b) => a.mainIndex - b.mainIndex);
-            const bridgeMap = Object.fromEntries(bridgeChunks.map(b => [b.mainIndex, b]));
-
-            let merged = '';
-
-            for (let i = 0; i < mainChunks.length; i++) {
-                const mainChunk = mainChunks[i];
-                const mainText = mainChunk.text || '';
-
-                if (detectRepetitions(mainText)) {
-                    if (i < bridgeChunks.length) {
-                        const bridge = bridgeMap[i];
-                        merged += (bridge?.text || mainText) + ' ';
-                    } else {
-                        merged += mainText + ' ';
-                    }
-                } else {
-                    merged += mainText + ' ';
-                }
-
-                if (i < mainChunks.length - 1 && bridgeMap[i]) {
-                    const bridge = bridgeMap[i];
-                    const nextMain = mainChunks[i + 1];
-                    const bridgeText = bridge.text || '';
-                    const nextText = nextMain.text || '';
-
-                    const mainTail = mainText.split(/\s+/).slice(-10).join(' ');
-                    const nextHead = nextText.split(/\s+/).slice(0, 10).join(' ');
-
-                    const simMainBridge = textSimilarity(mainTail, bridgeText);
-                    const simBridgeNext = textSimilarity(bridgeText, nextHead);
-
-                    if (simMainBridge > 0.5 || simBridgeNext > 0.5) {
-                        // Bridge provides better coverage of the boundary
-                    } else {
-                        // Append next chunk after consuming bridge consensus
-                    }
-                }
-            }
-
-            return merged.trim();
         }
 
         class FailedSegmentTracker {
@@ -2490,47 +2413,38 @@
 
                 try {
                     const totalBytes = file.size;
-                    const fileBlob = file;
-                    let bytesProcessed = 0;
 
-                    // Simulate reading progress
-                    const progressInterval = setInterval(() => {
-                        if (bytesProcessed < totalBytes) {
-                            bytesProcessed += Math.random() * totalBytes * 0.3; // Gradually increase
-                            bytesProcessed = Math.min(bytesProcessed, totalBytes * 0.9); // Cap at 90%
-
-                            const percent = Math.round((bytesProcessed / totalBytes) * 100);
-                            const elapsedSeconds = (Date.now() - uploadStartTime) / 1000;
-                            const uploadSpeed = bytesProcessed / elapsedSeconds;
-                            const remainingBytes = totalBytes - bytesProcessed;
-                            const etaSeconds = Math.ceil(remainingBytes / uploadSpeed);
-
-                            const loadedMb = (bytesProcessed / (1024 * 1024)).toFixed(1);
+                    // Real byte-read progress via FileReader (not simulated).
+                    document.getElementById('uploadProgressFill').classList.remove('in-progress');
+                    const arrayBuffer = await new Promise((res, rej) => {
+                        const reader = new FileReader();
+                        reader.onprogress = (e) => {
+                            const loaded = e.lengthComputable ? e.loaded : 0;
+                            const percent = totalBytes > 0 ? Math.round((loaded / totalBytes) * 100) : 0;
+                            const loadedMb = (loaded / (1024 * 1024)).toFixed(1);
                             const totalMb = (totalBytes / (1024 * 1024)).toFixed(1);
-                            document.getElementById('uploadProgressLabel').textContent = `Cargando: ${loadedMb} MB / ${totalMb} MB`;
+                            document.getElementById('uploadProgressLabel').textContent = `Leyendo: ${loadedMb} MB / ${totalMb} MB`;
                             document.getElementById('uploadProgressPercent').textContent = `${percent}%`;
                             document.getElementById('uploadProgressFill').style.width = percent + '%';
+                            document.getElementById('uploadEta').textContent = '';
+                        };
+                        reader.onload = () => res(reader.result);
+                        reader.onerror = () => rej(reader.error || new Error('No se pudo leer el archivo'));
+                        reader.readAsArrayBuffer(file);
+                    });
 
-                            if (etaSeconds < 60) {
-                                document.getElementById('uploadEta').textContent = `ETA: ${etaSeconds}s`;
-                            } else {
-                                const etaMinutes = Math.floor(etaSeconds / 60);
-                                const etaSecs = etaSeconds % 60;
-                                document.getElementById('uploadEta').textContent = `ETA: ${etaMinutes}m ${etaSecs}s`;
-                            }
-                        }
-                    }, 100);
-
-                    // Read and decode file
-                    const arrayBuffer = await fileBlob.arrayBuffer();
-                    bytesProcessed = totalBytes * 0.95;
-                    document.getElementById('uploadProgressFill').style.width = '95%';
+                    // Decoding has no browser progress API — show an honest
+                    // indeterminate state instead of fabricating a percentage.
+                    document.getElementById('uploadProgressLabel').textContent = 'Decodificando audio...';
+                    document.getElementById('uploadProgressPercent').textContent = '';
+                    document.getElementById('uploadProgressFill').style.width = '100%';
+                    document.getElementById('uploadProgressFill').classList.add('in-progress');
 
                     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
                     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-                    clearInterval(progressInterval);
-                    document.getElementById('uploadProgressFill').style.width = '100%';
+                    document.getElementById('uploadProgressFill').classList.remove('in-progress');
+                    document.getElementById('uploadProgressLabel').textContent = 'Listo';
                     document.getElementById('uploadProgressPercent').textContent = '100%';
 
                     const totalSeconds = Math.ceil(audioBuffer.duration);

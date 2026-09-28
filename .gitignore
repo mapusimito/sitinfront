@@ -50,3 +50,6 @@ temp/
 *.pt
 *.onnx
 models/
+
+# Per-run transcription artifacts (may contain private audio/text)
+runs/

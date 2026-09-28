@@ -21,6 +21,8 @@ from fastapi.responses import StreamingResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 
+import ctranslate2
+
 from faster_whisper import WhisperModel, BatchedInferencePipeline
 
 # Setup logging
@@ -39,29 +41,64 @@ class TranscriptionLog:
     status: str
     duration: float = 0.0
     error: str = None
+    prompt_source: str = None
 
     def to_dict(self):
         return asdict(self)
 
+def _detect_device() -> str:
+    """Auto-detect CUDA availability via CTranslate2. An explicit DEVICE env var wins."""
+    try:
+        return "cuda" if ctranslate2.get_cuda_device_count() > 0 else "cpu"
+    except Exception:
+        return "cpu"
+
+
 # Configuration
-DEFAULT_MODEL = os.environ.get("MODEL_SIZE", "base")
-DEVICE = os.environ.get("DEVICE", "cuda")
-COMPUTE_TYPE = os.environ.get("COMPUTE_TYPE", "float16")
+DEVICE = os.environ.get("DEVICE") or _detect_device()
+# int8 on CPU, float16 on CUDA (library-recommended defaults for each device); env var wins.
+COMPUTE_TYPE = os.environ.get("COMPUTE_TYPE") or ("float16" if DEVICE == "cuda" else "int8")
+# large-v3-turbo: best accuracy/speed tradeoff available in this faster-whisper version (1.2.1,
+# vendored at faster_whisper/); see IMPLEMENTATION_STATUS.md M0 for confirmation it is supported.
+DEFAULT_MODEL = os.environ.get("MODEL_SIZE", "large-v3-turbo")
 IDLE_TIMEOUT = int(os.environ.get("IDLE_TIMEOUT", 300))
+# When true, keep uploaded chunk audio next to its run artifact instead of deleting it.
+# Off by default: recordings may be private and large.
+KEEP_AUDIO = os.environ.get("KEEP_AUDIO", "").lower() in ("1", "true", "yes")
+
+RUNS_DIR = Path(__file__).parent.parent / "runs"
 
 # Available models
 AVAILABLE_MODELS = [
     "tiny", "tiny.en",
-    "base", "base.en", 
+    "base", "base.en",
     "small", "small.en",
     "medium", "medium.en",
     "large-v1", "large-v2", "large-v3",
-    "turbo",  # large-v3-turbo
+    "large-v3-turbo", "turbo",  # both names accepted (WhisperModel docstring); turbo is the alias
     "distil-large-v2", "distil-large-v3",
 ]
 
-# Default prompt
-DEFAULT_PROMPT = """标点：Hello, hi! Yes? No. Thank you. 你好，谢谢！是的。云计算：AWS, Azure, GCP, S3, EC2, Lambda, CloudFront, ECS, EKS, RDS, DynamoDB, SageMaker, Bedrock. 大数据：Kafka, Flink, Spark, Hadoop, Hive, Presto, Airflow, EMR, Glue, Athena, Redshift, Kinesis. AI/ML：OpenAI, ChatGPT, Claude, Gemini, GPT-4, Whisper, TensorFlow, PyTorch, MLX, LLM, RAG, Vector, Embedding. 开发：Python, JavaScript, TypeScript, Java, Go, Rust, React, Vue, Node.js, Docker, Kubernetes, Git, GitHub, GitLab, CI/CD, API, REST, GraphQL, gRPC. 职场：announce, confirm, schedule, meeting, deadline, deliverable, stakeholder, alignment, sync-up, follow-up, action item, escalate, prioritize, bandwidth, capacity. 公司：Amazon, Google, Microsoft, Meta, Apple, Netflix, Uber, Airbnb, Salesforce, Oracle, IBM, SAP. 人名：Neo, Damon, Jason, Kevin, Kenny, Rob, Eric, Richard, Michelle, Ken."""
+# Language-aware default prompts. This tech-jargon prompt was written for English/Chinese
+# tech-workplace audio; it must not be force-fed to unrelated languages (e.g. Spanish lectures).
+# Any language not listed here gets no default prompt (None).
+_EN_ZH_TECH_PROMPT = """标点：Hello, hi! Yes? No. Thank you. 你好，谢谢！是的。云计算：AWS, Azure, GCP, S3, EC2, Lambda, CloudFront, ECS, EKS, RDS, DynamoDB, SageMaker, Bedrock. 大数据：Kafka, Flink, Spark, Hadoop, Hive, Presto, Airflow, EMR, Glue, Athena, Redshift, Kinesis. AI/ML：OpenAI, ChatGPT, Claude, Gemini, GPT-4, Whisper, TensorFlow, PyTorch, MLX, LLM, RAG, Vector, Embedding. 开发：Python, JavaScript, TypeScript, Java, Go, Rust, React, Vue, Node.js, Docker, Kubernetes, Git, GitHub, GitLab, CI/CD, API, REST, GraphQL, gRPC. 职场：announce, confirm, schedule, meeting, deadline, deliverable, stakeholder, alignment, sync-up, follow-up, action item, escalate, prioritize, bandwidth, capacity. 公司：Amazon, Google, Microsoft, Meta, Apple, Netflix, Uber, Airbnb, Salesforce, Oracle, IBM, SAP. 人名：Neo, Damon, Jason, Kevin, Kenny, Rob, Eric, Richard, Michelle, Ken."""
+
+LANGUAGE_DEFAULT_PROMPTS: Dict[str, str] = {
+    "en": _EN_ZH_TECH_PROMPT,
+    "zh": _EN_ZH_TECH_PROMPT,
+}
+
+
+def resolve_prompt(user_prompt: Optional[str], language: Optional[str]) -> tuple:
+    """Returns (effective_prompt, prompt_source) where prompt_source is one of
+    'user', 'language_default', 'none'. A user-supplied prompt always wins."""
+    if user_prompt:
+        return user_prompt, "user"
+    default = LANGUAGE_DEFAULT_PROMPTS.get((language or "").lower())
+    if default:
+        return default, "language_default"
+    return None, "none"
 
 app = FastAPI(title="Faster Whisper API", description="High-performance STT API with streaming & multi-model support", version="2.1.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
@@ -82,17 +119,18 @@ class TranscriptionLogManager:
         logger.info(f"[{request_id}] Transcription started: {filename} (model: {model})")
         return entry
 
-    def log_success(self, request_id: str, duration: float, filename: str, model: str = ""):
+    def log_success(self, request_id: str, duration: float, filename: str, model: str = "", prompt_source: str = None):
         entry = TranscriptionLog(
             timestamp=datetime.now().isoformat(),
             request_id=request_id,
             filename=filename,
             model=model,
             status="success",
-            duration=duration
+            duration=duration,
+            prompt_source=prompt_source
         )
         self.logs.append(entry)
-        logger.info(f"[{request_id}] Transcription completed in {duration:.2f}s: {filename}")
+        logger.info(f"[{request_id}] Transcription completed in {duration:.2f}s: {filename} (prompt_source: {prompt_source})")
 
     def log_error(self, request_id: str, filename: str, model: str, error: str, duration: float = 0.0):
         entry = TranscriptionLog(
@@ -219,7 +257,48 @@ async def startup():
     asyncio.create_task(auto_unload_task())
 
 
-async def stream_transcription(file_path: str, model_name: str, language: str, prompt: str, 
+def _get_git_commit() -> str:
+    try:
+        import subprocess
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=str(Path(__file__).parent.parent), text=True, stderr=subprocess.DEVNULL
+        ).strip()
+    except Exception:
+        return "unknown"
+
+
+_GIT_COMMIT = _get_git_commit()
+_runs_lock = asyncio.Lock()
+
+
+async def write_run_chunk_artifact(run_id: str, chunk_record: dict, effective_config: dict):
+    """Append one chunk's result to its run's JSON artifact under runs/ (gitignored).
+    One artifact file per run_id; every request that shares a run_id appends a chunk entry,
+    so a full multi-chunk transcription is inspectable as a single file after the fact."""
+    RUNS_DIR.mkdir(parents=True, exist_ok=True)
+    path = RUNS_DIR / f"{run_id}.json"
+    async with _runs_lock:
+        if path.exists():
+            with open(path, "r", encoding="utf-8") as f:
+                artifact = json.load(f)
+        else:
+            artifact = {
+                "run_id": run_id,
+                "created_at": datetime.now().isoformat(),
+                "git_commit": _GIT_COMMIT,
+                "model": effective_config["model"],
+                "device": DEVICE,
+                "compute_type": COMPUTE_TYPE,
+                "decoding_params": effective_config["decoding_params"],
+                "chunks": [],
+            }
+        artifact["chunks"].append(chunk_record)
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(artifact, f, ensure_ascii=False, indent=2)
+    return path
+
+
+async def stream_transcription(file_path: str, model_name: str, language: str, prompt: str,
                                 beam_size: int, vad_filter: bool, word_timestamps: bool) -> AsyncGenerator[str, None]:
     """Stream transcription results segment by segment."""
     whisper = await model_provider.get_model(model_name)
@@ -260,26 +339,39 @@ async def openai_transcribe(
     word_timestamps: bool = Form(False),
     batch_size: int = Form(16),
     stream: bool = Form(False),  # NEW: streaming support
-    condition_on_previous_text: bool = Form(True),
-    compression_ratio_threshold: float = Form(1.8),  # Lower = more aggressive at detecting repetitions
-    log_prob_threshold: float = Form(-0.5),  # Stricter = reject low-confidence segments
-    no_speech_threshold: float = Form(0.75),  # Higher = skip more silence/noise
-    hallucination_silence_threshold: float = Form(1.0),  # Prevent hallucinating during silence
+    condition_on_previous_text: bool = Form(False),
+    # Library defaults (see faster_whisper/transcribe.py WhisperModel.transcribe signature).
+    # Previously tuned away from these without measurements (commit 4c7e856); reverted per
+    # IMPLEMENTATION_STATUS.md M3 decision log.
+    compression_ratio_threshold: float = Form(2.4),
+    log_prob_threshold: float = Form(-1.0),
+    no_speech_threshold: float = Form(0.6),
+    # Library default is None. Per M0, this is a no-op unless word_timestamps=True (and is
+    # hardcoded to None internally in batched mode regardless of what's passed).
+    hallucination_silence_threshold: Optional[float] = Form(None),
+    # Observability fields, all optional so non-chunked / non-UI API clients are unaffected.
+    run_id: Optional[str] = Form(None),
+    chunk_index: Optional[int] = Form(None),
+    chunk_type: Optional[str] = Form(None),
+    chunk_start_ms: Optional[float] = Form(None),
+    chunk_end_ms: Optional[float] = Form(None),
 ):
     """OpenAI-compatible transcription with streaming support."""
     request_id = str(uuid.uuid4())[:8]
     start_time = time.time()
-    effective_prompt = prompt if prompt else DEFAULT_PROMPT
+    effective_prompt, prompt_source = resolve_prompt(prompt, language)
     tmp_path = f"/tmp/whisper_{uuid.uuid4()}{Path(file.filename).suffix}"
+    effective_run_id = run_id or request_id
 
     transcription_log_manager.log_request(request_id, file.filename, model)
+    logger.info(f"[{request_id}] Prompt source: {prompt_source}")
 
     try:
         content = await file.read()
         with open(tmp_path, "wb") as f:
             f.write(content)
         logger.info(f"[{request_id}] File saved: {tmp_path} ({len(content)} bytes)")
-        
+
         # Streaming mode
         if stream:
             logger.info(f"[{request_id}] Using streaming mode")
@@ -288,17 +380,26 @@ async def openai_transcribe(
                 media_type="application/x-ndjson",
                 headers={"X-Content-Type-Options": "nosniff"}
             )
-        
+
         # Normal mode
         if batch_size > 1:
             pipeline = await model_provider.get_batched(model)
+            # M0: BatchedInferencePipeline.transcribe() ignores condition_on_previous_text
+            # (hardcoded False internally) and hallucination_silence_threshold (hardcoded None)
+            # regardless of what's passed, and only honors the first element of `temperature`
+            # (no multi-temperature fallback in batched mode) — see IMPLEMENTATION_STATUS.md M0.
+            # compression_ratio_threshold/log_prob_threshold/no_speech_threshold are accepted and
+            # stored on TranscriptionOptions but never read anywhere in the batched decode path
+            # (forward()/generate_segment_batched()); they do not reject or retry segments there.
+            # They are still passed through (at library-default values) for forward compatibility
+            # and because the frontend still displays them, but must not be assumed to filter output.
             segments, info = pipeline.transcribe(
                 tmp_path, language=language or None, initial_prompt=effective_prompt,
                 beam_size=beam_size, vad_filter=vad_filter, word_timestamps=word_timestamps,
-                batch_size=batch_size, condition_on_previous_text=condition_on_previous_text,
+                batch_size=batch_size,
                 compression_ratio_threshold=compression_ratio_threshold,
                 log_prob_threshold=log_prob_threshold, no_speech_threshold=no_speech_threshold,
-                hallucination_silence_threshold=hallucination_silence_threshold,
+                temperature=temperature,
             )
         else:
             whisper = await model_provider.get_model(model)
@@ -309,12 +410,59 @@ async def openai_transcribe(
                 condition_on_previous_text=condition_on_previous_text,
                 compression_ratio_threshold=compression_ratio_threshold,
                 log_prob_threshold=log_prob_threshold, no_speech_threshold=no_speech_threshold,
-                hallucination_silence_threshold=hallucination_silence_threshold, temperature=temperatures,
+                hallucination_silence_threshold=hallucination_silence_threshold if word_timestamps else None,
+                temperature=temperatures,
             )
-        
+
         segments = list(segments)
         duration = time.time() - start_time
-        transcription_log_manager.log_success(request_id, duration, file.filename, model)
+        transcription_log_manager.log_success(request_id, duration, file.filename, model, prompt_source)
+
+        effective_config = {
+            "model": model,
+            "decoding_params": {
+                "condition_on_previous_text": condition_on_previous_text,
+                "compression_ratio_threshold": compression_ratio_threshold,
+                "log_prob_threshold": log_prob_threshold,
+                "no_speech_threshold": no_speech_threshold,
+                "hallucination_silence_threshold": hallucination_silence_threshold if word_timestamps else None,
+                "temperature": temperature,
+                "beam_size": beam_size,
+                "vad_filter": vad_filter,
+                "word_timestamps": word_timestamps,
+                "batch_size": batch_size,
+                "batched_mode": batch_size > 1,
+            },
+        }
+        chunk_record = {
+            "request_id": request_id,
+            "index": chunk_index,
+            "type": chunk_type or "single",
+            "start_ms": chunk_start_ms,
+            "end_ms": chunk_end_ms,
+            "filename": file.filename,
+            "language": info.language,
+            "duration": info.duration,
+            "prompt_source": prompt_source,
+            "processing_seconds": duration,
+            "segments": [
+                {
+                    "text": s.text.strip(), "start": s.start, "end": s.end,
+                    "avg_logprob": s.avg_logprob, "compression_ratio": s.compression_ratio,
+                    "no_speech_prob": s.no_speech_prob,
+                    "temperature": getattr(s, "temperature", None),
+                }
+                for s in segments
+            ],
+        }
+        if KEEP_AUDIO:
+            audio_dir = RUNS_DIR / effective_run_id / "audio"
+            audio_dir.mkdir(parents=True, exist_ok=True)
+            kept_path = audio_dir / f"{chunk_type or 'single'}_{chunk_index if chunk_index is not None else request_id}{Path(file.filename).suffix}"
+            with open(kept_path, "wb") as f:
+                f.write(content)
+            chunk_record["kept_audio_path"] = str(kept_path)
+        await write_run_chunk_artifact(effective_run_id, chunk_record, effective_config)
 
         if response_format == "text":
             return JSONResponse({"text": " ".join(s.text.strip() for s in segments)})

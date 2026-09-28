@@ -318,3 +318,68 @@ def test_frontend_has_no_random_confidence():
     assert "calculateConfidence" not in html
     # No Math.random anywhere near "confidence"/"Confianza" text used for a displayed score.
     assert "Math.random() * 15" not in html
+
+
+def test_frontend_confidence_not_random_source():
+    """Structural check (mutation-resistant): even if a future edit re-implements a random
+    confidence score with different code than the literal string above, the functions that
+    actually compute/display the metric must never reference Math.random at all."""
+    html = (REPO_ROOT / "app" / "templates" / "index.html").read_text()
+    for fn_name in ("calculateAvgTokenProb", "calculateAverageTokenProb", "appendSegmentToTranscript"):
+        start = html.index(f"function {fn_name}(")
+        # Slice to the next top-level "        function " (8-space indent) after this one,
+        # or end of file — covers each function body without needing a JS parser.
+        next_fn = html.find("\n        function ", start + 1)
+        body = html[start:next_fn if next_fn != -1 else len(html)]
+        assert "Math.random" not in body, f"{fn_name} must derive its value from real Whisper stats, not Math.random"
+
+
+def test_condition_on_previous_text_form_default_is_false(server_module):
+    """Guards the Form field's default itself (not just what the batched call receives),
+    so reverting the default back to True is caught even though the batched call path
+    omits the kwarg either way."""
+    import inspect
+    sig = inspect.signature(server_module.openai_transcribe)
+    field_info = sig.parameters["condition_on_previous_text"].default
+    assert field_info.default is False
+
+
+def test_chunk_upload_requests_verbose_json():
+    """Targets the actual chunk-upload request-building code (the formData closures used by
+    the UI's chunked-transcription flows), not a whole-file grep, so removing verbose_json
+    from just that code is caught even if 'verbose_json' still appears elsewhere in the file."""
+    html = (REPO_ROOT / "app" / "templates" / "index.html").read_text()
+    upload_regions = [m.start() for m in __import__("re").finditer(r"formData\.append\('file', chunkBlob", html)]
+    assert len(upload_regions) >= 2, "expected both chunk-upload closures (recorded + uploaded-file flows) to build a FormData for the chunk file"
+    for start in upload_regions:
+        end = html.find("return formData;", start)
+        assert end != -1
+        region = html[start:end]
+        assert "formData.append('response_format', 'verbose_json')" in region
+
+
+def test_malicious_run_id_cannot_escape_runs_dir(server_module, client, monkeypatch):
+    """Regression test for the path-traversal/arbitrary-write finding: a run_id or chunk_type
+    containing path separators must never be used to build a path outside RUNS_DIR."""
+    _install_fake_pipeline(server_module, monkeypatch)
+    monkeypatch.setattr(server_module, "KEEP_AUDIO", True)
+    resp = client.post(
+        "/v1/audio/transcriptions",
+        files={"file": ("chunk.wav", b"fake-audio-bytes", "audio/wav")},
+        data={
+            "language": "es",
+            "run_id": "../../traversal-probe",
+            "chunk_type": "../../escape",
+            "chunk_index": "0",
+        },
+    )
+    assert resp.status_code == 200
+    escaped_json = server_module.RUNS_DIR.parent.parent / "traversal-probe.json"
+    escaped_audio = server_module.RUNS_DIR.parent.parent / "traversal-probe"
+    assert not escaped_json.exists()
+    assert not escaped_audio.exists()
+    # Everything written must stay inside RUNS_DIR, using the sanitized/fallback id.
+    written = list(server_module.RUNS_DIR.rglob("*"))
+    assert written, "expected a fallback-named artifact to be written inside RUNS_DIR"
+    for path in written:
+        assert server_module.RUNS_DIR in path.resolve().parents or path.resolve() == server_module.RUNS_DIR.resolve()

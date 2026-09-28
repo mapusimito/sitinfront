@@ -37,7 +37,7 @@ const uiLanguage = await page.$eval('#languageSelect', (el) => el.value);
 if (language) await page.selectOption('#languageSelect', language);
 
 await page.setInputFiles('#fileInput', file);
-await page.getByRole('button', { name: 'Subir' }).click();
+await page.getByRole('button', { name: 'Transcribir' }).click();
 await page.waitForFunction(
   () => document.getElementById('summaryCard')?.classList.contains('active'),
   null,

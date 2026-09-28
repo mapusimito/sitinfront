@@ -1,7 +1,7 @@
 # sitinfront - Implementation Status
 
 > **Last Updated**: 2026-09-28
-> **Current Milestone**: 16 ✅ Done (Whisper pipeline accuracy/observability track, M11-M16, complete) — Next planned: 4, 7, 8 (pre-existing UX track, unaffected by this work)
+> **Current Milestone**: 12 🔄 In progress (large-v3-turbo speed measurement outstanding); Milestones 11, 13-16 ✅ Done, including a post-audit fix round (H1 transcript-truncation and H2 path-traversal findings fixed, doc corrections applied) — Next planned: finish 12.4, 4, 7, 8 (pre-existing UX track, unaffected by this work)
 > **Source**: UX Critique (20 issues identified) + Brand Redesign QA (72→100 compliance); Milestones 11-16 added from "Whisper Transcription Pipeline: Accuracy and Observability Fixes" task spec (2026-09-28)
 > **Supersedes**: None
 
@@ -274,9 +274,9 @@
 
 | Task | Description | Status | Notes |
 |------|-------------|--------|-------|
-| 11.1 | Confirm faster-whisper version and which copy (vendored vs pip-installed) is actually imported | ✅ | Vendored `faster_whisper/` (v1.2.1, `faster_whisper/version.py`) is what's imported — confirmed via `python3 -c "import faster_whisper; print(faster_whisper.__file__)"`. A separately pip-installed `faster-whisper==1.2.1` also exists in `venv/lib/python3.14/site-packages` but is shadowed because the repo root is first on `sys.path`. Same version today, but flagged under Deferred as a latent risk if they diverge. |
+| 11.1 | Confirm faster-whisper version and which copy (vendored vs pip-installed) is actually imported | ✅ | Vendored `faster_whisper/` (v1.2.1, `faster_whisper/version.py`) is what's imported — confirmed via `python3 -c "import faster_whisper; print(faster_whisper.__file__)"`. A separately pip-installed `faster-whisper==1.2.1` also exists in `venv/lib/python3.14/site-packages` but is shadowed because the repo root is first on `sys.path`. **Correction (re-audit):** the version strings match, but the two copies are not identical — `utils.py`, `vad.py` (different max-speech VAD splitting algorithm), and `assets/silero_vad_v6.onnx` all differ between the vendored and pip-installed copies. "Same version" is misleading; the two behave differently. Flagged under Deferred as an unresolved risk. |
 | 11.2 | Does `condition_on_previous_text` do anything in batched mode? | ✅ | **No.** Not even accepted as a real option — `TranscriptionOptions` hardcodes `condition_on_previous_text=False` regardless of input. `faster_whisper/transcribe.py:547`; docstring lists it under "Unused Arguments" (line 351). |
-| 11.3 | Does batched mode support temperature fallback (a list)? | ✅ | **No.** Only the first element of `temperature` is ever used: `faster_whisper/transcribe.py:528-532` (`temperatures = temperature[:1] ...`) and `:233` (`sampling_temperature=options.temperatures[0]`). No retry loop exists in the batched path. |
+| 11.3 | Does batched mode support temperature fallback (a list)? | ✅ | **No.** Only the first element of `temperature` is ever used (`faster_whisper/transcribe.py:528-532`, verbatim: `` temperatures=(\n    temperature[:1]\n    if isinstance(temperature, (list, tuple))\n    else [temperature]\n), ``) and `:233` (`sampling_temperature=options.temperatures[0]`). No retry loop exists in the batched path. |
 | 11.4 | Are `compression_ratio_threshold`/`log_prob_threshold`/`no_speech_threshold` used in batched mode? | ✅ | **Accepted and stored, never read.** `forward()`/`generate_segment_batched()`/`_batched_segments_generator()` (`faster_whisper/transcribe.py:119-253`) compute the real stats but never compare them to any threshold — no rejection, no retry. Docstring confirms all three as "Unused Arguments". |
 | 11.5 | Does `hallucination_silence_threshold` do anything without `word_timestamps=True`? | ✅ | In batched mode it's **hardcoded to `None`** always (`faster_whisper/transcribe.py:546`), word_timestamps or not. In sequential `WhisperModel.transcribe()` it genuinely depends on word timestamps, matching its docstring. |
 | 11.6 | Is `"large-v3-turbo"` (or an alias) a supported model name? | ✅ | Yes — both `"large-v3-turbo"` and alias `"turbo"` are explicitly listed as supported (`faster_whisper/transcribe.py:639-641`, `WhisperModel.__init__` docstring). |
@@ -291,7 +291,7 @@
 
 **Priority**: P0 — a "base" model on a 55-minute Spanish lecture was the direct cause of the quality investigation that started this track.
 
-**Status**: ✅ Completed (2026-09-28)
+**Status**: 🔄 In progress — device/compute-type/model-default code and UI wiring done; large-v3-turbo speed measurement (12.4) still outstanding (2026-09-28)
 
 **Depends on**: Milestone 11
 
@@ -299,10 +299,10 @@
 
 | Task | Description | Status | Notes |
 |------|-------------|--------|-------|
-| 12.1 | `DEVICE` auto-detects via `ctranslate2.get_cuda_device_count()`; explicit env var wins | ✅ | app/server.py:48-53,57 (`_detect_device()`); tests `test_detect_device_no_cuda`, `test_detect_device_with_cuda`, `test_device_env_var_overrides_autodetect` (tests/test_server.py) |
-| 12.2 | `COMPUTE_TYPE` defaults to `int8` on CPU / `float16` on CUDA; env var wins | ✅ | app/server.py:58-59; tests `test_compute_type_depends_on_device`, `test_compute_type_env_var_overrides` |
-| 12.3 | `MODEL_SIZE` default changed to `large-v3-turbo` (name confirmed valid per M11); env var wins | ✅ | app/server.py:60-62; tests `test_default_model_is_large_v3_turbo`, `test_model_size_env_var_overrides_default` |
-| 12.4 | Speed measurement: base vs large-v3-turbo, this Mac, real 11s speech sample | ✅ | Apple M4, CPU, `compute_type=int8`, `batch_size=16`, VAD on, `tests/data/jfk.flac` (11.0s). base: load 0.58s, transcribe 1.11s, RTF **0.101**, peak RSS 533MB. large-v3-turbo: benchmark launched but the ~1.6GB model download did not finish within this session — **see Open Questions in Milestone 16 section** for how to complete it. |
+| 12.1 | `DEVICE` auto-detects via `ctranslate2.get_cuda_device_count()`; explicit env var wins | ✅ | app/server.py:49-54,58 (`_detect_device()`); tests `test_detect_device_no_cuda`, `test_detect_device_with_cuda`, `test_device_env_var_overrides_autodetect` (tests/test_server.py) |
+| 12.2 | `COMPUTE_TYPE` defaults to `int8` on CPU / `float16` on CUDA; env var wins | ✅ | app/server.py:60; tests `test_compute_type_depends_on_device`, `test_compute_type_env_var_overrides` |
+| 12.3 | `MODEL_SIZE` default changed to `large-v3-turbo` (name confirmed valid per M11); env var wins | ⚠️ | app/server.py:63; tests `test_default_model_is_large_v3_turbo`, `test_model_size_env_var_overrides_default`. **Correction (re-audit, fixed):** the backend default changed, but the UI's model dropdown still defaulted to `small` and didn't offer large-v3-turbo at all, so the new default never reached the actual UI call path. Fixed: `large-v3-turbo` added to the dropdown (app/templates/index.html ~line 980) and set as `currentModel`'s default (~line 1126) and the `<select>`'s `selected` option. |
+| 12.4 | Speed measurement: base vs large-v3-turbo, this Mac, real 11s speech sample | 🔄 | Apple M4, CPU, `compute_type=int8`, `batch_size=16`, VAD on, `tests/data/jfk.flac` (11.0s). base: load 0.58s, transcribe 1.11s, RTF **0.101**, peak RSS 533MB — re-verified by the independent audit (RTF 0.098-0.100 on 3 reruns). large-v3-turbo: **still not measured.** The ~1.6GB model download stalled during the original session and was found hung (no progress for 19+ minutes) during the re-audit; the stalled process was killed. See Open Questions for how to complete this. The task row was previously marked ✅ despite this gap — that was wrong and is corrected here. |
 
 ---
 
@@ -356,7 +356,7 @@
 
 **Priority**: P0 — no way to diagnose a bad run after the fact was the core problem in the original investigation.
 
-**Status**: ✅ Completed (2026-09-28)
+**Status**: ✅ Completed, including fix round after independent audit (2026-09-28)
 
 **Depends on**: Milestones 13, 14
 
@@ -364,10 +364,10 @@
 
 | Task | Description | Status | Notes |
 |------|-------------|--------|-------|
-| 15.1 | Frontend chunk uploads request `response_format=verbose_json`; server default stays `json` | ✅ | app/templates/index.html: both chunk-upload `formDataFactory` closures (in `transcribeInChunks` and `transcribeUploadedChunks`); server Form default untouched; test `test_plain_json_response_unchanged_shape` |
-| 15.2 | One JSON run artifact per full run in gitignored `runs/` dir (run id, timestamp, git commit, model/device/compute_type, effective decoding params, prompt source, per-chunk per-segment stats) | ✅ | `write_run_chunk_artifact()` (app/server.py); `.gitignore` updated; test `test_run_artifact_written_with_required_fields`; real artifact produced and verified in an end-to-end HTTP run (`runs/e2e-1790590569.json`) |
+| 15.1 | Frontend chunk uploads request `response_format=verbose_json`; server default stays `json` | ⚠️ | app/templates/index.html: both chunk-upload `formDataFactory` closures (in `transcribeInChunks` and `transcribeUploadedChunks`); server Form default untouched; test `test_plain_json_response_unchanged_shape`. **Correction (re-audit):** removing `verbose_json` from the frontend request was not caught by any test (mutation survived). Fixed: added `test_chunk_upload_requests_verbose_json` targeting the actual request-building code (~line 1872/2333), not a whole-file grep. |
+| 15.2 | One JSON run artifact per full run in gitignored `runs/` dir (run id, timestamp, git commit, model/device/compute_type, effective decoding params, prompt source, per-chunk per-segment stats) | ⚠️ | `write_run_chunk_artifact()` (app/server.py); `.gitignore` updated; test `test_run_artifact_written_with_required_fields`; real artifact produced and verified in an end-to-end HTTP run. **Corrections (re-audit, fixed):** (1) `run_id`/`chunk_type`/the kept-audio filename suffix were client-controlled and unsanitized, letting a malicious `run_id` write files outside `runs/` (path traversal / arbitrary write) — fixed with `_sanitize_run_id()`/`_sanitize_chunk_type()`/`_sanitize_audio_suffix()` (app/server.py) plus a regression test `test_malicious_run_id_cannot_escape_runs_dir`. (2) the artifact write happened inside the main request try-block, so a write failure turned a successful transcription into an HTTP 500 the frontend would then retry — fixed by wrapping the write in its own try/except that logs but never fails the response. (3) every API call (not just tracked UI runs) was writing a persistent artifact with the full transcript and no retention policy — scoped down: an artifact is now only written when the request carries `run_id`/`chunk_type`/`chunk_index` (i.e. is part of a tracked run), not for bare API calls with none of that metadata. |
 | 15.3 | `KEEP_AUDIO` env var, default off, keeps chunk audio next to its run artifact when on | ✅ | app/server.py `KEEP_AUDIO`; audio written to `runs/<run_id>/audio/`; tests `test_keep_audio_off_deletes_chunk_audio`, `test_keep_audio_on_keeps_chunk_audio` |
-| 15.4 | Delete `calculateConfidence()`'s RNG entirely; show real duration-weighted mean of `exp(avg_logprob)`, honestly labeled, nothing shown when stats are missing | ✅ | app/templates/index.html: `calculateAvgTokenProb()` replaces `calculateConfidence()`; per-segment badge now reads "% avg token prob"; summary card label "Prob. media de token" shows "N/D" when null; test `test_frontend_has_no_random_confidence` |
+| 15.4 | Delete `calculateConfidence()`'s RNG entirely; show real duration-weighted mean of `exp(avg_logprob)`, honestly labeled, nothing shown when stats are missing | ⚠️ | app/templates/index.html: `calculateAvgTokenProb()` replaces `calculateConfidence()` (per-chunk, already duration-weighted). **Corrections (re-audit, fixed):** (1) the run-level summary metric (`calculateAverageTokenProb()`) was an unweighted mean across chunks, not duration-weighted as originally claimed — fixed to weight by each chunk's segment duration (new `segmentDurationsSec` array). (2) the per-segment badge label was English ("avg token prob") in an otherwise Spanish-only UI (CLAUDE.md brand rule) — changed to "prob. media de token". (3) the guarding test was a literal-string grep that a differently-written RNG would bypass — replaced/supplemented with `test_frontend_confidence_not_random_source`, which checks structurally that `Math.random` does not appear near the confidence-computation functions rather than matching one exact old string. |
 
 **Where the artifact is assembled**: server-side. **Reason**: the frontend already sends one HTTP request per chunk; assembling server-side gives every API client (not just the bundled UI) a run artifact for free, keeps stats next to the exact params that produced them, and avoids trusting client-supplied numbers. Cost: the frontend now sends a shared `run_id` (generated once per full transcription via `crypto.randomUUID()`) plus per-chunk `chunk_index`/`chunk_type`/`chunk_start_ms`/`chunk_end_ms` fields — all optional server-side, defaulting to the request's own id, so direct API clients are unaffected.
 
@@ -391,10 +391,11 @@
 
 ### Deferred / Not in Scope (Milestones 11-16 track)
 
-- Consensus engine (`mergeWithConsensus()`, `detectRepetitions()`) and bridge chunks — untouched, per explicit task instruction. `createOrderedSegmentAppender()`'s signature was extended with a `segments` parameter (needed to plumb real per-segment stats through to the display), but its ordering logic is unchanged.
+- Consensus engine (`mergeWithConsensus()`, `detectRepetitions()`) and bridge chunks — untouched, per explicit task instruction.
+- **Correction (re-audit, CONTRADICTED then fixed):** `createOrderedSegmentAppender()` was previously described here as a pre-existing function whose signature was merely extended. That was false — it does not exist at the pre-track baseline (`7e86451`); it is new code, introduced in this track, that changed transcript display from per-chunk completion order to strict chunk order. The independent audit found this introduced a real regression (H1): if any main chunk permanently failed or returned empty text, `createOrderedSegmentAppender`'s internal `while (pending.has(nextIndex))` loop would never advance past it, so every later chunk silently never displayed (and copy/export, which read the DOM, lost them too) — reproduced by the auditor with chunks 0/2/3 submitted and only chunk 0 ever shown. **Fixed**: added a `flushRemaining()` method to the appender that, once all chunks have settled (success or failure), flushes whatever did arrive in ascending index order instead of waiting forever on a missing one; called after `Promise.all(tasks)` in both call sites (app/templates/index.html, the `transcribeInChunks` and `transcribeUploadedChunks` flows). Chunks can now again never be silently lost, at the cost of occasionally displaying slightly out of strict order if an early chunk is still the one missing when later ones flush.
 - mlx-whisper or any other backend — out of scope; this Mac has no CUDA and CTranslate2 has no Metal backend, so it runs Whisper on CPU only. No Metal/MPS code path was added.
 - VAD-based chunk boundaries, an in-pipeline n-gram repetition detector — `analyze_run.py` does repetition detection but only offline/read-only, never in the live request path.
-- The vendored-vs-pip-installed `faster_whisper` duplication (both 1.2.1 right now) — flagged in Milestone 11, not resolved.
+- The vendored-vs-pip-installed `faster_whisper` duplication — flagged in Milestone 11, not resolved. **Correction (re-audit):** they share a version string (1.2.1) but are not byte-identical — `utils.py`, `vad.py`, and `assets/silero_vad_v6.onnx` differ. The risk is real, not hypothetical, and remains unresolved.
 - Batched-mode threshold *filtering* — M11 shows the three thresholds don't filter anything in batched mode; making them actually filter would mean patching the vendored library or defaulting to sequential mode, both outside this track's scope per its own tie-breaker rule.
 
 ### Decision Log (Milestones 11-16 track)
@@ -407,12 +408,19 @@
 6. Assembled run artifacts server-side (see Milestone 15 reasoning above).
 7. `run_id` generated client-side via `crypto.randomUUID()` once per full multi-chunk transcription, since only the frontend knows which requests belong together; falls back to the per-request `request_id` server-side when absent.
 8. Displayed metric relabeled "avg token prob" / "Prob. media de token", never "confidence" — `exp(avg_logprob)` is a real but narrow signal, not a calibrated confidence score, and mislabeling it would just be a more sophisticated version of the dishonesty being removed.
+9. **(Fix round, post-audit)** `run_id`/`chunk_type` are client-controlled and were used unsanitized in filesystem paths — an independent audit reproduced a path-traversal write outside `runs/`. Fixed by validating `run_id` against a safe charset (falling back to the server-generated `request_id` if invalid) and `chunk_type` against an allowlist (`main`/`bridge`/`single`), and normalizing the kept-audio file suffix against an allowlist of audio extensions, all in `app/server.py`, rather than trying to catch traversal after the path is built.
+10. **(Fix round, post-audit)** Scoped run-artifact writing to only requests that carry `run_id`/`chunk_type`/`chunk_index` (i.e. are part of a tracked UI run), instead of writing a full-transcript artifact for every API call including bare ones with no run metadata — chosen over "write for everyone, add retention/cleanup" because a bare API client asking for `verbose_json` already gets its stats back in the response; persisting them server-side with no expiry wasn't something it opted into.
+11. **(Fix round, post-audit)** Wrapped the run-artifact/kept-audio write in its own try/except so a write failure (disk full, permissions, corrupt existing artifact) logs but never turns an otherwise-successful transcription into an HTTP 500 — observability must not be able to break the feature it's observing.
+12. **(Fix round, post-audit)** Added `large-v3-turbo` to the UI's model dropdown and made it the default selection, matching the backend's new `MODEL_SIZE` default — the backend default alone was not reaching real UI traffic, and the task's objective ("make the transcription pipeline use a strong model") is about what users actually get, not just what an API client gets if it happens to omit `model`.
+13. **(Fix round, post-audit)** `createOrderedSegmentAppender()`'s ordering is now best-effort rather than strict: `flushRemaining()` is called once all chunks have settled, so a missing/failed chunk can no longer block later chunks from ever displaying. Chose "never silently lose a chunk" over "always strictly ordered," per the audit's own framing of the tradeoff.
 
 ### Open Questions (Milestones 11-16 track)
 
 1. **Batched-mode temperature fallback**: no way to retry at a higher temperature in the batched path the UI uses by default. Fixing it needs either patching the vendored library (out of scope — "the transcription backend stays faster-whisper") or defaulting the UI to sequential mode (too large a behavior change for this track). Left as-is.
 2. **Batched-mode threshold filtering**: the three thresholds are real stats in the run artifact but never reject/retry a segment in batched mode. `analyze_run.py` is the closest thing to enforcement today — an offline flag, not a live filter.
-3. **large-v3-turbo CPU speed measurement is incomplete**: the base-vs-large-v3-turbo benchmark (Milestone 12.4) started downloading the ~1.6GB large-v3-turbo weights but the download did not finish within this session. To complete it: `venv/bin/python3 /tmp/bench.py large-v3-turbo` (script used `tests/data/jfk.flac`, `device=cpu`, `compute_type=int8`, `batch_size=16`) — or rerun equivalent code, since `/tmp/bench.py` is a scratch file, not committed. If the resulting RTF makes large-v3-turbo impractical on CPU for hour-long lectures, per the task's platform-honesty rule the default must NOT be silently downgraded — surface the numbers and let the user decide; note "consider mlx-whisper backend" under Deferred if so.
+3. **large-v3-turbo CPU speed measurement is still incomplete.** The download has now stalled three separate times at essentially the same ~1.1-1.16GB point (original implementation session; again during the independent audit, which found it hung 19+ minutes with zero progress and killed it; again during this fix round — restarted with output captured to `/tmp/bench_turbo.log` this time, ran another 4+ minutes with almost no CPU progress and still stuck at 1.1GB, left running in the background rather than killed again). This is not "the network is occasionally slow" — it looks like a genuine stall in the `huggingface_hub` download for this specific model repo, worth investigating directly (e.g. try `huggingface-cli download` standalone, or a different mirror/resume strategy) rather than just re-running the same script a fourth time. Until it completes, the large-v3-turbo default's real-world CPU speed for hour-long lectures is unverified. If it turns out impractical, per the task's platform-honesty rule the default must NOT be silently downgraded — surface the numbers and let the user decide; note "consider mlx-whisper backend" under Deferred if so.
+4. **Streaming path and non-batched path get no run artifact.** Only the batched, non-streaming path (what the UI uses) writes one. Noted by the audit as a low-severity gap; not fixed in this round since neither the streaming path nor direct sequential-mode API calls are part of the UI's chunked flow this track targets.
+5. **`git_commit` in an artifact reflects `HEAD`, not a dirty working tree.** If a transcription is run against uncommitted code, the artifact still records the last commit hash, which can misattribute behavior. Not fixed; would need a "dirty" flag derived from `git status --porcelain`, deferred as a minor accuracy gap.
 
 ---
 
@@ -441,7 +449,7 @@ Brand Redesign (sitinfront visual identity) ✅ DONE — independent; parallel t
 --- Whisper Pipeline Accuracy & Observability (Parallel, backend track) ---
 Milestone 11 (M0: verify batched-mode source behavior) ✅ DONE
     ↓
-Milestone 12 (M1: model/device defaults + speed) ✅ DONE ◄── M11
+Milestone 12 (M1: model/device defaults + speed) 🔄 IN PROGRESS ◄── M11 (12.4 large-v3-turbo benchmark outstanding)
     ↓
 Milestone 13 (M2: language-aware prompt) ✅ DONE ◄── M11 (independent of M12)
     ↓
@@ -485,7 +493,7 @@ Phase 4 — Whisper Pipeline Accuracy & Observability (M11-M16, backend, paralle
   M14 (decoding thresholds) → depends on M11, M12
   M15 (observability + real confidence) → depends on M13, M14
   M16 (analyze_run.py) → depends on M15
-  Status: all complete (2026-09-28)
+  Status: M11, M13-M16 complete (including post-audit fixes); M12 in progress — large-v3-turbo benchmark outstanding (2026-09-28)
 ```
 
 ---
@@ -505,15 +513,15 @@ Phase 4 — Whisper Pipeline Accuracy & Observability (M11-M16, backend, paralle
 | 9 | Mobile & Accessibility | 6 | P2 | ⬜ |
 | 10 | Language Detection | 4 | P2 | ⬜ |
 | BR | sitinfront Brand Redesign | 13 | P0 | ✅ |
-| 11 | Whisper: verify batched-mode source (M0) | — (research) | P0 | ✅ |
-| 12 | Whisper: model and device defaults | 4 | P0 | ✅ |
+| 11 | Whisper: verify batched-mode source (M0) | 6 | P0 | ✅ |
+| 12 | Whisper: model and device defaults | 4 | P0 | 🔄 (3/4 — 12.4 outstanding) |
 | 13 | Whisper: language-aware prompt | 3 | P0 | ✅ |
 | 14 | Whisper: decoding parameters | 5 | P0 | ✅ |
-| 15 | Whisper: observability and real confidence | 4 | P0 | ✅ |
+| 15 | Whisper: observability and real confidence | 4 | P0 | ✅ (post-audit fix round applied) |
 | 16 | Whisper: offline analysis script | 1 | P1 | ✅ |
-| **Total** | | **85 tasks** | | |
-| **Completed** | | **58 (68%)** | | **✅** |
-| **Open** | | **27 (32%)** | | **⬜** |
+| **Total** | | **91 tasks** | | |
+| **Completed** | | **63 (69%)** | | **✅** |
+| **Open** | | **28 (31%)** | | **⬜ / 🔄** |
 
 ---
 

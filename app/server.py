@@ -1,6 +1,7 @@
 """FastAPI server for Faster Whisper - OpenAI compatible API with streaming support."""
 
 import os
+import re
 import sys
 import time
 import uuid
@@ -67,6 +68,31 @@ IDLE_TIMEOUT = int(os.environ.get("IDLE_TIMEOUT", 300))
 KEEP_AUDIO = os.environ.get("KEEP_AUDIO", "").lower() in ("1", "true", "yes")
 
 RUNS_DIR = Path(__file__).parent.parent / "runs"
+
+# run_id, chunk_type and the upload filename's suffix are all client-controlled and are used
+# to build filesystem paths under RUNS_DIR. Reject/normalize anything unsafe before it ever
+# reaches a Path() join, rather than trying to catch traversal after the fact.
+_SAFE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{1,128}$")
+_ALLOWED_CHUNK_TYPES = {"main", "bridge", "single"}
+_ALLOWED_AUDIO_SUFFIXES = {".wav", ".mp3", ".m4a", ".flac", ".ogg", ".webm", ".mp4", ".mpga", ".mpeg"}
+
+
+def _sanitize_run_id(run_id: Optional[str], fallback: str) -> str:
+    """Falls back to the server-generated request_id when the client-supplied run_id is
+    missing or is not a safe filesystem-path component (prevents path traversal / writes
+    outside RUNS_DIR via e.g. run_id='../../evil')."""
+    if run_id and _SAFE_ID_RE.match(run_id):
+        return run_id
+    return fallback
+
+
+def _sanitize_chunk_type(chunk_type: Optional[str]) -> str:
+    return chunk_type if chunk_type in _ALLOWED_CHUNK_TYPES else "single"
+
+
+def _sanitize_audio_suffix(filename: str) -> str:
+    suffix = Path(filename or "").suffix.lower()
+    return suffix if suffix in _ALLOWED_AUDIO_SUFFIXES else ".bin"
 
 # Available models
 AVAILABLE_MODELS = [
@@ -361,7 +387,8 @@ async def openai_transcribe(
     start_time = time.time()
     effective_prompt, prompt_source = resolve_prompt(prompt, language)
     tmp_path = f"/tmp/whisper_{uuid.uuid4()}{Path(file.filename).suffix}"
-    effective_run_id = run_id or request_id
+    effective_run_id = _sanitize_run_id(run_id, request_id)
+    effective_chunk_type = _sanitize_chunk_type(chunk_type)
 
     transcription_log_manager.log_request(request_id, file.filename, model)
     logger.info(f"[{request_id}] Prompt source: {prompt_source}")
@@ -392,7 +419,9 @@ async def openai_transcribe(
             # stored on TranscriptionOptions but never read anywhere in the batched decode path
             # (forward()/generate_segment_batched()); they do not reject or retry segments there.
             # They are still passed through (at library-default values) for forward compatibility
-            # and because the frontend still displays them, but must not be assumed to filter output.
+            # with the non-batched path and any future faster-whisper version that reads them in
+            # batched mode; the frontend does not send or display them, and they currently have
+            # no filtering effect on batched output.
             segments, info = pipeline.transcribe(
                 tmp_path, language=language or None, initial_prompt=effective_prompt,
                 beam_size=beam_size, vad_filter=vad_filter, word_timestamps=word_timestamps,
@@ -437,7 +466,7 @@ async def openai_transcribe(
         chunk_record = {
             "request_id": request_id,
             "index": chunk_index,
-            "type": chunk_type or "single",
+            "type": effective_chunk_type,
             "start_ms": chunk_start_ms,
             "end_ms": chunk_end_ms,
             "filename": file.filename,
@@ -455,14 +484,24 @@ async def openai_transcribe(
                 for s in segments
             ],
         }
-        if KEEP_AUDIO:
-            audio_dir = RUNS_DIR / effective_run_id / "audio"
-            audio_dir.mkdir(parents=True, exist_ok=True)
-            kept_path = audio_dir / f"{chunk_type or 'single'}_{chunk_index if chunk_index is not None else request_id}{Path(file.filename).suffix}"
-            with open(kept_path, "wb") as f:
-                f.write(content)
-            chunk_record["kept_audio_path"] = str(kept_path)
-        await write_run_chunk_artifact(effective_run_id, chunk_record, effective_config)
+        # Only persist a run artifact for requests that are actually part of a tracked run
+        # (the UI's chunked flow, which always sends run_id/chunk_type/chunk_index) — a bare
+        # API call with none of that metadata gets no artifact, no retention concerns for it.
+        is_tracked_run = run_id is not None or chunk_type is not None or chunk_index is not None
+        if is_tracked_run:
+            try:
+                if KEEP_AUDIO:
+                    audio_dir = RUNS_DIR / effective_run_id / "audio"
+                    audio_dir.mkdir(parents=True, exist_ok=True)
+                    chunk_label = chunk_index if chunk_index is not None else request_id
+                    kept_path = audio_dir / f"{effective_chunk_type}_{chunk_label}{_sanitize_audio_suffix(file.filename)}"
+                    with open(kept_path, "wb") as f:
+                        f.write(content)
+                    chunk_record["kept_audio_path"] = str(kept_path)
+                await write_run_chunk_artifact(effective_run_id, chunk_record, effective_config)
+            except Exception:
+                # Observability must never fail an otherwise-successful transcription.
+                logger.exception(f"[{request_id}] Failed to persist run artifact/audio (run_id={effective_run_id})")
 
         if response_format == "text":
             return JSONResponse({"text": " ".join(s.text.strip() for s in segments)})

@@ -1,0 +1,105 @@
+/*
+ * Input region: record, upload, resume. Composes shared sf- components; only
+ * layout and the few input-specific pieces (level meter, file card) live here.
+ * Tokens only.
+ */
+
+#region-input .sf-btn { flex: none; }
+
+.in-card { display: grid; gap: var(--sp-5); }
+.in-notices, .in-alerts { display: grid; gap: var(--sp-3); }
+.in-notices:not(:empty) { margin-bottom: var(--sp-4); }
+.in-alerts:empty { display: none; }
+.in-detail { color: var(--muted); font-size: var(--fs-sm); overflow-wrap: anywhere; }
+
+.in-title { font-size: var(--fs-lg); font-weight: var(--fw-black); letter-spacing: -0.01em; }
+.in-title--sub { font-size: var(--fs-ui); font-weight: var(--fw-bold); }
+
+.in-hint { color: var(--muted); font-size: var(--fs-sm); margin: var(--sp-2) 0 0; }
+.in-note { display: flex; gap: var(--sp-2); align-items: flex-start; color: var(--muted); font-size: var(--fs-sm); margin: 0; }
+.in-note:empty { display: none; }
+.in-note[data-kind="failed"] { color: var(--warning); font-weight: var(--fw-medium); }
+
+.in-bigbtn { min-height: 3.5rem; font-size: var(--fs-lg); }
+
+/* Empty state: two equal ways in. */
+.in-entry {
+  display: grid;
+  gap: var(--sp-4);
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  align-items: stretch;
+}
+.in-entry__rec { display: flex; flex-direction: column; justify-content: center; }
+.in-drop { min-height: 8.5rem; align-content: center; }
+.in-drop:hover .in-drop__title { text-decoration: underline; text-underline-offset: 0.2em; }
+.in-drop__icon { width: 1.75rem; height: 1.75rem; color: var(--fg); }
+.in-drop__title { color: var(--fg); font-weight: var(--fw-bold); }
+.in-drop__hint { font-size: var(--fs-sm); max-width: 30ch; }
+.sf-dropzone[data-state="invalid"] .in-drop__title,
+.sf-dropzone[data-state="invalid"] .in-drop__icon { color: var(--danger); }
+
+/* Recording. --rec appears only through .sf-recdot. */
+.in-rec { display: grid; gap: var(--sp-4); }
+.in-rec__head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap; }
+.in-timer { font-size: 2.5rem; font-weight: var(--fw-medium); line-height: 1; letter-spacing: 0.02em; }
+.in-meter[hidden] { display: none; }
+.in-meter__track {
+  height: 0.875rem;
+  border: 1px solid var(--muted);
+  border-radius: var(--radius);
+  background: var(--panel);
+  overflow: hidden;
+}
+.in-meter__track[hidden] { display: none; }
+.in-meter__fill {
+  height: 100%;
+  width: 100%;
+  background: var(--accent-text);
+  transform-origin: left center;
+  transform: scaleX(0);
+}
+
+/* File card and review. */
+.in-review { display: grid; gap: var(--sp-4); }
+.in-file {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+  padding: var(--sp-3) var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  min-width: 0;
+}
+.in-file__icon { width: 2rem; height: 2rem; color: var(--fg); }
+.in-file__text { min-width: 0; display: grid; gap: var(--sp-1); }
+.in-file__name { font-weight: var(--fw-bold); overflow-wrap: anywhere; }
+.in-file__meta { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); color: var(--muted); font-size: var(--fs-sm); }
+.in-file__meta:empty { display: none; }
+.in-actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.in-actions .sf-btn--primary { flex: 1 1 10rem; }
+
+/* Upload sequence: reading (real bytes) then decoding (indeterminate). */
+.in-seq { display: grid; gap: var(--sp-2); }
+.in-seq__label { font-weight: var(--fw-bold); margin: 0; }
+.in-seq .in-hint { margin: 0; }
+
+/* A run owns the audio. */
+.in-running {
+  display: grid;
+  gap: var(--sp-1);
+  padding: var(--sp-4);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+}
+.in-running__title { font-weight: var(--fw-bold); margin: 0; overflow-wrap: anywhere; }
+.in-running .in-hint { margin: 0; }
+
+/* Settings stay here until the status milestone moves them into a dialog. */
+.in-settings { display: grid; gap: var(--sp-4); border-top: 1px solid var(--line); padding-top: var(--sp-5); }
+.in-settings__row { display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
+
+@media (forced-colors: active) {
+  .in-meter__fill { background: Highlight; }
+}

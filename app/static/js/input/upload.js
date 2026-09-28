@@ -1,180 +1,291 @@
-        function validateAudioFile(file) {
-            if (!file.type.startsWith('audio/')) {
-                return { valid: false, error: 'El archivo debe ser de audio' };
-            }
-            if (file.size > MAX_FILE_SIZE) {
-                const maxMb = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
-                return { valid: false, error: `El archivo excede el tamaño máximo de ${maxMb} MB` };
-            }
-            return { valid: true };
-        }
+/*
+ * Upload: drop zone, validation BEFORE anything runs, file card, and one honest
+ * sequence once the user confirms: reading bytes (real FileReader progress), then
+ * an indeterminate "Decodificando audio" (decodeAudioData has no progress API),
+ * then the file is handed to the engine (transcribeUploadedChunks, unchanged).
+ *
+ * The only rules enforced are the ones the app really has: an audio/* type,
+ * MAX_FILE_SIZE, a non-empty file and audio the browser can decode.
+ */
+const DURATION_METADATA_TIMEOUT_MS = 8000;
+let selectionToken = 0;
 
-        function calculateAudioDuration(file) {
-            return new Promise((resolve, reject) => {
-                const audio = new Audio();
-                audio.onloadedmetadata = () => {
-                    resolve(audio.duration);
-                };
-                audio.onerror = () => {
-                    reject(new Error('No se pudo cargar los metadatos del audio'));
-                };
-                audio.src = URL.createObjectURL(file);
-            });
-        }
+class UndecodableAudioError extends Error {}
 
-        async function uploadFile() {
-            const file = document.getElementById('fileInput').files[0];
-            if (!file) return;
+/* ---------- Validation (type, size, empty) ---------- */
+function validateAudioFile(file) {
+  const name = file.name || 'El archivo';
+  if (file.size === 0) {
+    return {
+      valid: false, code: 'empty',
+      title: `«${name}» está vacío`,
+      message: 'No tiene contenido (0 bytes), así que no hay audio que transcribir. Comprueba que la grabación se guardó bien y elige el archivo otra vez.',
+      error: 'El archivo está vacío',
+    };
+  }
+  if (!file.type.startsWith('audio/')) {
+    return {
+      valid: false, code: 'type',
+      title: `«${name}» no es un archivo de audio`,
+      message: 'Solo se pueden transcribir archivos de audio. Elige un archivo de audio.',
+      detail: `Tipo detectado: ${file.type || 'desconocido'}`,
+      error: 'El archivo debe ser de audio',
+    };
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    const maxMb = (MAX_FILE_SIZE / (1024 * 1024)).toFixed(0);
+    return {
+      valid: false, code: 'size',
+      title: `«${name}» pesa demasiado`,
+      message: `Ocupa ${formatBytesEs(file.size)} y el máximo es ${maxMb} MB. Prueba con una grabación más corta o guárdala en un formato de audio más comprimido.`,
+      error: `El archivo excede el tamaño máximo de ${maxMb} MB`,
+    };
+  }
+  return { valid: true };
+}
 
-            const validation = validateAudioFile(file);
-            if (!validation.valid) {
-                showStatus(validation.error, 'error');
-                document.getElementById('fileInput').value = '';
-                return;
-            }
+function undecodableInfo(file, err) {
+  return {
+    title: `El navegador no puede leer el audio de «${file.name}»`,
+    message: 'El archivo puede estar dañado o tener un formato que este navegador no reconoce. Prueba a convertirlo a M4A o WAV y súbelo otra vez.',
+    detail: err && err.message ? `Detalle técnico: ${err.message}` : '',
+  };
+}
 
-            pendingFile = file;
-            document.getElementById('metadataFileName').textContent = file.name;
-            document.getElementById('metadataFileSize').textContent = formatFileSize(file.size);
+/** Rejected before anything runs: say which file, which rule, what to do. */
+function rejectFile(info) {
+  pendingFile = null;
+  document.getElementById('fileInput').value = '';
+  inputStage.set('idle');
+  showInputAlert({
+    kind: 'danger',
+    title: info.title,
+    message: info.message,
+    detail: info.detail,
+    actions: [{ label: 'Elegir otro archivo', primary: true, onClick: () => document.getElementById('fileInput').click() }],
+  });
+  document.getElementById('uploadArea').dataset.state = 'invalid';
+  document.getElementById('uploadArea').focus();
+}
 
-            try {
-                const duration = await calculateAudioDuration(file);
-                const processingTime = Math.ceil(duration * 2);
-                const minutes = Math.floor(processingTime / 60);
-                const seconds = processingTime % 60;
-                const timeStr = minutes > 0 ? `${minutes} min ${seconds} seg` : `${seconds} seg`;
-                document.getElementById('metadataProcessingTime').textContent = timeStr;
-            } catch (err) {
-                showStatus('No se pudo determinar la duración del audio', 'error');
-                document.getElementById('fileInput').value = '';
-                pendingFile = null;
-                return;
-            }
+/* ---------- Duration from metadata (a browser-reported value, shown only if finite) ---------- */
+function calculateAudioDuration(file) {
+  return new Promise((resolve, reject) => {
+    const audio = new Audio();
+    const url = URL.createObjectURL(file);
+    const timer = setTimeout(() => { URL.revokeObjectURL(url); resolve(NaN); }, DURATION_METADATA_TIMEOUT_MS);
+    audio.onloadedmetadata = () => { clearTimeout(timer); URL.revokeObjectURL(url); resolve(audio.duration); };
+    audio.onerror = () => { clearTimeout(timer); URL.revokeObjectURL(url); reject(new Error('No se pudo cargar los metadatos del audio')); };
+    audio.src = url;
+  });
+}
 
-            document.getElementById('uploadMetadata').classList.add('show');
-            document.getElementById('uploadButtonGroup').classList.add('show');
-            document.getElementById('recordingControls').style.display = 'none';
-            document.getElementById('uploadActionButton').style.display = 'block';
-        }
+function setCardDuration(seconds) {
+  const wrap = document.getElementById('metadataDurationWrap');
+  const ok = Number.isFinite(seconds) && seconds > 0;
+  wrap.hidden = !ok;
+  document.getElementById('metadataDuration').textContent = ok ? formatClockSeconds(Math.round(seconds)) : '';
+}
 
-        function cancelFileSelection() {
-            pendingFile = null;
-            document.getElementById('fileInput').value = '';
-            document.getElementById('uploadMetadata').classList.remove('show');
-            document.getElementById('uploadButtonGroup').classList.remove('show');
-            document.getElementById('uploadProgress').classList.remove('show');
-            document.getElementById('recordingControls').style.display = 'flex';
-            document.getElementById('uploadActionButton').style.display = 'none';
-        }
+/* ---------- Selection ---------- */
+async function uploadFile(extraNote) {
+  const input = document.getElementById('fileInput');
+  const file = input.files[0];
+  if (!file) return;
+  const token = ++selectionToken;
+  clearInputAlerts();
 
-        function handleDragOver(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            document.getElementById('uploadArea').classList.add('dragover');
-        }
+  const validation = validateAudioFile(file);
+  if (!validation.valid) { rejectFile(validation); return; }
 
-        function handleDragLeave(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            document.getElementById('uploadArea').classList.remove('dragover');
-        }
+  let duration;
+  try {
+    duration = await calculateAudioDuration(file);
+  } catch (err) {
+    if (token === selectionToken) rejectFile(undecodableInfo(file, err));
+    return;
+  }
+  if (token !== selectionToken) return;
 
-        function handleDrop(event) {
-            event.preventDefault();
-            event.stopPropagation();
-            document.getElementById('uploadArea').classList.remove('dragover');
+  pendingFile = file;
+  document.getElementById('metadataFileName').textContent = file.name;
+  document.getElementById('metadataFileName').title = file.name;
+  document.getElementById('metadataFileSize').textContent = formatBytesEs(file.size);
+  setCardDuration(duration);
+  if (typeof extraNote === 'string' && extraNote) {
+    showInputAlert({ kind: 'warning', role: 'status', title: extraNote });
+  }
+  inputStage.set('file', 'confirmBtn');
+}
 
-            const files = event.dataTransfer.files;
-            if (files.length === 0) return;
+function cancelFileSelection() {
+  selectionToken++;
+  pendingFile = null;
+  document.getElementById('fileInput').value = '';
+  clearInputAlerts();
+  inputStage.set('idle', 'uploadArea');
+}
 
-            const file = files[0];
-            document.getElementById('fileInput').files = files;
-            uploadFile();
-        }
+/* ---------- Drop zone ---------- */
+const DROP_TITLE_DEFAULT = 'Subir archivo';
+function setDropState(state) {
+  const zone = document.getElementById('uploadArea');
+  const title = document.getElementById('dropTitle');
+  if (state) zone.dataset.state = state; else zone.removeAttribute('data-state');
+  title.textContent = state === 'invalid' ? 'Este archivo no es de audio' : DROP_TITLE_DEFAULT;
+}
 
-        async function confirmUpload() {
-            if (!pendingFile || isUploading) return;
+function dragHasOnlyNonAudio(event) {
+  const items = [...(event.dataTransfer?.items || [])].filter((i) => i.kind === 'file');
+  return items.length > 0 && items.every((i) => i.type && !i.type.startsWith('audio/'));
+}
 
-            isUploading = true;
-            document.getElementById('uploadButtonGroup').classList.remove('show');
-            document.getElementById('uploadProgress').classList.add('show');
-            document.getElementById('uploadMetadata').classList.remove('show');
+function handleDragOver(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  setDropState(dragHasOnlyNonAudio(event) ? 'invalid' : 'dragover');
+}
 
-            document.getElementById('transcript').textContent = '';
-            document.getElementById('transcript').classList.remove('empty');
-            document.getElementById('copyBtn').style.display = 'none';
-            document.getElementById('exportBtn').style.display = 'none';
+function handleDragLeave(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  const zone = document.getElementById('uploadArea');
+  if (event.relatedTarget && zone.contains(event.relatedTarget)) return;
+  setDropState(null);
+}
 
-            try {
-                await uploadFileWithProgress(pendingFile);
-            } catch (err) {
-                if (err.message !== 'Upload cancelled') {
-                    showStatus(`Carga fallida: ${err.message}`, 'error');
-                }
-            } finally {
-                isUploading = false;
-                if (uploadTimeoutId) clearTimeout(uploadTimeoutId);
-                document.getElementById('uploadProgress').classList.remove('show');
-                pendingFile = null;
-                document.getElementById('fileInput').value = '';
-                document.getElementById('recordingControls').style.display = 'flex';
-                document.getElementById('uploadActionButton').style.display = 'none';
-            }
-        }
+function handleDrop(event) {
+  event.preventDefault();
+  event.stopPropagation();
+  setDropState(null);
+  const files = event.dataTransfer.files;
+  if (files.length === 0) return;
+  document.getElementById('fileInput').files = files;
+  const note = files.length > 1
+    ? `Has soltado ${files.length} archivos. Solo se puede transcribir uno cada vez: se ha elegido «${files[0].name}».`
+    : '';
+  uploadFile(note);
+}
 
-        function uploadFileWithProgress(file) {
-            return new Promise(async (resolve, reject) => {
-                uploadStartTime = Date.now();
-                let lastUpdateTime = uploadStartTime;
+/* ---------- Confirm: reading, decoding, hand-over ---------- */
+function setSequence({ label, valueNow, detail, indeterminate }) {
+  document.getElementById('seqLabel').textContent = label;
+  const track = document.getElementById('seqTrack');
+  document.getElementById('seqBar').classList.toggle('sf-progress--indeterminate', !!indeterminate);
+  if (indeterminate) {
+    track.removeAttribute('aria-valuenow');
+    document.getElementById('seqFill').style.width = '';
+  } else {
+    track.setAttribute('aria-valuenow', String(valueNow));
+    document.getElementById('seqFill').style.width = `${valueNow}%`;
+  }
+  document.getElementById('seqDetail').textContent = detail || '';
+}
 
-                try {
-                    const totalBytes = file.size;
+function readFileWithProgress(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onprogress = (e) => {
+      const pct = file.size > 0 ? Math.min(100, Math.round((e.loaded / file.size) * 100)) : 0;
+      setSequence({
+        label: 'Leyendo el archivo',
+        valueNow: pct,
+        detail: `${formatBytesEs(e.loaded)} de ${formatBytesEs(file.size)} (${pct} %)`,
+      });
+    };
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error('No se pudo leer el archivo'));
+    reader.readAsArrayBuffer(file);
+  });
+}
 
-                    // Real byte-read progress via FileReader (not simulated).
-                    document.getElementById('uploadProgressFill').classList.remove('in-progress');
-                    const arrayBuffer = await new Promise((res, rej) => {
-                        const reader = new FileReader();
-                        reader.onprogress = (e) => {
-                            const loaded = e.lengthComputable ? e.loaded : 0;
-                            const percent = totalBytes > 0 ? Math.round((loaded / totalBytes) * 100) : 0;
-                            const loadedMb = (loaded / (1024 * 1024)).toFixed(1);
-                            const totalMb = (totalBytes / (1024 * 1024)).toFixed(1);
-                            document.getElementById('uploadProgressLabel').textContent = `Leyendo: ${loadedMb} MB / ${totalMb} MB`;
-                            document.getElementById('uploadProgressPercent').textContent = `${percent}%`;
-                            document.getElementById('uploadProgressFill').style.width = percent + '%';
-                            document.getElementById('uploadEta').textContent = '';
-                        };
-                        reader.onload = () => res(reader.result);
-                        reader.onerror = () => rej(reader.error || new Error('No se pudo leer el archivo'));
-                        reader.readAsArrayBuffer(file);
-                    });
+async function decodeUploadedAudio(arrayBuffer) {
+  const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  try {
+    return await audioContext.decodeAudioData(arrayBuffer);
+  } catch (err) {
+    throw new UndecodableAudioError(err && err.message ? err.message : 'decodeAudioData falló');
+  } finally {
+    audioContext.close().catch(() => {});
+  }
+}
 
-                    // Decoding has no browser progress API — show an honest
-                    // indeterminate state instead of fabricating a percentage.
-                    document.getElementById('uploadProgressLabel').textContent = 'Decodificando audio...';
-                    document.getElementById('uploadProgressPercent').textContent = '';
-                    document.getElementById('uploadProgressFill').style.width = '100%';
-                    document.getElementById('uploadProgressFill').classList.add('in-progress');
+async function confirmUpload() {
+  if (!pendingFile || isUploading) return;
+  const file = pendingFile;
+  isUploading = true;
+  pendingFileName = file.name;
+  clearInputAlerts();
 
-                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+  document.getElementById('transcript').textContent = '';
+  document.getElementById('transcript').classList.remove('empty');
+  document.getElementById('copyBtn').style.display = 'none';
+  document.getElementById('exportBtn').style.display = 'none';
 
-                    document.getElementById('uploadProgressFill').classList.remove('in-progress');
-                    document.getElementById('uploadProgressLabel').textContent = 'Listo';
-                    document.getElementById('uploadProgressPercent').textContent = '100%';
+  let rejected = false;
+  try {
+    await uploadFileWithProgress(file);
+  } catch (err) {
+    if (err instanceof UndecodableAudioError) {
+      rejected = true;
+      rejectFile(undecodableInfo(file, err));
+    } else if (err.message !== 'Upload cancelled') {
+      showInputAlert({
+        kind: 'danger',
+        title: `No se pudo cargar «${file.name}»`,
+        message: 'Comprueba que el archivo sigue en su sitio y prueba a elegirlo otra vez.',
+        detail: err.message,
+      });
+    }
+  } finally {
+    isUploading = false;
+    if (!rejected) inputReset();
+  }
+}
 
-                    const totalSeconds = Math.ceil(audioBuffer.duration);
-                    const totalMinutes = (totalSeconds / 60).toFixed(1);
-                    const numMainChunks = Math.ceil(totalSeconds / (5 * 60));
+async function uploadFileWithProgress(file) {
+  uploadStartTime = Date.now();
+  inputStage.set('reading');
+  setSequence({ label: 'Leyendo el archivo', valueNow: 0, detail: `${formatBytesEs(0)} de ${formatBytesEs(file.size)} (0 %)` });
+  const arrayBuffer = await readFileWithProgress(file);
 
-                    console.log(`File duration: ${totalMinutes} min → ${numMainChunks} main chunks`);
-                    showStatus(`Archivo cargado: ${totalMinutes} min → procesando...`, 'success');
-                    await transcribeUploadedChunks(audioBuffer, totalSeconds, numMainChunks, file);
-                    resolve();
-                } catch (err) {
-                    reject(err);
-                } finally {
-                    if (uploadTimeoutId) clearTimeout(uploadTimeoutId);
-                }
-            });
-        }
+  // decodeAudioData has no progress API: say so instead of inventing a percentage.
+  inputStage.set('decoding');
+  setSequence({ label: 'Decodificando audio', indeterminate: true, detail: 'El navegador no muestra el avance de este paso.' });
+  const audioBuffer = await decodeUploadedAudio(arrayBuffer);
+  setCardDuration(audioBuffer.duration);
+
+  const totalSeconds = Math.ceil(audioBuffer.duration);
+  const totalMinutes = (totalSeconds / 60).toFixed(1);
+  const numMainChunks = Math.ceil(totalSeconds / (5 * 60));
+  console.log(`File duration: ${totalMinutes} min, ${numMainChunks} main chunks`);
+  await transcribeUploadedChunks(audioBuffer, totalSeconds, numMainChunks, file);
+}
+
+/* ---------- Wiring ---------- */
+(() => {
+  const zone = document.getElementById('uploadArea');
+  const input = document.getElementById('fileInput');
+  document.getElementById('maxSizeLabel').textContent = `${Math.round(MAX_FILE_SIZE / (1024 * 1024))} MB`;
+
+  zone.addEventListener('click', () => input.click());
+  zone.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); }
+  });
+  zone.addEventListener('dragenter', handleDragOver);
+  zone.addEventListener('dragover', handleDragOver);
+  zone.addEventListener('dragleave', handleDragLeave);
+  zone.addEventListener('drop', handleDrop);
+  input.addEventListener('change', () => uploadFile());
+
+  // A file dropped outside the zone would make the browser navigate away and
+  // lose a recording in progress. Only the zone handles drops.
+  for (const type of ['dragover', 'drop']) {
+    window.addEventListener(type, (e) => {
+      if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault();
+    });
+  }
+
+  document.getElementById('confirmBtn').addEventListener('click', confirmUpload);
+  document.getElementById('removeFileBtn').addEventListener('click', cancelFileSelection);
+})();

@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="/static/css/components.css">
     <link rel="stylesheet" href="/static/css/legacy.css">
     <link rel="stylesheet" href="/static/css/shell.css">
+    <link rel="stylesheet" href="/static/css/input.css">
 </head>
 <body>
     <a class="sf-skip" href="#main">Saltar al contenido</a>
@@ -58,111 +59,151 @@
         <div class="shell-grid">
             <!-- region: input (owner: input team). Settings (moves to a dialog in the status team's milestone), record, upload, resume. -->
             <section id="region-input" class="shell-region" aria-label="Grabar o subir una clase">
-        <div id="resumeBanner" class="card" style="display:none; border: 1px solid var(--accent-edge);">
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
-                <div id="resumeBannerLabel" style="font-size:14px;"></div>
-                <div style="display:flex; gap:8px;">
-                    <button id="resumeBtn" onclick="handleResumeClick()" style="padding: 8px 14px; background: var(--foco); color: var(--sala); border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">Continuar</button>
-                    <button id="discardResumeBtn" onclick="handleDiscardClick()" style="padding: 8px 14px; background: transparent; color: var(--fg); border: 1px solid var(--line); border-radius: 4px; cursor: pointer;">Descartar</button>
-                </div>
-            </div>
-        </div>
-            <div class="card">
-                <div id="statusBox" class="status-box"></div>
+                <div id="inputNotices" class="in-notices"></div>
+                <div class="sf-card in-card">
+                    <div id="statusBox" class="status-box"></div>
+                    <div id="inputAlerts" class="in-alerts"></div>
 
-                <div class="section">
-                    <div class="section-title">Ajustes</div>
-                    <div class="control-row">
-                        <select id="modelSelect" aria-label="Modelo">
-                            <option value="tiny">Tiny (fastest)</option>
-                            <option value="base">Base (balanced)</option>
-                            <option value="small" selected>Small (accurate)</option>
-                            <option value="medium">Medium (more accurate)</option>
-                            <option value="large-v3">Large (best accuracy)</option>
-                            <option value="large-v3-turbo">Large v3 Turbo (strongest, needs model download)</option>
-                        </select>
-                        <select id="languageSelect" aria-label="Idioma de la clase">
-                            <option value="en">English</option>
-                            <option value="es" selected>Spanish</option>
-                            <option value="fr">French</option>
-                            <option value="de">German</option>
-                            <option value="it">Italian</option>
-                            <option value="pt">Portuguese</option>
-                            <option value="nl">Dutch</option>
-                            <option value="pl">Polish</option>
-                            <option value="ja">Japanese</option>
-                            <option value="zh">Chinese</option>
-                            <option value="ko">Korean</option>
-                            <option value="ru">Russian</option>
-                            <option value="ar">Arabic</option>
-                        </select>
-                    </div>
-                    <div class="control-row" style="margin-top: 12px;">
-                        <input type="text" id="contextInput" aria-label="Contexto de la clase" placeholder="Opcional: ¿de qué es la clase? (p. ej., Historia Contemporánea)" style="padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; color: var(--fg); font-size: 14px; width: 100%; font-family: inherit;">
-                    </div>
-                </div>
+                    <h2 class="in-title" id="inTitle">Tu clase</h2>
 
-                <div class="section" style="padding: 12px 0;">
-                    <div class="section-title">Grabar</div>
-                    <div class="timer" id="timer">00:00</div>
-                    <span class="rec-dot"></span>
-                    <div id="recordingControls" class="controls" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 8px;">
-                        <button id="recordBtn" class="btn-start" onclick="startRecording()" title="Grabar" style="display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 6px; font-size: 0; min-height: 32px;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
-                        </button>
-                        <button id="stopBtn" class="btn-stop" onclick="stopRecording()" disabled title="Parar" style="display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 6px; font-size: 0; min-height: 32px;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="2" y="2" width="20" height="20" rx="2.18"/></svg>
-                        </button>
-                        <button id="clearBtn" class="btn-secondary" onclick="clearAll()" title="Borrar" style="display: flex; align-items: center; justify-content: center; padding: 6px; border-radius: 6px; font-size: 0; min-height: 32px;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-                        </button>
+                    <!-- Empty: two equal ways in. -->
+                    <div id="panelEntry" class="in-entry">
+                        <div class="in-entry__rec">
+                            <button type="button" id="recordBtn" class="sf-btn sf-btn--primary sf-btn--block in-bigbtn" aria-describedby="micHint">
+                                <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-mic"></use></svg>
+                                Grabar
+                            </button>
+                            <p id="micHint" class="in-hint">El navegador te pedirá permiso para usar el micrófono.</p>
+                        </div>
+                        <div id="uploadArea" class="sf-dropzone in-drop" role="button" tabindex="0" aria-labelledby="dropTitle" aria-describedby="dropHint">
+                            <svg class="sf-icon in-drop__icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-upload"></use></svg>
+                            <span id="dropTitle" class="in-drop__title">Subir archivo</span>
+                            <span id="dropHint" class="in-drop__hint">Arrastra un audio aquí o pulsa para elegirlo. Máximo <span id="maxSizeLabel">500 MB</span>.</span>
+                        </div>
                     </div>
-                    <div id="uploadActionButton" style="display: none; margin-top: 8px;">
-                        <button class="btn-upload" onclick="confirmUpload()" style="display: flex; align-items: center; justify-content: center; gap: 4px; width: 100%; padding: 8px 4px; font-size: 12px;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                            <span>Subir</span>
-                        </button>
-                    </div>
-                </div>
+                    <input type="file" id="fileInput" class="sf-sr-only" accept="audio/*" tabindex="-1" aria-hidden="true">
 
-                <div class="section">
-                    <div class="section-title">Subir archivo</div>
-                    <div id="uploadMetadata" class="upload-metadata">
-                        <div class="metadata-item">
-                            <span class="metadata-label">Archivo:</span>
-                            <span id="metadataFileName"></span>
+                    <!-- Recording. -->
+                    <div id="panelRecording" class="in-rec" hidden>
+                        <div class="in-rec__head">
+                            <span><span class="sf-recdot" data-live="true" aria-hidden="true"></span><strong>Grabando</strong></span>
+                            <span id="timer" class="in-timer sf-mono" role="timer" aria-label="Tiempo grabado">00:00</span>
                         </div>
-                        <div class="metadata-item">
-                            <span class="metadata-label">Tamaño:</span>
-                            <span id="metadataFileSize"></span>
+                        <div class="in-meter">
+                            <div id="levelMeter" class="in-meter__track" role="meter" aria-label="Nivel del micrófono" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                                <div id="levelFill" class="in-meter__fill"></div>
+                            </div>
                         </div>
-                        <div class="metadata-item">
-                            <span class="metadata-label">Tiempo estimado:</span>
-                            <span id="metadataProcessingTime"></span>
-                        </div>
-                    </div>
-                    <div id="uploadProgress" class="upload-progress">
-                        <div class="progress-text-upload">
-                            <span id="uploadProgressLabel">Subiendo...</span>
-                            <span id="uploadProgressPercent">0%</span>
-                        </div>
-                        <div class="progress-bar-upload">
-                            <div id="uploadProgressFill" class="progress-fill-upload"></div>
-                        </div>
-                        <div class="upload-eta" id="uploadEta"></div>
-                    </div>
-                    <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
-                        <input type="file" id="fileInput" accept="audio/*" onchange="uploadFile()">
-                        <div class="upload-text">Sube la grabación de una clase</div>
-                        <div class="upload-text" style="font-size: 12px; margin-top: 8px;">Audio de cualquier duración</div>
-                    </div>
-                    <div id="uploadButtonGroup" class="upload-button-group">
-                        <button class="btn-cancel-upload" onclick="cancelFileSelection()" title="Cancelar" aria-label="Cancelar selección de archivo" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0;">
-                            <svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-x"></use></svg>
+                        <p id="levelHint" class="in-note" role="status"></p>
+                        <p id="safeNote" class="in-note" role="status"></p>
+                        <button type="button" id="stopBtn" class="sf-btn sf-btn--primary sf-btn--block in-bigbtn">
+                            <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-square"></use></svg>
+                            Parar
                         </button>
                     </div>
+
+                    <!-- Recording finished, not yet transcribed. -->
+                    <div id="panelReview" class="in-review" hidden>
+                        <div class="in-file">
+                            <svg class="sf-icon in-file__icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-file-audio"></use></svg>
+                            <div class="in-file__text">
+                                <div class="in-file__name" id="reviewTitle">Grabación</div>
+                                <div class="in-file__meta">
+                                    <span>Duración <span class="sf-mono" id="reviewDuration"></span></span>
+                                    <span id="reviewSize"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="in-actions">
+                            <button type="button" id="reviewTranscribeBtn" class="sf-btn sf-btn--primary">Transcribir</button>
+                            <button type="button" id="reviewDiscardBtn" class="sf-btn">
+                                <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-trash-2"></use></svg>
+                                Descartar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Chosen file. -->
+                    <div id="panelFile" class="in-review" hidden>
+                        <div class="in-file">
+                            <svg class="sf-icon in-file__icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-file-audio"></use></svg>
+                            <div class="in-file__text">
+                                <div class="in-file__name" id="metadataFileName"></div>
+                                <div class="in-file__meta">
+                                    <span id="metadataFileSize"></span>
+                                    <span id="metadataDurationWrap" hidden>Duración <span class="sf-mono" id="metadataDuration"></span></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="fileActions" class="in-actions">
+                            <button type="button" id="confirmBtn" class="sf-btn sf-btn--primary">Transcribir</button>
+                            <button type="button" id="removeFileBtn" class="sf-btn">
+                                <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-x"></use></svg>
+                                Quitar
+                            </button>
+                        </div>
+                        <div id="fileSeq" class="in-seq" hidden>
+                            <p id="seqLabel" class="in-seq__label" role="status"></p>
+                            <div class="sf-progress" id="seqBar">
+                                <div class="sf-progress__track" id="seqTrack" role="progressbar" aria-labelledby="seqLabel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                                    <div class="sf-progress__fill" id="seqFill"></div>
+                                </div>
+                            </div>
+                            <p id="seqDetail" class="in-hint"></p>
+                        </div>
+                    </div>
+
+                    <!-- A run owns the audio: input is locked until it ends. -->
+                    <div id="panelRunning" class="in-running" hidden>
+                        <p id="runningTitle" class="in-running__title" role="status"></p>
+                        <p class="in-hint" id="runningHint"></p>
+                    </div>
+
+                    <div class="in-settings">
+                        <h2 class="in-title in-title--sub">Ajustes</h2>
+                        <div class="in-settings__row">
+                            <div class="sf-field">
+                                <label class="sf-field__label" for="modelSelect">Modelo</label>
+                                <div class="sf-select-wrap">
+                                    <select id="modelSelect" class="sf-select">
+                                        <option value="tiny">Tiny (fastest)</option>
+                                        <option value="base">Base (balanced)</option>
+                                        <option value="small" selected>Small (accurate)</option>
+                                        <option value="medium">Medium (more accurate)</option>
+                                        <option value="large-v3">Large (best accuracy)</option>
+                                        <option value="large-v3-turbo">Large v3 Turbo (strongest, needs model download)</option>
+                                    </select>
+                                    <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-chevron-down"></use></svg>
+                                </div>
+                            </div>
+                            <div class="sf-field">
+                                <label class="sf-field__label" for="languageSelect">Idioma de la clase</label>
+                                <div class="sf-select-wrap">
+                                    <select id="languageSelect" class="sf-select">
+                                        <option value="en">English</option>
+                                        <option value="es" selected>Spanish</option>
+                                        <option value="fr">French</option>
+                                        <option value="de">German</option>
+                                        <option value="it">Italian</option>
+                                        <option value="pt">Portuguese</option>
+                                        <option value="nl">Dutch</option>
+                                        <option value="pl">Polish</option>
+                                        <option value="ja">Japanese</option>
+                                        <option value="zh">Chinese</option>
+                                        <option value="ko">Korean</option>
+                                        <option value="ru">Russian</option>
+                                        <option value="ar">Arabic</option>
+                                    </select>
+                                    <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-chevron-down"></use></svg>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sf-field">
+                            <label class="sf-field__label" for="contextInput">Contexto de la clase</label>
+                            <input type="text" id="contextInput" class="sf-input" placeholder="Opcional: ¿de qué es la clase? (p. ej., Historia Contemporánea)">
+                        </div>
+                    </div>
                 </div>
-            </div>
             </section>
 
             <!-- region: transcript (owner: transcript team). Reading view, summary, copy/export. -->
@@ -214,6 +255,8 @@
 
     <script src="/static/js/core/icons.js"></script>
     <script src="/static/js/core/events.js"></script>
+    <script src="/static/js/core/toast.js"></script>
+    <script src="/static/js/core/dialog.js"></script>
     <script src="/static/js/engine/state.js"></script>
     <script src="/static/js/core/format.js"></script>
     <script src="/static/js/engine/run-store.js"></script>
@@ -228,6 +271,8 @@
     <script src="/static/js/transcript/segment.js"></script>
     <script src="/static/js/transcript/summary.js"></script>
     <script src="/static/js/transcript/view.js"></script>
+    <script src="/static/js/input/stage.js"></script>
+    <script src="/static/js/input/safe-copy.js"></script>
     <script src="/static/js/input/recorder.js"></script>
     <script src="/static/js/input/upload.js"></script>
     <script src="/static/js/input/resume.js"></script>

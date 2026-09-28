@@ -12,7 +12,9 @@ const html = fs.readFileSync(path.join(ROOT, 'app/templates/index.html'), 'utf8'
 const scripts = [...html.matchAll(/<script src="\/static\/([^"]+)"/g)].map((m) => m[1]);
 // Files replaced by test doubles, or that only wire the real page.
 const SKIP = new Set(['js/engine/run-store.js', 'js/engine/audio.js', 'js/main.js', 'js/core/shell.js',
-  'js/core/theme.js', 'js/core/ui.js', 'js/core/icons.js']);
+  'js/core/theme.js', 'js/core/ui.js', 'js/core/icons.js',
+  // Input region scripts wire the real page (DOM, mic, IndexedDB) and are not engine code.
+  'js/input/stage.js', 'js/input/safe-copy.js', 'js/input/recorder.js', 'js/input/upload.js', 'js/input/resume.js']);
 
 const [variant, failArg, failStatusArg] = process.argv.slice(2);
 const failIndex = failArg === 'none' ? -1 : Number(failArg);

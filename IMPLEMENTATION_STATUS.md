@@ -324,6 +324,8 @@
 | 13.2 | User-supplied prompt always overrides the default | ✅ | test `test_user_prompt_always_wins` |
 | 13.3 | Prompt source (`user`/`language_default`/`none`) logged per request | ✅ | `TranscriptionLog.prompt_source` field (app/server.py:36-46); written into every run-artifact chunk record (Milestone 15) |
 
+**Streaming path note**: `stream_transcription()` (the `stream=true` code path) takes its `prompt` argument from the same `effective_prompt` computed by `resolve_prompt()` as the non-streaming paths, so it now also gets language-aware prompt selection instead of the old always-English/Chinese default — this is the one shared-default case called out by the task spec ("except where a shared parameter default necessarily applies to it too"). No other part of the streaming path (decoding thresholds, batching, response shape) was touched; those parameters were never passed to `stream_transcription()` in the first place.
+
 ---
 
 ## Milestone 14: Decoding parameters reverted to measured/library defaults

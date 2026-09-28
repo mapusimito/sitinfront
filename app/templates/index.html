@@ -788,6 +788,15 @@
             transition: width 0.3s ease;
         }
 
+        .progress-fill-simple.in-progress {
+            animation: pulse-progress 1.4s ease-in-out infinite;
+        }
+
+        @keyframes pulse-progress {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.45; }
+        }
+
         .summary-card {
             display: none;
             margin-top: 24px;
@@ -1277,11 +1286,21 @@
             return submit;
         }
 
+        function markSegmentInProgress(mainIndex, total) {
+            const progressLabel = document.getElementById('progressLabel');
+            const progressFill = document.getElementById('progressFill');
+            if (!progressLabel || !progressFill) return;
+
+            progressLabel.textContent = `Transcribiendo segmento ${mainIndex + 1}/${total}...`;
+            progressFill.classList.add('in-progress');
+        }
+
         function updateSimpleProgress(current, total) {
             const progressLabel = document.getElementById('progressLabel');
             const progressFill = document.getElementById('progressFill');
             const progressEta = document.getElementById('progressEta');
 
+            progressFill.classList.remove('in-progress');
             const percent = (current / total) * 100;
             progressLabel.textContent = `Procesando segmento ${current}/${total}`;
             progressFill.style.width = percent + '%';
@@ -1888,6 +1907,9 @@
                 const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
                 updateChunkStatus(chunkId, 'processing');
                 chunkStartTimes.set(chunkId, Date.now());
+                if (chunk.type === 'main') {
+                    markSegmentInProgress(chunk.mainIndex, totalSegments);
+                }
 
                 try {
                     const chunkBlob = await extractAudioChunk(audioBlob, chunk.startMs, chunk.endMs);
@@ -2352,6 +2374,9 @@
                 updateChunkStatus(chunkId, 'processing');
                 updateProgressBar(chunkId, 0);
                 chunkStartTimes.set(chunkId, Date.now());
+                if (chunk.type === 'main') {
+                    markSegmentInProgress(chunk.mainIndex, totalSegments);
+                }
 
                 try {
                     updateProgressBar(chunkId, 25);

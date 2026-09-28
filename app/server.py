@@ -81,7 +81,7 @@ def _sanitize_run_id(run_id: Optional[str], fallback: str) -> str:
     """Falls back to the server-generated request_id when the client-supplied run_id is
     missing or is not a safe filesystem-path component (prevents path traversal / writes
     outside RUNS_DIR via e.g. run_id='../../evil')."""
-    if run_id and _SAFE_ID_RE.match(run_id):
+    if run_id and _SAFE_ID_RE.fullmatch(run_id):
         return run_id
     return fallback
 

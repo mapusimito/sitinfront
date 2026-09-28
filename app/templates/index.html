@@ -975,10 +975,10 @@
                         <select id="modelSelect">
                             <option value="tiny">Tiny (fastest)</option>
                             <option value="base">Base (balanced)</option>
-                            <option value="small">Small (accurate)</option>
+                            <option value="small" selected>Small (accurate)</option>
                             <option value="medium">Medium (more accurate)</option>
                             <option value="large-v3">Large (best accuracy)</option>
-                            <option value="large-v3-turbo" selected>Large v3 Turbo (strongest, recommended)</option>
+                            <option value="large-v3-turbo">Large v3 Turbo (strongest, needs model download)</option>
                         </select>
                         <select id="languageSelect">
                             <option value="en">English</option>
@@ -1124,7 +1124,7 @@
         let isRecording = false;
         let recordingStart = null;
         let recordingTimer = null;
-        let currentModel = 'large-v3-turbo';
+        let currentModel = 'small';
         let currentLanguage = 'en';
         let currentContext = '';
         let segmentCount = 0;

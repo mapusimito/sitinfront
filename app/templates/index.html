@@ -1495,31 +1495,78 @@
             progressFill.classList.add('in-progress');
         }
 
+        // ---------- ETA ticker ----------
+        // A per-chunk completion only gives us a fresh *estimate*; the old
+        // code wrote that estimate once as static text, so it visibly froze
+        // for the whole next chunk (minutes on a large model). This anchors
+        // the estimate to a real timestamp and ticks it down every second
+        // against Date.now(), so the number on screen is always live, while
+        // still being clearly an estimate ("~"), never a fake counter.
+        let etaAnchorMs = null;
+        let etaRemainingAtAnchor = null;
+        let etaTickerInterval = null;
+        let etaCurrentLabel = { current: 0, total: 0 };
+
+        function formatEta(totalSeconds) {
+            const s = Math.max(0, Math.round(totalSeconds));
+            const mins = Math.floor(s / 60);
+            const secs = s % 60;
+            return mins > 0 ? `~${mins}m ${secs}s` : `~${secs}s`;
+        }
+
+        function renderEtaTick() {
+            const progressEta = document.getElementById('progressEta');
+            if (etaAnchorMs === null) {
+                if (progressEta) progressEta.textContent = '';
+                return;
+            }
+            const elapsedSinceAnchor = (Date.now() - etaAnchorMs) / 1000;
+            const remaining = Math.max(0, etaRemainingAtAnchor - elapsedSinceAnchor);
+            const text = remaining > 0 ? `ETA: ${formatEta(remaining)}` : 'Finalizando...';
+            if (progressEta) progressEta.textContent = text;
+
+            const statusBox = document.getElementById('statusBox');
+            if (statusBox && statusBox.classList.contains('show') && etaCurrentLabel.total > 0) {
+                statusBox.textContent = remaining > 0
+                    ? `Procesando ${etaCurrentLabel.current}/${etaCurrentLabel.total}. ETA: ${formatEta(remaining)}`
+                    : `Procesando ${etaCurrentLabel.current}/${etaCurrentLabel.total}. Finalizando...`;
+            }
+        }
+
+        function startEtaTicker() {
+            stopEtaTicker();
+            etaTickerInterval = setInterval(renderEtaTick, 1000);
+        }
+
+        function stopEtaTicker() {
+            if (etaTickerInterval) {
+                clearInterval(etaTickerInterval);
+                etaTickerInterval = null;
+            }
+            etaAnchorMs = null;
+            etaRemainingAtAnchor = null;
+            renderEtaTick();
+        }
+
         function updateSimpleProgress(current, total) {
             const progressLabel = document.getElementById('progressLabel');
             const progressFill = document.getElementById('progressFill');
-            const progressEta = document.getElementById('progressEta');
 
             progressFill.classList.remove('in-progress');
             const percent = (current / total) * 100;
             progressLabel.textContent = `Procesando segmento ${current}/${total}`;
             progressFill.style.width = percent + '%';
+            etaCurrentLabel = { current, total };
 
             if (transcriptionStart) {
                 const elapsed = Date.now() - transcriptionStart;
                 const avgTimePerSegment = elapsed / current;
                 const remainingSegments = total - current;
-                const estimatedRemaining = Math.ceil((avgTimePerSegment * remainingSegments) / 1000);
+                const estimatedRemaining = (avgTimePerSegment * remainingSegments) / 1000;
 
-                if (estimatedRemaining > 0) {
-                    const mins = Math.floor(estimatedRemaining / 60);
-                    const secs = estimatedRemaining % 60;
-                    if (mins > 0) {
-                        progressEta.textContent = `ETA: ~${mins}m ${secs}s`;
-                    } else {
-                        progressEta.textContent = `ETA: ~${secs}s`;
-                    }
-                }
+                etaAnchorMs = Date.now();
+                etaRemainingAtAnchor = estimatedRemaining;
+                renderEtaTick();
             }
         }
 
@@ -1984,6 +2031,7 @@
             segmentTexts = [];
             isAbortingTranscription = false;
             failedSegmentTracker = new FailedSegmentTracker();
+            startEtaTicker();
 
             document.getElementById('progressSection').classList.add('active');
             document.getElementById('simpleProgress').classList.add('active');
@@ -2123,6 +2171,7 @@
             submitSegment.flushRemaining();
 
             document.getElementById('simpleProgress').classList.remove('active');
+            stopEtaTicker();
 
             if (isAbortingTranscription) {
                 showStatus('Transcripción interrumpida por errores repetidos', 'error');
@@ -2250,20 +2299,13 @@
         }
 
         function updateChunkETA(chunkId, elapsedMs, chunkIndex, totalChunks) {
+            // Only writes this chunk's own real elapsed time (per-chunk box,
+            // hidden by default). The live-ticking overall ETA is owned by
+            // updateSimpleProgress/renderEtaTick, not duplicated here.
             const etaEl = document.getElementById(`eta-${chunkId}`);
             if (etaEl) {
                 const seconds = (elapsedMs / 1000).toFixed(1);
                 etaEl.textContent = `${seconds}s`;
-
-                const remainingChunks = totalChunks - chunkIndex;
-                if (remainingChunks > 0) {
-                    const estimatedTotal = (elapsedMs * totalChunks) / 1000;
-                    const eta = (estimatedTotal - elapsedMs / 1000).toFixed(0);
-                    const statusBox = document.querySelector('.status-box');
-                    if (statusBox) {
-                        statusBox.textContent = `Procesando ${chunkIndex}/${totalChunks}. ETA: ~${eta}s`;
-                    }
-                }
             }
         }
 
@@ -2477,6 +2519,7 @@
             segmentTexts = [];
             isAbortingTranscription = false;
             failedSegmentTracker = new FailedSegmentTracker();
+            startEtaTicker();
 
             document.getElementById('progressSection').classList.add('active');
             document.getElementById('simpleProgress').classList.add('active');
@@ -2618,6 +2661,7 @@
             submitSegment.flushRemaining();
 
             document.getElementById('simpleProgress').classList.remove('active');
+            stopEtaTicker();
 
             if (isAbortingTranscription) {
                 showStatus('Transcripción interrumpida por errores repetidos', 'error');
@@ -2714,6 +2758,7 @@
             document.getElementById('progressSection').classList.remove('active');
             document.getElementById('simpleProgress').classList.remove('active');
             document.getElementById('statusBox').classList.remove('show');
+            stopEtaTicker();
             document.getElementById('copyBtn').style.display = 'none';
             document.getElementById('exportBtn').style.display = 'none';
             document.getElementById('uploadMetadata').classList.remove('show');

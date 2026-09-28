@@ -53,3 +53,7 @@ models/
 
 # Per-run transcription artifacts (may contain private audio/text)
 runs/
+
+# Local-only test audio fixtures (may contain real recorded speech / other
+# people's voices - keep off the public repo, see tests/fixtures/README.md)
+tests/fixtures/

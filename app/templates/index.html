@@ -1102,6 +1102,16 @@
             </div>
         </div>
 
+        <div id="resumeBanner" class="card" style="display:none; border: 1px solid var(--foco);">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+                <div id="resumeBannerLabel" style="font-size:14px;"></div>
+                <div style="display:flex; gap:8px;">
+                    <button id="resumeBtn" onclick="handleResumeClick()" style="padding: 8px 14px; background: var(--foco); color: var(--sala); border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">Continuar</button>
+                    <button id="discardResumeBtn" onclick="handleDiscardClick()" style="padding: 8px 14px; background: transparent; color: var(--papel); border: 1px solid #2A2A27; border-radius: 4px; cursor: pointer;">Descartar</button>
+                </div>
+            </div>
+        </div>
+
         <div id="progressSection" class="card progress-section">
             <div class="section-title">Progreso</div>
             <div id="simpleProgress" class="simple-progress">
@@ -1164,6 +1174,193 @@
 
         let isAbortingTranscription = false;
         let failedSegmentTracker = null;
+
+        // ---------- RunStore: best-effort client-side persistence (IndexedDB) ----------
+        // Survives a page refresh mid-transcription. Never allowed to block or fail
+        // an actual transcription — every call site wraps this in try/catch.
+        const RunStore = (() => {
+            const DB_NAME = 'sitinfront-runs';
+            const DB_VERSION = 1;
+            const STORE = 'runs';
+            let dbPromise = null;
+
+            function open() {
+                if (dbPromise) return dbPromise;
+                dbPromise = new Promise((resolve, reject) => {
+                    const req = indexedDB.open(DB_NAME, DB_VERSION);
+                    req.onupgradeneeded = () => {
+                        const db = req.result;
+                        if (!db.objectStoreNames.contains(STORE)) {
+                            const store = db.createObjectStore(STORE, { keyPath: 'runId' });
+                            store.createIndex('by-status', 'status', { unique: false });
+                            store.createIndex('by-updatedAt', 'updatedAt', { unique: false });
+                        }
+                    };
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                });
+                return dbPromise;
+            }
+
+            async function withStore(mode, fn) {
+                const db = await open();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(STORE, mode);
+                    const store = tx.objectStore(STORE);
+                    let result;
+                    Promise.resolve(fn(store)).then(r => { result = r; }).catch(reject);
+                    tx.oncomplete = () => resolve(result);
+                    tx.onerror = () => reject(tx.error);
+                });
+            }
+
+            function reqToPromise(req) {
+                return new Promise((resolve, reject) => {
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                });
+            }
+
+            function chunkIdOf(chunk) {
+                return `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+            }
+
+            async function createRun({ runId, source, model, language, context, totalSeconds, audioBlob, chunkPlan }) {
+                const now = Date.now();
+                const chunkResults = {};
+                for (const chunk of chunkPlan) {
+                    chunkResults[chunkIdOf(chunk)] = { status: 'pending' };
+                }
+                const record = {
+                    runId, status: 'in-progress', source, createdAt: now, updatedAt: now,
+                    model, language, context, totalSeconds, audioBlob, chunkPlan, chunkResults
+                };
+                await withStore('readwrite', store => store.put(record));
+                return record;
+            }
+
+            async function updateChunk(runId, chunkId, patch) {
+                await withStore('readwrite', async store => {
+                    const record = await reqToPromise(store.get(runId));
+                    if (!record) return;
+                    record.chunkResults[chunkId] = { ...(record.chunkResults[chunkId] || {}), ...patch };
+                    record.updatedAt = Date.now();
+                    store.put(record);
+                });
+            }
+
+            async function markRunStatus(runId, status) {
+                await withStore('readwrite', async store => {
+                    const record = await reqToPromise(store.get(runId));
+                    if (!record) return;
+                    record.status = status;
+                    record.updatedAt = Date.now();
+                    store.put(record);
+                });
+            }
+
+            async function getRun(runId) {
+                return withStore('readonly', store => reqToPromise(store.get(runId)));
+            }
+
+            async function getIncompleteRuns() {
+                return withStore('readonly', async store => {
+                    const index = store.index('by-status');
+                    const all = await reqToPromise(index.getAll('in-progress'));
+                    return all.sort((a, b) => b.updatedAt - a.updatedAt);
+                });
+            }
+
+            async function deleteRun(runId) {
+                await withStore('readwrite', store => store.delete(runId));
+            }
+
+            async function pruneOldRuns({ maxRuns = 5, maxAgeMs = 7 * 24 * 3600 * 1000 } = {}) {
+                await withStore('readwrite', async store => {
+                    const all = await reqToPromise(store.getAll());
+                    const now = Date.now();
+                    const finished = all
+                        .filter(r => r.status !== 'in-progress')
+                        .sort((a, b) => b.updatedAt - a.updatedAt);
+                    finished.forEach((r, i) => {
+                        if (i >= maxRuns || (now - r.updatedAt) > maxAgeMs) {
+                            store.delete(r.runId);
+                        }
+                    });
+                });
+            }
+
+            return { chunkIdOf, createRun, updateChunk, markRunStatus, getRun, getIncompleteRuns, deleteRun, pruneOldRuns };
+        })();
+
+        function formatRelativeTime(ms) {
+            const seconds = Math.floor((Date.now() - ms) / 1000);
+            if (seconds < 60) return 'hace un momento';
+            const minutes = Math.floor(seconds / 60);
+            if (minutes < 60) return `hace ${minutes} min`;
+            const hours = Math.floor(minutes / 60);
+            return `hace ${hours} h`;
+        }
+
+        async function checkForIncompleteRun() {
+            try {
+                const runs = await RunStore.getIncompleteRuns();
+                if (runs.length === 0) return;
+                const [latest, ...stale] = runs;
+                for (const r of stale) {
+                    RunStore.markRunStatus(r.runId, 'aborted').catch(() => {});
+                }
+                const mainTotal = latest.chunkPlan.filter(c => c.type === 'main').length;
+                const mainDone = latest.chunkPlan.filter(c => c.type === 'main' && latest.chunkResults[RunStore.chunkIdOf(c)]?.status === 'done').length;
+                document.getElementById('resumeBannerLabel').textContent =
+                    `Transcripción sin terminar (${mainDone}/${mainTotal} segmentos, ${formatRelativeTime(latest.updatedAt)}).`;
+                document.getElementById('resumeBanner').dataset.runId = latest.runId;
+                document.getElementById('resumeBanner').style.display = 'block';
+                await RunStore.pruneOldRuns();
+            } catch (err) {
+                console.error('checkForIncompleteRun failed', err);
+            }
+        }
+
+        async function handleResumeClick() {
+            const runId = document.getElementById('resumeBanner').dataset.runId;
+            document.getElementById('resumeBanner').style.display = 'none';
+            try {
+                const record = await RunStore.getRun(runId);
+                if (record) await resumeRun(record);
+            } catch (err) {
+                showStatus(`No se pudo continuar la transcripción: ${err.message}`, 'error');
+            }
+        }
+
+        async function handleDiscardClick() {
+            const runId = document.getElementById('resumeBanner').dataset.runId;
+            document.getElementById('resumeBanner').style.display = 'none';
+            try {
+                await RunStore.deleteRun(runId);
+            } catch (err) {
+                console.error('discard failed', err);
+            }
+        }
+
+        async function resumeRun(record) {
+            const doneMap = {};
+            for (const [chunkId, result] of Object.entries(record.chunkResults)) {
+                if (result.status === 'done') doneMap[chunkId] = result;
+            }
+            if (record.source === 'upload') {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const arrayBuffer = await record.audioBlob.arrayBuffer();
+                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                await transcribeUploadedChunks(audioBuffer, record.totalSeconds, null, record.audioBlob, {
+                    resumeRunId: record.runId, doneMap
+                });
+            } else {
+                await transcribeInChunks(record.audioBlob, record.totalSeconds, {
+                    resumeRunId: record.runId, doneMap
+                });
+            }
+        }
 
         document.getElementById('modelSelect').addEventListener('change', (e) => {
             currentModel = e.target.value;
@@ -1851,11 +2048,12 @@
             };
         }
 
-        async function transcribeInChunks(audioBlob, totalSeconds) {
+        async function transcribeInChunks(audioBlob, totalSeconds, resumeOpts) {
+            const { resumeRunId = null, doneMap = {} } = resumeOpts || {};
             const chunks = buildChunkPlan(totalSeconds);
             const mainChunks = chunks.filter(c => c.type === 'main');
             totalSegments = mainChunks.length;
-            const runId = crypto.randomUUID();
+            const runId = resumeRunId || crypto.randomUUID();
             segmentCount = 0;
             transcriptionStart = Date.now();
             segmentConfidences = [];
@@ -1898,12 +2096,34 @@
             transcriptBox.innerHTML = '';
             transcriptBox.classList.remove('empty');
 
+            if (!resumeRunId) {
+                RunStore.createRun({
+                    runId, source: 'mic', model: currentModel, language: currentLanguage,
+                    context: currentContext, totalSeconds, audioBlob, chunkPlan: chunks
+                }).catch(err => console.error('RunStore.createRun failed', err));
+            }
+
             const chunkResults = [];
             const limiter = new ConcurrencyLimiter(MAX_CONCURRENT_REQUESTS);
             const chunkStartTimes = new Map();
             const submitSegment = createOrderedSegmentAppender(totalSegments);
 
-            const tasks = chunks.map(chunk => limiter.run(async () => {
+            // Rehydrate already-completed chunks (resume path) instantly, no network.
+            for (const chunk of chunks) {
+                const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+                const done = doneMap[chunkId];
+                if (!done) continue;
+                updateChunkStatus(chunkId, 'done');
+                updateProgressBar(chunkId, 100);
+                if (chunk.type === 'main' && done.text) {
+                    submitSegment(chunk.mainIndex, done.text, chunk.startMs, done.segments);
+                }
+            }
+
+            const tasks = chunks.filter(chunk => {
+                const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+                return !doneMap[chunkId];
+            }).map(chunk => limiter.run(async () => {
                 const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
                 updateChunkStatus(chunkId, 'processing');
                 chunkStartTimes.set(chunkId, Date.now());
@@ -1940,9 +2160,14 @@
                             updateProgressBar(chunkId, 100);
                             updateChunkStatus(chunkId, 'done');
                             updateChunkETA(chunkId, elapsed, chunk.index, chunks.length);
+                            RunStore.updateChunk(runId, chunkId, {
+                                status: 'done', text: data.text, segments: data.segments,
+                                startMs: chunk.startMs, endMs: chunk.endMs
+                            }).catch(() => {});
                         },
                         (error, retried) => {
                             updateChunkStatus(chunkId, 'error');
+                            RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch(() => {});
                             if (failedSegmentTracker.getConsecutiveFailures() >= MAX_CONSECUTIVE_FAILURES) {
                                 triggerErrorBoundary();
                             }
@@ -1959,6 +2184,7 @@
                 } catch (err) {
                     updateChunkStatus(chunkId, 'error');
                     showStatus(`Error en ${chunk.type} ${chunk.mainIndex}: ${err.message}`, 'error');
+                    RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch(() => {});
                     return {
                         ...chunk,
                         text: '',
@@ -1977,6 +2203,8 @@
 
             if (isAbortingTranscription) {
                 showStatus('Transcripción interrumpida por errores repetidos', 'error');
+                RunStore.markRunStatus(runId, 'aborted').catch(() => {});
+                RunStore.pruneOldRuns().catch(() => {});
                 return;
             }
 
@@ -1992,6 +2220,8 @@
                 displaySummaryCard(processingTime);
                 document.getElementById('copyBtn').style.display = 'flex';
                 document.getElementById('exportBtn').style.display = 'flex';
+                RunStore.markRunStatus(runId, 'aborted').catch(() => {});
+                RunStore.pruneOldRuns().catch(() => {});
                 return;
             }
 
@@ -2003,6 +2233,8 @@
             document.getElementById('exportBtn').style.display = 'flex';
 
             showStatus('Todos los segmentos transcriptos', 'success');
+            RunStore.markRunStatus(runId, 'done').catch(() => {});
+            RunStore.pruneOldRuns().catch(() => {});
         }
 
         async function extractAudioChunk(audioBlob, startMs, endMs) {
@@ -2308,7 +2540,7 @@
 
                     console.log(`File duration: ${totalMinutes} min → ${numMainChunks} main chunks + ${Math.max(0, numMainChunks - 1)} bridges`);
                     showStatus(`Archivo cargado: ${totalMinutes} min → procesando...`, 'success');
-                    await transcribeUploadedChunks(audioBuffer, totalSeconds, totalChunksWithBridges);
+                    await transcribeUploadedChunks(audioBuffer, totalSeconds, totalChunksWithBridges, file);
                     resolve();
                 } catch (err) {
                     reject(err);
@@ -2318,11 +2550,12 @@
             });
         }
 
-        async function transcribeUploadedChunks(audioBuffer, totalSeconds, _numChunks) {
+        async function transcribeUploadedChunks(audioBuffer, totalSeconds, _numChunks, originalFile, resumeOpts) {
+            const { resumeRunId = null, doneMap = {} } = resumeOpts || {};
             const chunks = buildChunkPlan(totalSeconds);
             const mainChunks = chunks.filter(c => c.type === 'main');
             totalSegments = mainChunks.length;
-            const runId = crypto.randomUUID();
+            const runId = resumeRunId || crypto.randomUUID();
             segmentCount = 0;
             transcriptionStart = Date.now();
             segmentConfidences = [];
@@ -2365,11 +2598,33 @@
             transcriptBox.innerHTML = '';
             transcriptBox.classList.remove('empty');
 
+            if (!resumeRunId && originalFile) {
+                RunStore.createRun({
+                    runId, source: 'upload', model: currentModel, language: currentLanguage,
+                    context: currentContext, totalSeconds, audioBlob: originalFile, chunkPlan: chunks
+                }).catch(err => console.error('RunStore.createRun failed', err));
+            }
+
             const limiter = new ConcurrencyLimiter(MAX_CONCURRENT_REQUESTS);
             const chunkStartTimes = new Map();
             const submitSegment = createOrderedSegmentAppender(totalSegments);
 
-            const tasks = chunks.map(chunk => limiter.run(async () => {
+            // Rehydrate already-completed chunks (resume path) instantly, no network.
+            for (const chunk of chunks) {
+                const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+                const done = doneMap[chunkId];
+                if (!done) continue;
+                updateChunkStatus(chunkId, 'done');
+                updateProgressBar(chunkId, 100);
+                if (chunk.type === 'main' && done.text) {
+                    submitSegment(chunk.mainIndex, done.text, chunk.startMs, done.segments);
+                }
+            }
+
+            const tasks = chunks.filter(chunk => {
+                const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+                return !doneMap[chunkId];
+            }).map(chunk => limiter.run(async () => {
                 const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
                 updateChunkStatus(chunkId, 'processing');
                 updateProgressBar(chunkId, 0);
@@ -2409,9 +2664,14 @@
                             updateProgressBar(chunkId, 100);
                             updateChunkStatus(chunkId, 'done');
                             updateChunkETA(chunkId, elapsed, chunk.index, chunks.length);
+                            RunStore.updateChunk(runId, chunkId, {
+                                status: 'done', text: data.text, segments: data.segments,
+                                startMs: chunk.startMs, endMs: chunk.endMs
+                            }).catch(() => {});
                         },
                         (error, retried) => {
                             updateChunkStatus(chunkId, 'error');
+                            RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch(() => {});
                             if (failedSegmentTracker.getConsecutiveFailures() >= MAX_CONSECUTIVE_FAILURES) {
                                 triggerErrorBoundary();
                             }
@@ -2428,6 +2688,7 @@
                 } catch (err) {
                     updateChunkStatus(chunkId, 'error');
                     showStatus(`Error en ${chunk.type} ${chunk.mainIndex}: ${err.message}`, 'error');
+                    RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch(() => {});
                     return {
                         ...chunk,
                         text: '',
@@ -2446,6 +2707,8 @@
 
             if (isAbortingTranscription) {
                 showStatus('Transcripción interrumpida por errores repetidos', 'error');
+                RunStore.markRunStatus(runId, 'aborted').catch(() => {});
+                RunStore.pruneOldRuns().catch(() => {});
                 return;
             }
 
@@ -2461,6 +2724,8 @@
                 displaySummaryCard(processingTime);
                 document.getElementById('copyBtn').style.display = 'flex';
                 document.getElementById('exportBtn').style.display = 'flex';
+                RunStore.markRunStatus(runId, 'aborted').catch(() => {});
+                RunStore.pruneOldRuns().catch(() => {});
                 return;
             }
 
@@ -2472,6 +2737,8 @@
             document.getElementById('exportBtn').style.display = 'flex';
 
             showStatus('Todos los segmentos transcriptos', 'success');
+            RunStore.markRunStatus(runId, 'done').catch(() => {});
+            RunStore.pruneOldRuns().catch(() => {});
         }
 
         async function extractAudioChunkFromBuffer(audioBuffer, startMs, endMs) {
@@ -2617,6 +2884,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             initializeLucideIcons();
             refreshLogs();
+            checkForIncompleteRun();
         });
         document.addEventListener('click', initializeLucideIcons);
     </script>

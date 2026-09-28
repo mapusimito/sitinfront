@@ -18,7 +18,7 @@
 
 sitinfront is a speech-to-text web app built on [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (a CTranslate2 reimplementation of OpenAI's Whisper). It streams transcript segments to the browser as they're produced instead of making you wait for the whole file, handles long recordings by chunking with overlapping bridges for consensus, and exposes an OpenAI-compatible REST API alongside the web UI.
 
-It started as a fork of Faster Whisper Web and has been rebuilt with its own visual identity, a redesigned two-column interface, and a stronger focus on resilience during long transcription jobs (retry logic, partial-transcript export, failure tracking).
+**This project is a fork of [neosun100/faster-whisper-web](https://github.com/neosun100/faster-whisper-web)**, which built the original streaming web UI and Docker deployment on top of faster-whisper. sitinfront keeps that transcription pipeline and REST API, and replaces everything else: its own visual identity (see [Brand](#brand) below), a redesigned two-column interface, Spanish-first copy, and a stronger focus on resilience during long transcription jobs (retry logic, partial-transcript export, failure tracking).
 
 <div align="center">
   <img src="sitinfront-proper-layout.png" alt="sitinfront interface" width="720" />

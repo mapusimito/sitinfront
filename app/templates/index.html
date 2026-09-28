@@ -975,9 +975,10 @@
                         <select id="modelSelect">
                             <option value="tiny">Tiny (fastest)</option>
                             <option value="base">Base (balanced)</option>
-                            <option value="small" selected>Small (most accurate)</option>
+                            <option value="small">Small (accurate)</option>
                             <option value="medium">Medium (more accurate)</option>
                             <option value="large-v3">Large (best accuracy)</option>
+                            <option value="large-v3-turbo" selected>Large v3 Turbo (strongest, recommended)</option>
                         </select>
                         <select id="languageSelect">
                             <option value="en">English</option>
@@ -1123,13 +1124,14 @@
         let isRecording = false;
         let recordingStart = null;
         let recordingTimer = null;
-        let currentModel = 'small';
+        let currentModel = 'large-v3-turbo';
         let currentLanguage = 'en';
         let currentContext = '';
         let segmentCount = 0;
         let totalSegments = 0;
         let transcriptionStart = null;
         let segmentConfidences = [];
+        let segmentDurationsSec = [];
         let segmentTexts = [];
         let isUploading = false;
         let uploadXhr = null;
@@ -1195,7 +1197,7 @@
             return weightedSum / totalDuration;
         }
 
-        function appendSegmentToTranscript(text, startMs, avgTokenProb, segmentNumber, totalSegs) {
+        function appendSegmentToTranscript(text, startMs, avgTokenProb, segmentNumber, totalSegs, durationSec) {
             const transcriptBox = document.getElementById('transcript');
 
             if (transcriptBox.classList.contains('empty')) {
@@ -1205,7 +1207,7 @@
 
             const statsBadge = (avgTokenProb === null || avgTokenProb === undefined)
                 ? ''
-                : `<span class="segment-badge">${Math.round(avgTokenProb * 100)}% avg token prob</span>`;
+                : `<span class="segment-badge">${Math.round(avgTokenProb * 100)}% prob. media de token</span>`;
 
             const segment = document.createElement('div');
             segment.className = 'segment highlight';
@@ -1223,6 +1225,7 @@
             // Track metadata
             segmentTexts.push(text);
             segmentConfidences.push(avgTokenProb);
+            segmentDurationsSec.push(durationSec || 0);
 
             // Auto-scroll to bottom
             transcriptBox.scrollTop = transcriptBox.scrollHeight;
@@ -1237,21 +1240,41 @@
             const pending = new Map();
             let nextIndex = 0;
 
-            return function submit(mainIndex, text, startMs, segments) {
+            function flushOne(index, { text, startMs, segments }) {
+                pending.delete(index);
+                segmentCount++;
+                const avgTokenProb = calculateAvgTokenProb(segments);
+                const durationSec = (segments || []).reduce(
+                    (sum, seg) => sum + Math.max(0, (seg.end || 0) - (seg.start || 0)), 0
+                );
+                appendSegmentToTranscript(text, startMs, avgTokenProb, segmentCount, totalSegs, durationSec);
+                updateChunkProgress(segmentCount, totalSegs);
+                updateSimpleProgress(segmentCount, totalSegs);
+            }
+
+            const submit = function submit(mainIndex, text, startMs, segments) {
                 pending.set(mainIndex, { text, startMs, segments });
 
                 while (pending.has(nextIndex)) {
-                    const { text: readyText, startMs: readyStartMs, segments: readySegments } = pending.get(nextIndex);
-                    pending.delete(nextIndex);
+                    flushOne(nextIndex, pending.get(nextIndex));
                     nextIndex++;
-
-                    segmentCount++;
-                    const avgTokenProb = calculateAvgTokenProb(readySegments);
-                    appendSegmentToTranscript(readyText, readyStartMs, avgTokenProb, segmentCount, totalSegs);
-                    updateChunkProgress(segmentCount, totalSegs);
-                    updateSimpleProgress(segmentCount, totalSegs);
                 }
             };
+
+            // A permanently failed or empty chunk (skipped by the caller,
+            // so it never reaches submit()) would otherwise block every
+            // later chunk from ever displaying. Call this once all chunks
+            // have settled (success or failure) to flush whatever arrived,
+            // in ascending index order, instead of silently losing it.
+            submit.flushRemaining = function flushRemaining() {
+                const remainingIndexes = Array.from(pending.keys()).sort((a, b) => a - b);
+                for (const index of remainingIndexes) {
+                    flushOne(index, pending.get(index));
+                }
+                nextIndex = totalSegs;
+            };
+
+            return submit;
         }
 
         function updateSimpleProgress(current, total) {
@@ -1290,14 +1313,23 @@
             return Math.ceil(wordCount / WORDS_PER_MINUTE);
         }
 
-        // segmentConfidences now holds real avg-token-probability values (0..1) or null
-        // per segment (null when Whisper stats were unavailable for that segment).
+        // segmentConfidences holds real avg-token-probability values (0..1) or null per
+        // chunk (null when Whisper stats were unavailable for that chunk); segmentDurationsSec
+        // holds each chunk's audio duration, so the run-level figure is a duration-weighted
+        // mean, consistent with calculateAvgTokenProb()'s per-chunk weighting.
         // Returns null, not a placeholder, when there is nothing real to average.
         function calculateAverageTokenProb() {
-            const real = segmentConfidences.filter(v => typeof v === 'number');
-            if (real.length === 0) return null;
-            const sum = real.reduce((a, b) => a + b, 0);
-            return sum / real.length;
+            let weightedSum = 0;
+            let totalDuration = 0;
+            for (let i = 0; i < segmentConfidences.length; i++) {
+                const value = segmentConfidences[i];
+                if (typeof value !== 'number') continue;
+                const dur = segmentDurationsSec[i] || 0;
+                weightedSum += value * dur;
+                totalDuration += dur;
+            }
+            if (totalDuration === 0) return null;
+            return weightedSum / totalDuration;
         }
 
         function formatProcessingTime(milliseconds) {
@@ -1808,6 +1840,7 @@
             segmentCount = 0;
             transcriptionStart = Date.now();
             segmentConfidences = [];
+            segmentDurationsSec = [];
             segmentTexts = [];
             isAbortingTranscription = false;
             failedSegmentTracker = new FailedSegmentTracker();
@@ -1913,6 +1946,10 @@
             }));
 
             const results = await Promise.all(tasks);
+            // Flush any main chunks that never became displayable in strict
+            // order (e.g. an earlier chunk failed/returned empty text) so
+            // later chunks are never silently dropped from the transcript.
+            submitSegment.flushRemaining();
 
             document.getElementById('simpleProgress').classList.remove('active');
 
@@ -2267,6 +2304,7 @@
             segmentCount = 0;
             transcriptionStart = Date.now();
             segmentConfidences = [];
+            segmentDurationsSec = [];
             segmentTexts = [];
             isAbortingTranscription = false;
             failedSegmentTracker = new FailedSegmentTracker();
@@ -2374,6 +2412,10 @@
             }));
 
             const results = await Promise.all(tasks);
+            // Flush any main chunks that never became displayable in strict
+            // order (e.g. an earlier chunk failed/returned empty text) so
+            // later chunks are never silently dropped from the transcript.
+            submitSegment.flushRemaining();
 
             document.getElementById('simpleProgress').classList.remove('active');
 
@@ -2476,6 +2518,7 @@
             document.getElementById('uploadActionButton').style.display = 'none';
             hideSummaryCard();
             segmentConfidences = [];
+            segmentDurationsSec = [];
             segmentTexts = [];
             pendingFile = null;
             isAbortingTranscription = false;

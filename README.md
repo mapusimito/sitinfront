@@ -3,7 +3,8 @@
 
   # sitinfront
 
-  **GPU-accelerated speech transcription, built for real-time work.**
+  ### Tú atiende. Nosotros escribimos.
+  *You pay attention. We write it down.*
 
   [![License](https://img.shields.io/badge/license-MIT-F2FF00.svg?labelColor=000000)](LICENSE)
   [![Engine](https://img.shields.io/badge/engine-CTranslate2-F2FF00?labelColor=000000)](https://github.com/OpenNMT/CTranslate2)
@@ -14,82 +15,24 @@
 
 ---
 
-## What is sitinfront
-
-sitinfront is a speech-to-text web app built on [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (a CTranslate2 reimplementation of OpenAI's Whisper). It streams transcript segments to the browser as they're produced instead of making you wait for the whole file, handles long recordings by chunking with overlapping bridges for consensus, and exposes an OpenAI-compatible REST API alongside the web UI.
-
-**This project is a fork of [neosun100/faster-whisper-web](https://github.com/neosun100/faster-whisper-web)**, which built the original streaming web UI and Docker deployment on top of faster-whisper. sitinfront keeps that transcription pipeline and REST API, and replaces everything else: its own visual identity (see [Brand](#brand) below), a redesigned two-column interface, Spanish-first copy, and a stronger focus on resilience during long transcription jobs (retry logic, partial-transcript export, failure tracking).
+Sitting in the front row is the best way not to miss anything. sitinfront brings that seat to anyone, in any class, however long it runs — upload the recording, get the whole thing back, word for word, with a timestamp on every sentence. You stop copying things down and go back to listening, asking questions, thinking.
 
 <div align="center">
   <img src="sitinfront-proper-layout.png" alt="sitinfront interface" width="720" />
 </div>
 
-## Features
+## What it does
 
-| | |
-|---|---|
-| **Real-time streaming** | Segments appear as they're transcribed, not after the whole job finishes |
-| **Long-audio chunking** | 5-minute chunks with 1-minute overlapping bridges, processed concurrently |
-| **Resilient by design** | Automatic retry on failed segments, auto-abort after repeated failures, partial-transcript export so nothing is lost |
-| **Drag-and-drop upload** | Or record straight from the browser |
-| **Multi-model** | Tiny through Large-v3, pick your speed/accuracy tradeoff per job |
-| **OpenAI-compatible API** | Drop-in `/v1/audio/transcriptions` endpoint with Swagger docs at `/docs` |
-| **GPU-managed** | Models load on demand and idle out after a configurable timeout to free VRAM |
-| **Spanish-first UI** | Built and localized for Spanish speakers, no emoji clutter |
+- **Complete.** Full 2-3 hour lectures, transcribed in full — no summaries that quietly skip what the professor said at minute 97.
+- **Present.** Segments stream in as they're transcribed. You're not staring at a spinner; you're already reading, while it keeps going.
+- **Findable.** Every sentence has its own minute. Search for "what she said about the exam" and it takes you exactly there.
+- **Honest when it breaks.** A failed chunk retries automatically; if it still can't be read, you're told which minute and why, not left guessing. What did transcribe is never thrown away.
 
-## Brand
+## How it works
 
-sitinfront has its own visual identity, distinct from the upstream project it's built on. Full guide: [`docs/brand-guide.html`](docs/brand-guide.html).
+sitinfront is a speech-to-text web app built on [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (a CTranslate2 reimplementation of OpenAI's Whisper), forked from [neosun100/faster-whisper-web](https://github.com/neosun100/faster-whisper-web), which built the original streaming UI and Docker deployment this one is based on. sitinfront keeps that transcription pipeline and REST API, and rebuilds everything else on top: its own visual identity, a redesigned two-column interface, Spanish-first copy, and a stronger focus on resilience during long transcription jobs — retry logic, partial-transcript export, failure tracking. `docs/brand-guide.html` has the full brand guide credited for all of that.
 
-**Tagline**: *Tú atiende. Nosotros escribimos.* ("You pay attention. We write it down.")
-
-**Idea**: sitting in the front row is the best way not to miss anything. sitinfront brings that seat to anyone, in any class, however long it runs. Complete (full 2-3 hour lectures, no summaries that skip minute 97), present (the user stops transcribing by hand and goes back to listening and asking questions), findable (every sentence has its own timestamp).
-
-**Palette**
-
-| Token | Value | Role |
-|---|---|---|
-| `--foco` | `#F2FF00` | Focus yellow — primary action, cursor, highlights. Never used as text on white; it doesn't read. |
-| `--foco-2` | `#DDE000` | Dim yellow — logo gradient only |
-| `--sala` | `#000000` | Room black — app and logo background |
-| `--papel` | `#FFFFFF` | Paper — exported documents, light mode |
-| `--grafito` | `#3B3B38` | Graphite — secondary text, timestamps |
-| `--tiza` | `#E6E6DF` | Chalk — lines, borders, separators |
-| `--rec` | `#FF3B30` | Recording — recording state only |
-
-Dark-mode surface tones: `--bg #000`, `--fg #F4F4EE`, `--muted #A3A39A`, `--line #2A2A27`, `--panel #141412`. Light-mode panel: `#F5F5F0`.
-
-On-screen color ratio is roughly 62% black, 22% white, 9% graphite, 6% yellow, 1% red — yellow marks what matters; used everywhere, it stops meaning anything.
-
-**Type**
-
-Three typefaces, each with exactly one job, all free on Google Fonts:
-
-- **Silkscreen** — logotype and brand moments only. Never in paragraphs.
-- **Schibsted Grotesk** — headlines in Black 900, interface in Bold 700, body text in Regular 400 at 18px/1.55.
-- **IBM Plex Mono** — timestamps and durations only.
-
-**Logo**
-
-A pixelated "S" on a 5×7 grid followed by a text cursor — the class writing itself in real time. Canonical mark: `app/static/brand/sitinfront-mark.svg`.
-
-Rules: always lowercase (`sitinfront`, one word, never `SitInFront`); the cursor is part of the logo and stays (it can blink on screen, fixed in print); clear space is at least 2× the cursor's width on every side; minimum size is 96px wide for the full logotype, 16px for the symbol alone (favicon).
-
-**Voice**
-
-Like the classmate who sits up front and shares their notes: direct, clear, no fluff. Second person, talks about the class, never about "the AI."
-
-| Do | Don't |
-|---|---|
-| "Sube la grabación. Te avisamos cuando esté lista." | "Revoluciona tu aprendizaje con IA de última generación." |
-| "Tu clase de 2 h 38 min ya está transcrita." | "¡Ups! Algo salió mal 😅" |
-| "No hemos podido leer el audio a partir del minuto 84. Prueba a subir el archivo otra vez." | "Procesando tu contenido multimedia…" |
-
-Taglines: *Tú atiende. Nosotros escribimos.* (main) · *La clase entera, palabra por palabra.* (one-line product description) · *Primera fila, siempre.* (social, short-form)
-
-**Icons**
-
-[Lucide](https://lucide.dev), loaded from CDN. No emoji anywhere in the product UI — that's a hard brand rule, not an oversight.
+Under the hood: long recordings get split into 5-minute chunks with 1-minute overlapping bridges, processed concurrently, and merged back into one ordered transcript. Pick a model per job, from Tiny (fast, rough) to Large-v3 (slow, precise). Everything is also reachable through an OpenAI-compatible REST API at `/v1/audio/transcriptions`, with Swagger docs at `/docs` — so if you're not the one uploading files by hand, your code can be.
 
 ## Quick Start
 
@@ -101,8 +44,8 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-./run.sh          # base model, CPU, port 8600
-./run.sh large-v3  # swap in a bigger model
+./run.sh           # base model, CPU, port 8600
+./run.sh large-v3   # swap in a bigger model
 ```
 
 Open `http://localhost:8600`.
@@ -169,6 +112,7 @@ sitinfront/
 │       └── favicon.svg
 ├── faster_whisper/          # CTranslate2-based Whisper engine (upstream, unmodified)
 ├── tests/                   # Unit tests
+├── docs/brand-guide.html    # Full sitinfront brand guide (palette, type, voice, logo rules)
 ├── IMPLEMENTATION_STATUS.md # Milestone-level work tracker
 └── run.sh                   # Dev server launcher
 ```
@@ -179,14 +123,19 @@ sitinfront/
 - **Model**: [faster-whisper](https://github.com/SYSTRAN/faster-whisper) / [OpenAI Whisper](https://github.com/openai/whisper)
 - **Backend**: FastAPI + Uvicorn
 - **Frontend**: Vanilla JS, no framework
-- **Icons**: Lucide
+- **Icons**: Lucide, no emoji anywhere in the product
+
+## Brand
+
+sitinfront has its own visual identity: focus yellow (`#F2FF00`) on room black, Silkscreen for the logotype, Schibsted Grotesk for everything you read, IBM Plex Mono for timestamps. The full guide — palette, type, logo usage, voice do's and don'ts — lives at [`docs/brand-guide.html`](docs/brand-guide.html).
 
 ## License
 
-MIT — see [LICENSE](LICENSE). The core transcription engine is inherited from [SYSTRAN/faster-whisper](https://github.com/SYSTRAN/faster-whisper); sitinfront's UI, server logic, and brand identity are original to this repository.
+MIT — see [LICENSE](LICENSE). The core transcription engine is inherited from [SYSTRAN/faster-whisper](https://github.com/SYSTRAN/faster-whisper) via [neosun100/faster-whisper-web](https://github.com/neosun100/faster-whisper-web); sitinfront's UI, server resilience work, and brand identity are original to this repository.
 
 ## Acknowledgments
 
-- [SYSTRAN/faster-whisper](https://github.com/SYSTRAN/faster-whisper) — transcription engine this project builds on
+- [neosun100/faster-whisper-web](https://github.com/neosun100/faster-whisper-web) — the fork base: streaming web UI, Docker deployment
+- [SYSTRAN/faster-whisper](https://github.com/SYSTRAN/faster-whisper) — transcription engine
 - [OpenNMT/CTranslate2](https://github.com/OpenNMT/CTranslate2) — inference runtime
 - [OpenAI Whisper](https://github.com/openai/whisper) — original model

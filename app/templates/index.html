@@ -2520,11 +2520,10 @@
                     const totalSeconds = Math.ceil(audioBuffer.duration);
                     const totalMinutes = (totalSeconds / 60).toFixed(1);
                     const numMainChunks = Math.ceil(totalSeconds / (5 * 60));
-                    const totalChunksWithBridges = numMainChunks + Math.max(0, numMainChunks - 1);
 
-                    console.log(`File duration: ${totalMinutes} min → ${numMainChunks} main chunks + ${Math.max(0, numMainChunks - 1)} bridges`);
+                    console.log(`File duration: ${totalMinutes} min → ${numMainChunks} main chunks`);
                     showStatus(`Archivo cargado: ${totalMinutes} min → procesando...`, 'success');
-                    await transcribeUploadedChunks(audioBuffer, totalSeconds, totalChunksWithBridges, file);
+                    await transcribeUploadedChunks(audioBuffer, totalSeconds, numMainChunks, file);
                     resolve();
                 } catch (err) {
                     reject(err);

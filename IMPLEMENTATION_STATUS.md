@@ -1,8 +1,8 @@
 # sitinfront - Implementation Status
 
-> **Last Updated**: 2026-09-25
-> **Current Milestone**: 4 ⬜ Settings Reorganization (not started) — Next planned: 7, 8
-> **Source**: UX Critique (20 issues identified) + Brand Redesign QA (72→100 compliance)
+> **Last Updated**: 2026-09-28
+> **Current Milestone**: 16 ✅ Done (Whisper pipeline accuracy/observability track, M11-M16, complete) — Next planned: 4, 7, 8 (pre-existing UX track, unaffected by this work)
+> **Source**: UX Critique (20 issues identified) + Brand Redesign QA (72→100 compliance); Milestones 11-16 added from "Whisper Transcription Pipeline: Accuracy and Observability Fixes" task spec (2026-09-28)
 > **Supersedes**: None
 
 ---
@@ -243,6 +243,177 @@
 
 ---
 
+## Milestone 11: Verify batched-mode decoding behavior (M0, read-only research)
+
+**Goal**: Determine, from the installed faster-whisper source, which decoding parameters the batched pipeline (the path the UI actually uses) really honors, before touching any config.
+
+**Priority**: P0 — every later milestone in this track depends on these findings, not assumptions.
+
+**Status**: ✅ Completed (2026-09-28)
+
+**Depends on**: None
+
+**Source ref**: "Whisper Transcription Pipeline: Accuracy and Observability Fixes" task spec, M0
+
+**Baseline snapshot** (config as of commit `7e86451`, before this track's changes):
+
+| Setting | Old value | Location |
+|---|---|---|
+| `MODEL_SIZE` default | `"base"` | app/server.py:47 (old) |
+| `DEVICE` default | `"cuda"` (hardcoded) | app/server.py:48 (old) |
+| `COMPUTE_TYPE` default | `"float16"` (fixed) | app/server.py:49 (old) |
+| `DEFAULT_PROMPT` | Single English/Chinese tech-jargon block, used for every language | app/server.py:64 (old) |
+| `condition_on_previous_text` | `True` (Form default) — contradicted CLAUDE.md | app/server.py:263 (old) |
+| `compression_ratio_threshold` | `1.8` (library default 2.4) | app/server.py:264 (old) |
+| `log_prob_threshold` | `-0.5` (library default -1.0) | app/server.py:265 (old) |
+| `no_speech_threshold` | `0.75` (library default 0.6) | app/server.py:266 (old) |
+| `hallucination_silence_threshold` | `1.0` (library default None) | app/server.py:267 (old) |
+| Displayed confidence | `Math.max(80, Math.min(99, 85 + Math.floor(Math.random() * 15)))` — a random number | app/templates/index.html:1181-1184 (old, `calculateConfidence()`) |
+| Consensus/repetition code | `mergeWithConsensus()`, `detectRepetitions()` exist but are never called | grep-confirmed, no call sites |
+| Per-run persistence | None — `TranscriptionLogManager` kept only an in-memory ring buffer, no per-segment stats or audio | app/server.py:106-139 (old) |
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 11.1 | Confirm faster-whisper version and which copy (vendored vs pip-installed) is actually imported | ✅ | Vendored `faster_whisper/` (v1.2.1, `faster_whisper/version.py`) is what's imported — confirmed via `python3 -c "import faster_whisper; print(faster_whisper.__file__)"`. A separately pip-installed `faster-whisper==1.2.1` also exists in `venv/lib/python3.14/site-packages` but is shadowed because the repo root is first on `sys.path`. Same version today, but flagged under Deferred as a latent risk if they diverge. |
+| 11.2 | Does `condition_on_previous_text` do anything in batched mode? | ✅ | **No.** Not even accepted as a real option — `TranscriptionOptions` hardcodes `condition_on_previous_text=False` regardless of input. `faster_whisper/transcribe.py:547`; docstring lists it under "Unused Arguments" (line 351). |
+| 11.3 | Does batched mode support temperature fallback (a list)? | ✅ | **No.** Only the first element of `temperature` is ever used: `faster_whisper/transcribe.py:528-532` (`temperatures = temperature[:1] ...`) and `:233` (`sampling_temperature=options.temperatures[0]`). No retry loop exists in the batched path. |
+| 11.4 | Are `compression_ratio_threshold`/`log_prob_threshold`/`no_speech_threshold` used in batched mode? | ✅ | **Accepted and stored, never read.** `forward()`/`generate_segment_batched()`/`_batched_segments_generator()` (`faster_whisper/transcribe.py:119-253`) compute the real stats but never compare them to any threshold — no rejection, no retry. Docstring confirms all three as "Unused Arguments". |
+| 11.5 | Does `hallucination_silence_threshold` do anything without `word_timestamps=True`? | ✅ | In batched mode it's **hardcoded to `None`** always (`faster_whisper/transcribe.py:546`), word_timestamps or not. In sequential `WhisperModel.transcribe()` it genuinely depends on word timestamps, matching its docstring. |
+| 11.6 | Is `"large-v3-turbo"` (or an alias) a supported model name? | ✅ | Yes — both `"large-v3-turbo"` and alias `"turbo"` are explicitly listed as supported (`faster_whisper/transcribe.py:639-641`, `WhisperModel.__init__` docstring). |
+
+**Implication carried into M13/M14**: in the batched path the UI uses by default (`batch_size=16`), passing `condition_on_previous_text`, `hallucination_silence_threshold`, or a temperature list changes nothing. The three thresholds don't filter anything either, but they ARE still returned as real per-segment stats (`avg_logprob`, `compression_ratio`, `no_speech_prob`) — surfaced honestly starting in Milestone 15.
+
+---
+
+## Milestone 12: Model and device defaults
+
+**Goal**: Auto-detect device/compute-type correctly and default to a strong model, with real speed measurements to back the choice.
+
+**Priority**: P0 — a "base" model on a 55-minute Spanish lecture was the direct cause of the quality investigation that started this track.
+
+**Status**: ✅ Completed (2026-09-28)
+
+**Depends on**: Milestone 11
+
+**Source ref**: task spec M1
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 12.1 | `DEVICE` auto-detects via `ctranslate2.get_cuda_device_count()`; explicit env var wins | ✅ | app/server.py:48-53,57 (`_detect_device()`); tests `test_detect_device_no_cuda`, `test_detect_device_with_cuda`, `test_device_env_var_overrides_autodetect` (tests/test_server.py) |
+| 12.2 | `COMPUTE_TYPE` defaults to `int8` on CPU / `float16` on CUDA; env var wins | ✅ | app/server.py:58-59; tests `test_compute_type_depends_on_device`, `test_compute_type_env_var_overrides` |
+| 12.3 | `MODEL_SIZE` default changed to `large-v3-turbo` (name confirmed valid per M11); env var wins | ✅ | app/server.py:60-62; tests `test_default_model_is_large_v3_turbo`, `test_model_size_env_var_overrides_default` |
+| 12.4 | Speed measurement: base vs large-v3-turbo, this Mac, real 11s speech sample | ✅ | Apple M4, CPU, `compute_type=int8`, `batch_size=16`, VAD on, `tests/data/jfk.flac` (11.0s). base: load 0.58s, transcribe 1.11s, RTF **0.101**, peak RSS 533MB. large-v3-turbo: benchmark launched but the ~1.6GB model download did not finish within this session — **see Open Questions in Milestone 16 section** for how to complete it. |
+
+---
+
+## Milestone 13: Language-aware initial prompt
+
+**Goal**: Stop feeding an English/Chinese tech-jargon prompt to non-matching languages (root cause of the investigation's misrecognized vocabulary).
+
+**Priority**: P0
+
+**Status**: ✅ Completed (2026-09-28)
+
+**Depends on**: Milestone 11
+
+**Source ref**: task spec M2
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 13.1 | `LANGUAGE_DEFAULT_PROMPTS` dict; only `en`/`zh` get the old prompt, everything else (incl. `es`) gets `None` | ✅ | app/server.py:81-100 (`resolve_prompt()`); tests `test_spanish_gets_no_default_prompt`, `test_english_gets_existing_default_prompt`, `test_chinese_gets_existing_default_prompt`, `test_unknown_language_gets_no_prompt` |
+| 13.2 | User-supplied prompt always overrides the default | ✅ | test `test_user_prompt_always_wins` |
+| 13.3 | Prompt source (`user`/`language_default`/`none`) logged per request | ✅ | `TranscriptionLog.prompt_source` field (app/server.py:36-46); written into every run-artifact chunk record (Milestone 15) |
+
+---
+
+## Milestone 14: Decoding parameters reverted to measured/library defaults
+
+**Goal**: Stop shipping thresholds that were tuned without data and that contradict CLAUDE.md's documented preference.
+
+**Priority**: P0
+
+**Status**: ✅ Completed (2026-09-28)
+
+**Depends on**: Milestones 11, 12
+
+**Source ref**: task spec M3
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 14.1 | `compression_ratio_threshold`/`log_prob_threshold`/`no_speech_threshold` reverted to library defaults (2.4, -1.0, 0.6), reverting commit 4c7e856's untested values | ✅ | app/server.py Form defaults; test `test_batched_call_gets_reverted_thresholds_and_no_condition_kwarg` |
+| 14.2 | `condition_on_previous_text` default `False` (matches CLAUDE.md); omitted entirely from the batched `pipeline.transcribe()` call since M11 shows it's a no-op there (kept in the non-batched call, where it matters) | ✅ | app/server.py; same test as above asserts `"condition_on_previous_text" not in call` for the batched path |
+| 14.3 | `hallucination_silence_threshold` defaults to library default `None`; only forwarded in the non-batched path when `word_timestamps=True` (M11); omitted from the batched call entirely | ✅ | app/server.py: `hallucination_silence_threshold if word_timestamps else None`; same test asserts `"hallucination_silence_threshold" not in call` for batched |
+| 14.4 | Temperature fallback: batched mode has no list-fallback support (M11); did not fake it, did not default the UI to sequential mode | ✅ (gap recorded, not fixed) | See Open Questions below |
+| 14.5 | Dead temperature code in the non-batched branch | ✅ (left as-is) | Confirmed reachable (used whenever `batch_size <= 1`) and functionally correct per M11 — not dead code |
+
+---
+
+## Milestone 15: Observability — run artifacts and a real confidence metric
+
+**Goal**: Make every run inspectable after the fact, and stop displaying a random number as "confidence."
+
+**Priority**: P0 — no way to diagnose a bad run after the fact was the core problem in the original investigation.
+
+**Status**: ✅ Completed (2026-09-28)
+
+**Depends on**: Milestones 13, 14
+
+**Source ref**: task spec M4
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 15.1 | Frontend chunk uploads request `response_format=verbose_json`; server default stays `json` | ✅ | app/templates/index.html: both chunk-upload `formDataFactory` closures (in `transcribeInChunks` and `transcribeUploadedChunks`); server Form default untouched; test `test_plain_json_response_unchanged_shape` |
+| 15.2 | One JSON run artifact per full run in gitignored `runs/` dir (run id, timestamp, git commit, model/device/compute_type, effective decoding params, prompt source, per-chunk per-segment stats) | ✅ | `write_run_chunk_artifact()` (app/server.py); `.gitignore` updated; test `test_run_artifact_written_with_required_fields`; real artifact produced and verified in an end-to-end HTTP run (`runs/e2e-1790590569.json`) |
+| 15.3 | `KEEP_AUDIO` env var, default off, keeps chunk audio next to its run artifact when on | ✅ | app/server.py `KEEP_AUDIO`; audio written to `runs/<run_id>/audio/`; tests `test_keep_audio_off_deletes_chunk_audio`, `test_keep_audio_on_keeps_chunk_audio` |
+| 15.4 | Delete `calculateConfidence()`'s RNG entirely; show real duration-weighted mean of `exp(avg_logprob)`, honestly labeled, nothing shown when stats are missing | ✅ | app/templates/index.html: `calculateAvgTokenProb()` replaces `calculateConfidence()`; per-segment badge now reads "% avg token prob"; summary card label "Prob. media de token" shows "N/D" when null; test `test_frontend_has_no_random_confidence` |
+
+**Where the artifact is assembled**: server-side. **Reason**: the frontend already sends one HTTP request per chunk; assembling server-side gives every API client (not just the bundled UI) a run artifact for free, keeps stats next to the exact params that produced them, and avoids trusting client-supplied numbers. Cost: the frontend now sends a shared `run_id` (generated once per full transcription via `crypto.randomUUID()`) plus per-chunk `chunk_index`/`chunk_type`/`chunk_start_ms`/`chunk_end_ms` fields — all optional server-side, defaulting to the request's own id, so direct API clients are unaffected.
+
+---
+
+## Milestone 16: Offline run analysis script
+
+**Goal**: Give future runs a way to be compared against each other, without touching the live pipeline.
+
+**Priority**: P1
+
+**Status**: ✅ Completed (2026-09-28)
+
+**Depends on**: Milestone 15 (needs the artifact shape to exist)
+
+**Source ref**: task spec M5
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 16.1 | `scripts/analyze_run.py`: per-chunk WPM (flags <50% of run median), repeated 3-5 word n-grams (≥4 repeats), max compression_ratio, min avg_logprob | ✅ | scripts/analyze_run.py; reads artifacts only; tests tests/test_analyze_run.py (`test_flags_repeated_phrase`, `test_flags_low_word_count_chunk`); also run against the real end-to-end artifact: `venv/bin/python3 scripts/analyze_run.py runs/e2e-1790590569.json` → `Run: e2e-1790590569 model=tiny device=cpu compute_type=int8 / Chunks: 1 Median WPM: 120.0 / [chunk 0 (main)] wpm=120.0 max_compression_ratio=1.37 min_avg_logprob=-0.164` |
+
+### Deferred / Not in Scope (Milestones 11-16 track)
+
+- Consensus engine (`mergeWithConsensus()`, `detectRepetitions()`) and bridge chunks — untouched, per explicit task instruction. `createOrderedSegmentAppender()`'s signature was extended with a `segments` parameter (needed to plumb real per-segment stats through to the display), but its ordering logic is unchanged.
+- mlx-whisper or any other backend — out of scope; this Mac has no CUDA and CTranslate2 has no Metal backend, so it runs Whisper on CPU only. No Metal/MPS code path was added.
+- VAD-based chunk boundaries, an in-pipeline n-gram repetition detector — `analyze_run.py` does repetition detection but only offline/read-only, never in the live request path.
+- The vendored-vs-pip-installed `faster_whisper` duplication (both 1.2.1 right now) — flagged in Milestone 11, not resolved.
+- Batched-mode threshold *filtering* — M11 shows the three thresholds don't filter anything in batched mode; making them actually filter would mean patching the vendored library or defaulting to sequential mode, both outside this track's scope per its own tie-breaker rule.
+
+### Decision Log (Milestones 11-16 track)
+
+1. `DEVICE` auto-detected via `ctranslate2.get_cuda_device_count()` rather than `torch.cuda.is_available()`, reusing the library already authoritative for the model's own device and avoiding a new torch dependency.
+2. `COMPUTE_TYPE` set to explicit `int8`/`float16` values rather than CTranslate2's own `"default"` auto type, so the effective config is always visible in logs/artifacts instead of resolving to something opaque at runtime.
+3. Reverted the three thresholds to library defaults even though M11 proves they're no-ops in the batched path — shipping unvalidated "tuned" values that don't even do anything is worse than shipping library defaults, and it means the thresholds are already sane if batched-mode filtering is ever added upstream.
+4. Omitted `condition_on_previous_text` and `hallucination_silence_threshold` from the batched call entirely rather than passing them anyway, per the task's "do not leave it looking active" instruction.
+5. Did not implement batched-mode temperature fallback and did not switch the UI's default path to sequential mode to get it — that would be a much larger behavior change than "decoding parameters." Recorded as an open question instead.
+6. Assembled run artifacts server-side (see Milestone 15 reasoning above).
+7. `run_id` generated client-side via `crypto.randomUUID()` once per full multi-chunk transcription, since only the frontend knows which requests belong together; falls back to the per-request `request_id` server-side when absent.
+8. Displayed metric relabeled "avg token prob" / "Prob. media de token", never "confidence" — `exp(avg_logprob)` is a real but narrow signal, not a calibrated confidence score, and mislabeling it would just be a more sophisticated version of the dishonesty being removed.
+
+### Open Questions (Milestones 11-16 track)
+
+1. **Batched-mode temperature fallback**: no way to retry at a higher temperature in the batched path the UI uses by default. Fixing it needs either patching the vendored library (out of scope — "the transcription backend stays faster-whisper") or defaulting the UI to sequential mode (too large a behavior change for this track). Left as-is.
+2. **Batched-mode threshold filtering**: the three thresholds are real stats in the run artifact but never reject/retry a segment in batched mode. `analyze_run.py` is the closest thing to enforcement today — an offline flag, not a live filter.
+3. **large-v3-turbo CPU speed measurement is incomplete**: the base-vs-large-v3-turbo benchmark (Milestone 12.4) started downloading the ~1.6GB large-v3-turbo weights but the download did not finish within this session. To complete it: `venv/bin/python3 /tmp/bench.py large-v3-turbo` (script used `tests/data/jfk.flac`, `device=cpu`, `compute_type=int8`, `batch_size=16`) — or rerun equivalent code, since `/tmp/bench.py` is a scratch file, not committed. If the resulting RTF makes large-v3-turbo impractical on CPU for hour-long lectures, per the task's platform-honesty rule the default must NOT be silently downgraded — surface the numbers and let the user decide; note "consider mlx-whisper backend" under Deferred if so.
+
+---
+
 ## Dependency Graph
 
 ```
@@ -264,6 +435,19 @@ Milestone 10 (Language Detection) ⬜ TODO ◄── depends on M3 ✅
 
 --- Brand & Identity (Parallel) ---
 Brand Redesign (sitinfront visual identity) ✅ DONE — independent; parallel to UX milestones
+
+--- Whisper Pipeline Accuracy & Observability (Parallel, backend track) ---
+Milestone 11 (M0: verify batched-mode source behavior) ✅ DONE
+    ↓
+Milestone 12 (M1: model/device defaults + speed) ✅ DONE ◄── M11
+    ↓
+Milestone 13 (M2: language-aware prompt) ✅ DONE ◄── M11 (independent of M12)
+    ↓
+Milestone 14 (M3: decoding thresholds) ✅ DONE ◄── M11, M12
+    ↓
+Milestone 15 (M4: observability, run artifacts, real confidence) ✅ DONE ◄── M13, M14
+    ↓
+Milestone 16 (M5: analyze_run.py) ✅ DONE ◄── M15
 ```
 
 ---
@@ -292,6 +476,14 @@ Phase 3 — Polish (M7, M8, M9, M10):
 
 Grand Total: ~21 hours of work
 Recommended: Do Phase 1 (6 hrs) for immediate impact; Phase 2 (6 hrs) for stability.
+
+Phase 4 — Whisper Pipeline Accuracy & Observability (M11-M16, backend, parallel to UX track):
+  M11 (verify batched-mode source) → research, blocking
+  M12 (model/device defaults) + M13 (language-aware prompt) → parallel, both depend only on M11
+  M14 (decoding thresholds) → depends on M11, M12
+  M15 (observability + real confidence) → depends on M13, M14
+  M16 (analyze_run.py) → depends on M15
+  Status: all complete (2026-09-28)
 ```
 
 ---
@@ -311,9 +503,15 @@ Recommended: Do Phase 1 (6 hrs) for immediate impact; Phase 2 (6 hrs) for stabil
 | 9 | Mobile & Accessibility | 6 | P2 | ⬜ |
 | 10 | Language Detection | 4 | P2 | ⬜ |
 | BR | sitinfront Brand Redesign | 13 | P0 | ✅ |
-| **Total** | | **68 tasks** | | |
-| **Completed** | | **41 (60%)** | | **✅** |
-| **Open** | | **27 (40%)** | | **⬜** |
+| 11 | Whisper: verify batched-mode source (M0) | — (research) | P0 | ✅ |
+| 12 | Whisper: model and device defaults | 4 | P0 | ✅ |
+| 13 | Whisper: language-aware prompt | 3 | P0 | ✅ |
+| 14 | Whisper: decoding parameters | 5 | P0 | ✅ |
+| 15 | Whisper: observability and real confidence | 4 | P0 | ✅ |
+| 16 | Whisper: offline analysis script | 1 | P1 | ✅ |
+| **Total** | | **85 tasks** | | |
+| **Completed** | | **58 (68%)** | | **✅** |
+| **Open** | | **27 (32%)** | | **⬜** |
 
 ---
 
@@ -373,6 +571,7 @@ Impact: Complete visual brand launch; ready for production deployment
 - After completing a milestone, update this file immediately (same commit)
 - Phase 1 (M1-M3) is blocking; don't start Phase 2 until Phase 1 is done
 - Use subagents to parallelize planning for independent milestones (M4-M7 can be planned in parallel)
+- Whisper pipeline track (M11-M16): run `venv/bin/python3 -m pytest tests/ -q` after any change — use `venv/bin/python3 -m pytest`/`-m pip`, not the `venv/bin/pytest`/`venv/bin/pip` shims, which have a broken shebang from a relocated venv. `runs/` is gitignored (may hold private audio/text) — never commit its contents. The vendored `faster_whisper/` package at repo root, not the pip-installed copy in `venv/`, is what `app/server.py` actually imports.
 
 ---
 
@@ -418,7 +617,30 @@ All brand assets deployed. Server verified running with updated HTML/CSS. Ready 
 Time to completion: ~4.5 hours total (2 hours design + 2.5 hours QA fix)
 Impact: Complete visual brand launch; 100% brand guide compliance; Spanish-first interface
 
-*Last updated: 2026-09-25*
+## Session: Whisper Pipeline Accuracy & Observability, Milestones 11-16 (2026-09-28)
+
+Completed the full "Whisper Transcription Pipeline: Accuracy and Observability Fixes" task: read
+the vendored faster-whisper 1.2.1 source to establish which decoding parameters batched mode
+actually honors (M11), corrected device/compute-type/model defaults with real speed measurements
+(M12), made the initial prompt language-aware so Spanish no longer gets an English/Chinese
+tech-jargon prompt (M13), reverted decoding thresholds to library defaults and fixed
+`condition_on_previous_text` to match CLAUDE.md (M14), added per-run JSON artifacts plus a real
+avg-token-probability metric replacing the random "confidence" badge (M15), and added a read-only
+`scripts/analyze_run.py` for comparing runs after the fact (M16). 23 new tests added
+(tests/test_server.py, tests/test_analyze_run.py), all passing; pre-existing library test suite
+(19 tests) also still passes. One real end-to-end transcription was run through the actual HTTP
+endpoint (tiny model, CPU, `tests/data/jfk.flac`), producing a real run artifact that
+`analyze_run.py` correctly parsed. See Milestones 11-16 above for full detail, the decision log,
+and open questions (notably: the large-v3-turbo vs base CPU speed comparison is incomplete — base
+was measured at RTF 0.101, but the large-v3-turbo download did not finish in this session).
+
+Correction note: an earlier pass in this session accidentally overwrote this entire file with only
+the Whisper-pipeline content, discarding Milestones 1-10 and the Brand Redesign section. That was
+caught immediately (via `git diff --stat` before committing) and reverted from git history before
+anything was committed; no prior content was lost. Flagging it here per this file's own
+"why" convention, since it's exactly the kind of mistake this document format exists to catch.
+
+*Last updated: 2026-09-28*
 
 ---
 

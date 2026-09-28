@@ -6,7 +6,7 @@
   ### Tú atiende. Nosotros escribimos.
   *You pay attention. We write it down.*
 
-  [![License](https://img.shields.io/badge/license-MIT-F2FF00.svg?labelColor=000000)](LICENSE)
+  [![License](https://img.shields.io/badge/license-CC0%201.0-F2FF00.svg?labelColor=000000)](LICENSE)
   [![Engine](https://img.shields.io/badge/engine-CTranslate2-F2FF00?labelColor=000000)](https://github.com/OpenNMT/CTranslate2)
   [![Model](https://img.shields.io/badge/model-Whisper-F2FF00?labelColor=000000)](https://github.com/openai/whisper)
   [![API](https://img.shields.io/badge/API-OpenAI--compatible-F2FF00?labelColor=000000)](#api-reference)
@@ -131,7 +131,7 @@ sitinfront has its own visual identity: focus yellow (`#F2FF00`) on room black, 
 
 ## License
 
-MIT — see [LICENSE](LICENSE). The core transcription engine is inherited from [SYSTRAN/faster-whisper](https://github.com/SYSTRAN/faster-whisper) via [neosun100/faster-whisper-web](https://github.com/neosun100/faster-whisper-web); sitinfront's UI, server resilience work, and brand identity are original to this repository.
+This repository's own code (UI, server logic, brand identity) is dedicated to the public domain under [CC0 1.0](LICENSE) — no rights reserved. The core transcription engine, `faster_whisper/`, is inherited from [SYSTRAN/faster-whisper](https://github.com/SYSTRAN/faster-whisper) via [neosun100/faster-whisper-web](https://github.com/neosun100/faster-whisper-web) and remains under its original MIT license; CC0 on this repo doesn't waive that upstream license, so MIT attribution stays with that code.
 
 ## Acknowledgments
 

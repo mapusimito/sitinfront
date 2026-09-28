@@ -1507,6 +1507,25 @@
         let etaTickerInterval = null;
         let etaCurrentLabel = { current: 0, total: 0 };
 
+        // The estimate itself: chunks are nominally equal-length, but the
+        // last chunk of a run is usually shorter, and wall-clock time per
+        // chunk varies with real content/concurrency, not just chunk count.
+        // So we weight remaining time by remaining *raw audio seconds*
+        // (known exactly from the chunk plan) rather than remaining chunk
+        // count, and use a recency-weighted rate (last 3 chunks) instead of
+        // an all-time average, so the estimate keeps adapting instead of
+        // going sluggish as a long run progresses.
+        const ETA_RATE_WINDOW = 3;
+        let etaChunkSamples = []; // [{rawSec, wallSec}], most recent main chunks
+        let etaCompletedRawSec = 0;
+        let etaTotalRawSec = 0;
+
+        function recordChunkEtaSample(rawSec, wallSec) {
+            etaChunkSamples.push({ rawSec, wallSec });
+            if (etaChunkSamples.length > ETA_RATE_WINDOW) etaChunkSamples.shift();
+            etaCompletedRawSec += rawSec;
+        }
+
         function formatEta(totalSeconds) {
             const s = Math.max(0, Math.round(totalSeconds));
             const mins = Math.floor(s / 60);
@@ -1558,14 +1577,14 @@
             progressFill.style.width = percent + '%';
             etaCurrentLabel = { current, total };
 
-            if (transcriptionStart) {
-                const elapsed = Date.now() - transcriptionStart;
-                const avgTimePerSegment = elapsed / current;
-                const remainingSegments = total - current;
-                const estimatedRemaining = (avgTimePerSegment * remainingSegments) / 1000;
+            const remainingRawSec = Math.max(0, etaTotalRawSec - etaCompletedRawSec);
+            if (etaChunkSamples.length > 0 && remainingRawSec > 0) {
+                const sumRaw = etaChunkSamples.reduce((s, x) => s + x.rawSec, 0);
+                const sumWall = etaChunkSamples.reduce((s, x) => s + x.wallSec, 0);
+                const secondsPerRawSecond = sumRaw > 0 ? sumWall / sumRaw : 0;
 
                 etaAnchorMs = Date.now();
-                etaRemainingAtAnchor = estimatedRemaining;
+                etaRemainingAtAnchor = secondsPerRawSecond * remainingRawSec;
                 renderEtaTick();
             }
         }
@@ -2031,6 +2050,9 @@
             segmentTexts = [];
             isAbortingTranscription = false;
             failedSegmentTracker = new FailedSegmentTracker();
+            etaChunkSamples = [];
+            etaCompletedRawSec = 0;
+            etaTotalRawSec = totalSeconds;
             startEtaTicker();
 
             document.getElementById('progressSection').classList.add('active');
@@ -2086,8 +2108,11 @@
                 if (!done) continue;
                 updateChunkStatus(chunkId, 'done');
                 updateProgressBar(chunkId, 100);
-                if (chunk.type === 'main' && done.text) {
-                    submitSegment(chunk.mainIndex, done.text, chunk.startMs, done.segments);
+                if (chunk.type === 'main') {
+                    etaCompletedRawSec += (chunk.endMs - chunk.startMs) / 1000;
+                    if (done.text) {
+                        submitSegment(chunk.mainIndex, done.text, chunk.startMs, done.segments);
+                    }
                 }
             }
 
@@ -2131,6 +2156,9 @@
                             updateProgressBar(chunkId, 100);
                             updateChunkStatus(chunkId, 'done');
                             updateChunkETA(chunkId, elapsed, chunk.index, chunks.length);
+                            if (chunk.type === 'main') {
+                                recordChunkEtaSample((chunk.endMs - chunk.startMs) / 1000, elapsed / 1000);
+                            }
                             RunStore.updateChunk(runId, chunkId, {
                                 status: 'done', text: data.text, segments: data.segments,
                                 startMs: chunk.startMs, endMs: chunk.endMs
@@ -2519,6 +2547,9 @@
             segmentTexts = [];
             isAbortingTranscription = false;
             failedSegmentTracker = new FailedSegmentTracker();
+            etaChunkSamples = [];
+            etaCompletedRawSec = 0;
+            etaTotalRawSec = totalSeconds;
             startEtaTicker();
 
             document.getElementById('progressSection').classList.add('active');
@@ -2573,8 +2604,11 @@
                 if (!done) continue;
                 updateChunkStatus(chunkId, 'done');
                 updateProgressBar(chunkId, 100);
-                if (chunk.type === 'main' && done.text) {
-                    submitSegment(chunk.mainIndex, done.text, chunk.startMs, done.segments);
+                if (chunk.type === 'main') {
+                    etaCompletedRawSec += (chunk.endMs - chunk.startMs) / 1000;
+                    if (done.text) {
+                        submitSegment(chunk.mainIndex, done.text, chunk.startMs, done.segments);
+                    }
                 }
             }
 
@@ -2621,6 +2655,9 @@
                             updateProgressBar(chunkId, 100);
                             updateChunkStatus(chunkId, 'done');
                             updateChunkETA(chunkId, elapsed, chunk.index, chunks.length);
+                            if (chunk.type === 'main') {
+                                recordChunkEtaSample((chunk.endMs - chunk.startMs) / 1000, elapsed / 1000);
+                            }
                             RunStore.updateChunk(runId, chunkId, {
                                 status: 'done', text: data.text, segments: data.segments,
                                 startMs: chunk.startMs, endMs: chunk.endMs

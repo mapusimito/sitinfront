@@ -65,3 +65,5 @@ tools/ux/node_modules/
 docs/ux-revamp/baseline/4min/
 docs/ux-revamp/baseline/12min/
 docs/ux-revamp/after-*/
+# Working screenshots; the final set is committed by the last UX milestone
+docs/ux-revamp/screens/

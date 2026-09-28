@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>sitinfront · componentes</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <script src="/static/js/core/theme.js"></script>
+  <link rel="stylesheet" href="/static/css/tokens.css">
+  <link rel="stylesheet" href="/static/css/base.css">
+  <link rel="stylesheet" href="/static/css/components.css">
+  <style>
+    /* Gallery layout only. Every value is a token. */
+    .g-section { display: grid; gap: var(--sp-4); padding-block: var(--sp-6); border-top: 1px solid var(--line); }
+    .g-row { display: flex; flex-wrap: wrap; gap: var(--sp-3); align-items: center; }
+    .g-grid { display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); }
+    .g-head { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-4); flex-wrap: wrap; padding-block: var(--sp-5); }
+  </style>
+</head>
+<body>
+  <a class="sf-skip" href="#main">Saltar al contenido</a>
+  <header class="sf-wrap g-head">
+    <a class="sf-logo" href="/static/gallery.html" aria-label="sitinfront">
+      <svg class="sf-logo__mark" viewBox="0 0 74 70" aria-hidden="true"><use href="/static/icons.svg#mark"></use></svg>
+      <span class="sf-logo__word">sitinfront</span>
+    </a>
+    <fieldset class="sf-segctl" style="margin:0;padding:0" aria-label="Tema">
+      <label><input type="radio" name="theme" value="auto"><span>Auto</span></label>
+      <label><input type="radio" name="theme" value="light"><span>Claro</span></label>
+      <label><input type="radio" name="theme" value="dark"><span>Oscuro</span></label>
+    </fieldset>
+  </header>
+
+  <main id="main" class="sf-wrap">
+    <h1>Componentes</h1>
+    <p class="sf-field__help" style="margin-top:var(--sp-2)">Página de desarrollo. Cada componente compartido, en cada estado.</p>
+
+    <section class="g-section" aria-labelledby="g-btn">
+      <h2 id="g-btn">Botones</h2>
+      <div class="g-row">
+        <button class="sf-btn sf-btn--primary" type="button">Transcribir</button>
+        <button class="sf-btn" type="button">Cancelar</button>
+        <button class="sf-btn sf-btn--ghost" type="button">Ahora no</button>
+        <button class="sf-btn sf-btn--danger" type="button">Descartar</button>
+        <button class="sf-btn sf-btn--primary" type="button" disabled>Deshabilitado</button>
+        <button class="sf-btn sf-btn--icon" type="button" aria-label="Grabar"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-mic"></use></svg></button>
+        <button class="sf-btn" type="button"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-upload"></use></svg>Subir</button>
+      </div>
+    </section>
+
+    <section class="g-section" aria-labelledby="g-fld">
+      <h2 id="g-fld">Campos</h2>
+      <div class="g-grid">
+        <div class="sf-field">
+          <label class="sf-field__label" for="g-ctx">Contexto de la clase</label>
+          <input class="sf-input" id="g-ctx" type="text" placeholder="Historia Contemporánea, tema 4" aria-describedby="g-ctx-h">
+          <span class="sf-field__help" id="g-ctx-h">Ayuda a reconocer nombres y términos.</span>
+        </div>
+        <div class="sf-field">
+          <label class="sf-field__label" for="g-lang">Idioma</label>
+          <div class="sf-select-wrap">
+            <select class="sf-select" id="g-lang"><option>Español</option><option>Inglés</option></select>
+            <svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-chevron-down"></use></svg>
+          </div>
+        </div>
+        <div class="sf-field">
+          <label class="sf-field__label" for="g-err">Campo con error</label>
+          <input class="sf-input" id="g-err" type="text" value="valor" aria-invalid="true" aria-describedby="g-err-e">
+          <span class="sf-field__error" id="g-err-e"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-circle-alert"></use></svg>Este valor no es válido. Prueba con otro.</span>
+        </div>
+        <div class="sf-field">
+          <label class="sf-field__label" for="g-ta">Notas</label>
+          <textarea class="sf-textarea" id="g-ta"></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section class="g-section" aria-labelledby="g-prog">
+      <h2 id="g-prog">Progreso</h2>
+      <div class="g-grid">
+        <div class="sf-progress">
+          <div class="sf-progress__head"><span>Fragmento 2 de 5</span><span class="sf-mono">40 %</span></div>
+          <div class="sf-progress__track" role="progressbar" aria-label="Fragmentos completados" aria-valuemin="0" aria-valuemax="5" aria-valuenow="2"><div class="sf-progress__fill" style="width:40%"></div></div>
+        </div>
+        <div class="sf-progress sf-progress--indeterminate">
+          <div class="sf-progress__head"><span>Transcribiendo el fragmento 1 de 1</span><span class="sf-mono">00:42</span></div>
+          <div class="sf-progress__track" role="progressbar" aria-label="Transcribiendo, sin porcentaje disponible"><div class="sf-progress__fill"></div></div>
+        </div>
+      </div>
+      <div class="sf-chunks" role="img" aria-label="Fragmentos: 3 hechos, 1 reintentando, 1 fallido, 2 activos, 2 pendientes">
+        <span class="sf-chunk" data-state="done"></span><span class="sf-chunk" data-state="done"></span><span class="sf-chunk" data-state="done"></span>
+        <span class="sf-chunk" data-state="retrying"></span><span class="sf-chunk" data-state="failed"></span>
+        <span class="sf-chunk" data-state="active"></span><span class="sf-chunk" data-state="active"></span>
+        <span class="sf-chunk"></span><span class="sf-chunk"></span>
+      </div>
+    </section>
+
+    <section class="g-section" aria-labelledby="g-ban">
+      <h2 id="g-ban">Avisos</h2>
+      <div class="sf-banner"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-info"></use></svg><div class="sf-banner__body"><div class="sf-banner__title">Tienes una clase sin terminar</div><div>Grabada hace 12 min. Puedes continuar donde se quedó.</div><div class="sf-banner__actions"><button class="sf-btn sf-btn--primary" type="button">Continuar</button><button class="sf-btn" type="button">Descartar</button></div></div></div>
+      <div class="sf-banner sf-banner--success"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-circle-check"></use></svg><div class="sf-banner__body"><div class="sf-banner__title">Tu clase de 2 h 38 min ya está transcrita</div></div></div>
+      <div class="sf-banner sf-banner--warning"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-triangle-alert"></use></svg><div class="sf-banner__body"><div class="sf-banner__title">Transcripción incompleta</div><div>Faltan 2 fragmentos. Puedes reintentarlos.</div></div></div>
+      <div class="sf-banner sf-banner--danger"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-circle-alert"></use></svg><div class="sf-banner__body"><div class="sf-banner__title">No hemos podido leer el audio</div><div>Prueba a subir el archivo otra vez.</div></div></div>
+    </section>
+
+    <section class="g-section" aria-labelledby="g-misc">
+      <h2 id="g-misc">Vacío, zona de carga, etiquetas</h2>
+      <div class="g-grid">
+        <div class="sf-empty"><div class="sf-empty__title">Aún no tienes clases</div><p class="sf-empty__text">Sube la grabación de una clase y la tendrás transcrita, con cada frase en su minuto.</p></div>
+        <div class="sf-dropzone" tabindex="0" role="button" aria-label="Elegir un archivo de audio"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-upload"></use></svg><span>Arrastra aquí un audio</span></div>
+        <div class="sf-dropzone" data-state="dragover"><span>Suelta el archivo</span></div>
+        <div class="sf-dropzone" data-state="invalid"><span>Este formato no es compatible</span></div>
+      </div>
+      <div class="g-row"><span class="sf-badge">Prob. media de token 72 %</span><span class="sf-badge"><span class="sf-recdot" data-live="true" aria-hidden="true"></span>Grabando</span></div>
+    </section>
+
+    <section class="g-section" aria-labelledby="g-seg">
+      <h2 id="g-seg">Transcripción</h2>
+      <div>
+        <div class="sf-segment"><span class="sf-segment__time">00:31:05</span><div><p>La profase es donde la cromatina se condensa, así que si veis <mark class="sf-mark">cromosomas</mark> visibles, ya estáis ahí.</p><div class="sf-segment__meta"><span class="sf-badge">Prob. media de token 81 %</span></div></div></div>
+        <div class="sf-segment" data-state="failed"><span class="sf-segment__time">00:35:00</span><div><p>No se pudo transcribir este tramo (35:00 a 40:00).</p></div></div>
+      </div>
+      <div class="g-grid">
+        <div class="sf-stat"><span class="sf-stat__label">Palabras</span><span class="sf-stat__value">366</span></div>
+        <div class="sf-stat"><span class="sf-stat__label">Duración</span><span class="sf-stat__value sf-mono">2 h 38 min</span></div>
+      </div>
+    </section>
+
+    <section class="g-section" aria-labelledby="g-ov">
+      <h2 id="g-ov">Diálogos y avisos emergentes</h2>
+      <div class="g-row">
+        <button class="sf-btn" type="button" id="g-open-confirm">Confirmar</button>
+        <button class="sf-btn" type="button" id="g-open-danger">Confirmar (destructivo)</button>
+        <button class="sf-btn" type="button" data-toast="info">Aviso</button>
+        <button class="sf-btn" type="button" data-toast="success">Éxito</button>
+        <button class="sf-btn" type="button" data-toast="warning">Advertencia</button>
+        <button class="sf-btn" type="button" data-toast="danger">Error</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="/static/js/core/icons.js"></script>
+  <script src="/static/js/core/toast.js"></script>
+  <script src="/static/js/core/dialog.js"></script>
+  <script>
+    // Theme switch wiring (the shell will own this in L3).
+    const mode = sf.theme.get();
+    document.querySelectorAll('input[name=theme]').forEach((r) => {
+      r.checked = r.value === mode;
+      r.addEventListener('change', () => sf.theme.set(r.value));
+    });
+    document.getElementById('g-open-confirm').addEventListener('click', () =>
+      sf.confirm({ title: '¿Continuar con la transcripción?', message: 'Seguiremos donde lo dejaste.', confirmLabel: 'Continuar' }));
+    document.getElementById('g-open-danger').addEventListener('click', () =>
+      sf.confirm({ title: '¿Descartar la grabación?', message: 'Se borrará de este dispositivo y no podrás recuperarla.', confirmLabel: 'Descartar', danger: true }));
+    const T = {
+      info: { title: 'Copiado', message: 'La transcripción está en el portapapeles.' },
+      success: { title: 'Archivo descargado', message: '' },
+      warning: { title: 'Fragmento 3 falló', message: 'Reintentando (2 de 3).' },
+      danger: { title: 'No hemos podido transcribir el fragmento 3', message: 'Puedes reintentarlo.', actions: [{ label: 'Reintentar' }] },
+    };
+    document.querySelectorAll('[data-toast]').forEach((b) =>
+      b.addEventListener('click', () => sf.toast({ kind: b.dataset.toast, ...T[b.dataset.toast] })));
+  </script>
+</body>
+</html>

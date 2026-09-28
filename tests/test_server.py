@@ -607,3 +607,81 @@ def test_frontend_default_language_is_spanish():
     assert "let currentLanguage = 'es';" in html
     assert '<option value="es" selected>' in html
     assert '<option value="en" selected>' not in html
+
+
+# ---------------------------------------------------------------------------
+# UX revamp: design tokens are the only source of color and font values
+# ---------------------------------------------------------------------------
+
+# Files still carrying pre-revamp hardcoded values. Each UX milestone that
+# replaces a screen removes its files from this set; the final verification
+# milestone requires it to be empty.
+_UNTOKENIZED_LEGACY = {
+    "css/legacy.css",
+    "js/status/logs.js",
+    "js/transcript/segment.js",
+    "../templates/index.html",
+}
+
+
+def test_no_hardcoded_colors_or_fonts_outside_tokens():
+    import re
+    static = REPO_ROOT / "app" / "static"
+    value_re = re.compile(
+        r"#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(|Silkscreen|Schibsted|IBM Plex|Helvetica|Arial|Courier"
+    )
+    candidates = [p for p in static.rglob("*") if p.suffix in {".css", ".js", ".html"}]
+    candidates.append(REPO_ROOT / "app" / "templates" / "index.html")
+    offenders = []
+    for p in candidates:
+        rel = str(p.relative_to(static)) if static in p.parents else "../templates/" + p.name
+        if rel == "css/tokens.css" or rel in _UNTOKENIZED_LEGACY:
+            continue
+        if value_re.search(p.read_text()):
+            offenders.append(rel)
+    assert not offenders, f"hardcoded color/font values outside css/tokens.css: {offenders}"
+
+
+def test_legacy_untokenized_list_has_no_stale_entries():
+    """An entry that no longer needs the exemption must be removed, so the list only shrinks."""
+    import re
+    static = REPO_ROOT / "app" / "static"
+    value_re = re.compile(r"#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(|Silkscreen|Schibsted|IBM Plex|Helvetica|Arial|Courier")
+    for rel in _UNTOKENIZED_LEGACY:
+        p = (static / rel).resolve()
+        assert p.exists(), f"{rel} listed as legacy but missing"
+        assert value_re.search(p.read_text()), f"{rel} is clean now: remove it from _UNTOKENIZED_LEGACY"
+
+
+def _run_node(script):
+    import shutil
+    import subprocess
+    if shutil.which("node") is None:
+        pytest.skip("node not available in this environment")
+    proc = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=10)
+    assert proc.returncode == 0, proc.stderr
+    return proc.stdout.strip()
+
+
+def test_event_bus_contract():
+    src = (REPO_ROOT / "app" / "static" / "js" / "core" / "events.js").read_text()
+    out = _run_node(f"""
+    global.window = global;
+    {src}
+    const seen = [];
+    const off = sf.events.on('chunk:done', d => seen.push(d.index));
+    sf.events.on('chunk:done', () => {{ throw new Error('boom'); }});   // must not break others
+    console.error = () => {{}};
+    sf.events.emit('chunk:done', {{index: 1}});
+    off();
+    sf.events.emit('chunk:done', {{index: 2}});
+    let unknownThrows = false, unknownEmitThrows = false;
+    try {{ sf.events.on('nope', () => {{}}); }} catch (e) {{ unknownThrows = true; }}
+    try {{ sf.events.emit('nope'); }} catch (e) {{ unknownEmitThrows = true; }}
+    console.log(JSON.stringify({{seen, unknownThrows, unknownEmitThrows, hasSegment: sf.events.TYPES.includes('segment')}}));
+    """)
+    import json
+    r = json.loads(out)
+    assert r["seen"] == [1]          # unsubscribed handler not called; throwing handler isolated
+    assert r["unknownThrows"] and r["unknownEmitThrows"]
+    assert r["hasSegment"]           # reserved integration point for future streaming

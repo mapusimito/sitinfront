@@ -1,0 +1,173 @@
+/*
+ * sitinfront design tokens.
+ *
+ * The ONLY file allowed to contain color values or font names. Everything
+ * else uses var(--token). Source: docs/brand-guide.html ("guía de marca").
+ * Where the guide is silent the value is derived and logged in
+ * UX_REVAMP_PLAN.md (section 2.2, decision log).
+ *
+ * Theme mechanism is the guide's: light by default, dark via
+ * prefers-color-scheme unless data-theme="light", or forced with
+ * data-theme="dark".
+ */
+
+/* ---------- Fonts (self-hosted, SIL OFL, latin subset covers Spanish) ---------- */
+@font-face {
+  font-family: "Silkscreen";
+  font-weight: 400;
+  font-display: swap;
+  src: url("/static/fonts/silkscreen-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Silkscreen";
+  font-weight: 700;
+  font-display: swap;
+  src: url("/static/fonts/silkscreen-700.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Schibsted Grotesk";
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("/static/fonts/schibsted-grotesk-400-900.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-weight: 400;
+  font-display: swap;
+  src: url("/static/fonts/ibm-plex-mono-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  font-weight: 500;
+  font-display: swap;
+  src: url("/static/fonts/ibm-plex-mono-500.woff2") format("woff2");
+}
+
+:root {
+  color-scheme: light dark;
+
+  /* ---------- Brand palette (guide, verbatim) ---------- */
+  --foco: #F2FF00;
+  --foco-2: #DDE000;
+  --sala: #000000;
+  --papel: #FFFFFF;
+  --tiza: #E6E6DF;
+  --grafito: #3B3B38;
+  --rec: #FF3B30; /* recording state ONLY */
+
+  /* ---------- Fonts ---------- */
+  --font-display: "Silkscreen", "Courier New", monospace;
+  --font-sans: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+  /* ---------- Type scale (guide: reading text 18px / 1.55) ---------- */
+  --fs-xs: 0.8125rem;   /* 13 */
+  --fs-sm: 0.875rem;    /* 14 */
+  --fs-ui: 1rem;        /* 16 */
+  --fs-read: 1.125rem;  /* 18 */
+  --fs-lg: 1.3125rem;   /* 21 */
+  --fs-h2: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
+  --fs-h1: clamp(1.875rem, 1.3rem + 2.2vw, 2.75rem);
+  --lh-read: 1.55;
+  --lh-ui: 1.4;
+  --lh-tight: 1.1;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-bold: 700;
+  --fw-black: 900;
+
+  /* ---------- Spacing / shape / layout ---------- */
+  --sp-1: 0.25rem;
+  --sp-2: 0.5rem;
+  --sp-3: 0.75rem;
+  --sp-4: 1rem;
+  --sp-5: 1.5rem;
+  --sp-6: 2rem;
+  --sp-7: 3rem;
+  --sp-8: 4rem;
+  --radius: 2px;        /* the guide's UI is square; 2px only softens inputs */
+  --border-w: 2px;      /* guide buttons use a 2px border */
+  --hit: 2.75rem;       /* 44px minimum touch target (WCAG 2.5.8 / brand) */
+  --wrap: 68rem;
+  --gutter: 1rem;
+
+  /* ---------- Motion ---------- */
+  --dur-fast: 120ms;
+  --dur: 200ms;
+
+  /* ---------- Light theme (default) ---------- */
+  --bg: var(--papel);
+  --fg: var(--sala);
+  --muted: #5E5E58;
+  --line: var(--tiza);
+  --panel: #F5F5F0;
+  --accent: var(--foco);            /* fill only; never text on light */
+  --on-accent: var(--sala);
+  --accent-edge: var(--sala);       /* border that makes a yellow fill visible on white */
+  --accent-text: var(--sala);       /* "yellow" emphasis as text on this theme */
+  --focus: var(--sala);
+  --overlay: rgba(0, 0, 0, 0.55);
+  --danger: #B3261E;
+  --danger-surface: #FDECEA;
+  --success: #1E6B34;
+  --success-surface: #E7F4EA;
+  --warning: #6B5000;
+  --warning-surface: #FFF4CC;
+  --mark-bg: var(--foco);           /* search highlight (guide: yellow mark) */
+  --mark-fg: var(--sala);
+  --glow: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: var(--sala);
+    --fg: #F4F4EE;
+    --muted: #A3A39A;
+    --line: #2A2A27;
+    --panel: #141412;
+    --accent-text: var(--foco);
+    --accent-edge: var(--foco);
+    --focus: var(--foco);
+    --overlay: rgba(0, 0, 0, 0.75);
+    --danger: #FF8A80;
+    --danger-surface: #2A1211;
+    --success: #7DDB8F;
+    --success-surface: #0E2316;
+    --warning: var(--foco-2);
+    --warning-surface: #262400;
+    --glow: 0 0 18px rgba(242, 255, 0, 0.35);
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: var(--sala);
+  --fg: #F4F4EE;
+  --muted: #A3A39A;
+  --line: #2A2A27;
+  --panel: #141412;
+  --accent-text: var(--foco);
+  --accent-edge: var(--foco);
+  --focus: var(--foco);
+  --overlay: rgba(0, 0, 0, 0.75);
+  --danger: #FF8A80;
+  --danger-surface: #2A1211;
+  --success: #7DDB8F;
+  --success-surface: #0E2316;
+  --warning: var(--foco-2);
+  --warning-surface: #262400;
+  --glow: 0 0 18px rgba(242, 255, 0, 0.35);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0.01ms;
+    --dur: 0.01ms;
+  }
+}

@@ -32,12 +32,32 @@ def _frontend_source():
     return "\n".join(parts)
 
 
+_TEST_RUNS_DIR = None
+
+
+def _test_runs_dir():
+    """One throwaway runs/ directory for the whole session (removed at exit), so no test can
+    write run artifacts or kept audio into the real, developer-facing runs/ directory."""
+    global _TEST_RUNS_DIR
+    if _TEST_RUNS_DIR is None:
+        import atexit
+        import shutil
+        import tempfile
+        _TEST_RUNS_DIR = Path(tempfile.mkdtemp(prefix="sitinfront-test-runs-"))
+        atexit.register(shutil.rmtree, _TEST_RUNS_DIR, ignore_errors=True)
+    return _TEST_RUNS_DIR
+
+
 def _reload_server():
     """(Re)import app.server fresh so module-level DEVICE/COMPUTE_TYPE/DEFAULT_MODEL
-    pick up whatever env vars are set right now."""
+    pick up whatever env vars are set right now. RUNS_DIR is always redirected to a temp
+    dir: a fresh import would otherwise point back at the real runs/ directory."""
     if "server" in sys.modules:
-        return importlib.reload(sys.modules["server"])
-    return importlib.import_module("server")
+        module = importlib.reload(sys.modules["server"])
+    else:
+        module = importlib.import_module("server")
+    module.RUNS_DIR = _test_runs_dir()
+    return module
 
 
 # ---------------------------------------------------------------------------
@@ -712,3 +732,11 @@ def test_engine_emits_the_documented_progress_events():
     # The bus must load before any engine script that emits.
     html = (REPO_ROOT / "app" / "templates" / "index.html").read_text()
     assert html.index("core/events.js") < html.index("engine/state.js")
+
+
+def test_reloaded_server_never_targets_the_real_runs_dir():
+    """Regression guard: a test that reloads the server without the server_module fixture must
+    not be able to write artifacts into the developer's real runs/ directory."""
+    server = _reload_server()
+    assert server.RUNS_DIR.resolve() != (REPO_ROOT / "runs").resolve()
+    assert REPO_ROOT.resolve() not in server.RUNS_DIR.resolve().parents

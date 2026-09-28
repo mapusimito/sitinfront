@@ -39,27 +39,53 @@ It started as a fork of Faster Whisper Web and has been rebuilt with its own vis
 
 ## Brand
 
-sitinfront has its own visual identity, distinct from the upstream project it's built on.
+sitinfront has its own visual identity, distinct from the upstream project it's built on. Full guide: [`docs/brand-guide.html`](docs/brand-guide.html).
+
+**Tagline**: *Tú atiende. Nosotros escribimos.* ("You pay attention. We write it down.")
+
+**Idea**: sitting in the front row is the best way not to miss anything. sitinfront brings that seat to anyone, in any class, however long it runs. Complete (full 2-3 hour lectures, no summaries that skip minute 97), present (the user stops transcribing by hand and goes back to listening and asking questions), findable (every sentence has its own timestamp).
 
 **Palette**
 
 | Token | Value | Role |
 |---|---|---|
-| `--foco` | `#F2FF00` | Primary yellow — accents, focus states |
-| `--sala` | `#000000` | Background |
-| `--papel` | `#F4F4EE` | Primary text (cream) |
-| `--grafito` | `#3B3B38` | Secondary surfaces (dark gray) |
-| `--rec` | `#FF3B30` | Recording indicator only |
+| `--foco` | `#F2FF00` | Focus yellow — primary action, cursor, highlights. Never used as text on white; it doesn't read. |
+| `--foco-2` | `#DDE000` | Dim yellow — logo gradient only |
+| `--sala` | `#000000` | Room black — app and logo background |
+| `--papel` | `#FFFFFF` | Paper — exported documents, light mode |
+| `--grafito` | `#3B3B38` | Graphite — secondary text, timestamps |
+| `--tiza` | `#E6E6DF` | Chalk — lines, borders, separators |
+| `--rec` | `#FF3B30` | Recording — recording state only |
+
+Dark-mode surface tones: `--bg #000`, `--fg #F4F4EE`, `--muted #A3A39A`, `--line #2A2A27`, `--panel #141412`. Light-mode panel: `#F5F5F0`.
+
+On-screen color ratio is roughly 62% black, 22% white, 9% graphite, 6% yellow, 1% red — yellow marks what matters; used everywhere, it stops meaning anything.
 
 **Type**
 
-- **Silkscreen** — logotype only
-- **Schibsted Grotesk** (400/500/700/900) — UI text
-- **IBM Plex Mono** — timestamps
+Three typefaces, each with exactly one job, all free on Google Fonts:
 
-**Mark**
+- **Silkscreen** — logotype and brand moments only. Never in paragraphs.
+- **Schibsted Grotesk** — headlines in Black 900, interface in Bold 700, body text in Regular 400 at 18px/1.55.
+- **IBM Plex Mono** — timestamps and durations only.
 
-A pixel-art "S" with a blinking cursor, at `app/static/brand/sitinfront-mark.svg`.
+**Logo**
+
+A pixelated "S" on a 5×7 grid followed by a text cursor — the class writing itself in real time. Canonical mark: `app/static/brand/sitinfront-mark.svg`.
+
+Rules: always lowercase (`sitinfront`, one word, never `SitInFront`); the cursor is part of the logo and stays (it can blink on screen, fixed in print); clear space is at least 2× the cursor's width on every side; minimum size is 96px wide for the full logotype, 16px for the symbol alone (favicon).
+
+**Voice**
+
+Like the classmate who sits up front and shares their notes: direct, clear, no fluff. Second person, talks about the class, never about "the AI."
+
+| Do | Don't |
+|---|---|
+| "Sube la grabación. Te avisamos cuando esté lista." | "Revoluciona tu aprendizaje con IA de última generación." |
+| "Tu clase de 2 h 38 min ya está transcrita." | "¡Ups! Algo salió mal 😅" |
+| "No hemos podido leer el audio a partir del minuto 84. Prueba a subir el archivo otra vez." | "Procesando tu contenido multimedia…" |
+
+Taglines: *Tú atiende. Nosotros escribimos.* (main) · *La clase entera, palabra por palabra.* (one-line product description) · *Primera fila, siempre.* (social, short-form)
 
 **Icons**
 
@@ -164,5 +190,3 @@ MIT — see [LICENSE](LICENSE). The core transcription engine is inherited from 
 - [SYSTRAN/faster-whisper](https://github.com/SYSTRAN/faster-whisper) — transcription engine this project builds on
 - [OpenNMT/CTranslate2](https://github.com/OpenNMT/CTranslate2) — inference runtime
 - [OpenAI Whisper](https://github.com/openai/whisper) — original model
-# sitinfront
-# sitinfront

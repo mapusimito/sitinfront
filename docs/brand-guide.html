@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>sitinfront — guía de marca</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Schibsted+Grotesk:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --foco:#F2FF00;      /* amarillo foco */
+  --foco-2:#DDE000;    /* amarillo tenue (degradado del logo) */
+  --sala:#000000;      /* negro sala */
+  --papel:#FFFFFF;
+  --tiza:#E6E6DF;
+  --grafito:#3B3B38;
+  --rec:#FF3B30;
+
+  --bg:var(--papel);
+  --fg:var(--sala);
+  --muted:#5E5E58;
+  --line:var(--tiza);
+  --panel:#F5F5F0;
+
+  --display:"Silkscreen", "Courier New", monospace;
+  --sans:"Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#000; --fg:#F4F4EE; --muted:#A3A39A; --line:#2A2A27; --panel:#141412;
+  }
+}
+:root[data-theme="dark"]{--bg:#000; --fg:#F4F4EE; --muted:#A3A39A; --line:#2A2A27; --panel:#141412;}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+*,*::before,*::after{box-sizing:inherit;}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:18px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+img,svg{max-width:100%;}
+a{color:inherit;}
+:focus-visible{outline:3px solid var(--foco);outline-offset:3px;}
+
+.wrap{max-width:1040px;margin:0 auto;padding:0 24px;}
+
+/* ---------- HERO ---------- */
+.hero{background:#000;color:#F4F4EE;padding:64px 0 72px;overflow:hidden;}
+.hero .wrap{display:grid;grid-template-columns:1fr;gap:48px;}
+.lockup{display:flex;align-items:center;gap:20px;}
+.lockup svg{width:64px;height:auto;flex:none;filter:drop-shadow(0 0 18px rgba(242,255,0,.45));}
+.wordmark{font-family:var(--display);font-size:clamp(40px,8vw,88px);line-height:1;letter-spacing:-.01em;color:var(--foco);text-shadow:0 0 28px rgba(242,255,0,.35);}
+.hero h1{font-weight:900;font-size:clamp(34px,5.4vw,64px);line-height:1.02;letter-spacing:-.025em;margin:0;max-width:14ch;}
+.hero p.lead{color:#B8B8AE;max-width:46ch;margin:18px 0 0;font-size:19px;}
+
+.live{border-top:1px solid #262624;padding-top:20px;font-family:var(--sans);}
+.live-head{display:flex;justify-content:space-between;align-items:center;color:#8C8C84;font-size:14px;margin-bottom:14px;gap:12px;flex-wrap:wrap;}
+.recdot{display:inline-block;width:9px;height:9px;background:var(--rec);margin-right:8px;vertical-align:1px;}
+.tline{display:grid;grid-template-columns:72px 1fr;gap:14px;padding:6px 0;font-size:clamp(17px,2.2vw,21px);line-height:1.45;}
+.tline time{font-family:var(--mono);font-size:14px;color:#6F6F68;padding-top:4px;}
+.tline .who{color:var(--foco);font-weight:700;margin-right:6px;}
+.caret{display:inline-block;width:.55em;height:1.05em;background:var(--foco);vertical-align:-.15em;margin-left:2px;animation:blink 1s steps(1) infinite;box-shadow:0 0 12px rgba(242,255,0,.6);}
+@keyframes blink{50%{opacity:0;}}
+@media (prefers-reduced-motion:reduce){.caret{animation:none;}}
+
+@media (min-width:860px){
+  .hero .wrap{grid-template-columns:1fr 1.05fr;align-items:end;}
+}
+
+/* ---------- SECTIONS ---------- */
+section.block{padding:88px 0 0;}
+section.block:last-of-type{padding-bottom:96px;}
+h2{font-weight:900;font-size:clamp(28px,3.6vw,40px);letter-spacing:-.02em;line-height:1.1;margin:0 0 14px;}
+h3{font-weight:700;font-size:20px;margin:0 0 6px;letter-spacing:-.01em;}
+p{margin:0 0 14px;max-width:62ch;}
+.muted{color:var(--muted);}
+.intro{display:grid;gap:8px 48px;grid-template-columns:1fr;margin-bottom:40px;}
+@media (min-width:860px){.intro{grid-template-columns:.9fr 1.1fr;}}
+
+/* concept */
+.promise{font-size:clamp(22px,2.6vw,28px);line-height:1.35;font-weight:500;max-width:30ch;letter-spacing:-.01em;}
+.pillars{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:32px;border-top:2px solid var(--fg);padding-top:24px;}
+.pillars p{font-size:16px;}
+
+/* logo */
+.logo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:4px;}
+.tile{min-height:240px;display:flex;align-items:center;justify-content:center;padding:32px;position:relative;}
+.tile small{position:absolute;left:16px;bottom:12px;font-size:13px;}
+.tile.dark{background:#000;color:#8C8C84;}
+.tile.light{background:#fff;color:#6b6b64;border:1px solid var(--line);}
+.tile.yellow{background:var(--foco);color:#000;}
+.wm{font-family:var(--display);font-size:clamp(30px,4vw,40px);line-height:1;display:flex;align-items:center;gap:4px;}
+.wm i{display:inline-block;width:.5em;height:.95em;}
+.wm.on-dark{color:var(--foco);text-shadow:0 0 20px rgba(242,255,0,.35);}
+.wm.on-dark i{background:var(--foco);box-shadow:0 0 12px rgba(242,255,0,.6);}
+.wm.on-light{color:#000;}
+.wm.on-light i{background:var(--foco);outline:2px solid #000;outline-offset:-2px;}
+.wm.on-yellow{color:#000;}
+.wm.on-yellow i{background:#000;}
+
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:24px 32px;margin-top:36px;}
+.rules div{border-left:3px solid var(--foco);padding-left:14px;}
+:root:not([data-theme="dark"]) .rules div{border-left-color:#000;}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .rules div{border-left-color:var(--foco);}}
+.rules p{font-size:16px;margin:0;}
+
+/* color */
+.swatches{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:4px;}
+.sw{min-height:190px;padding:16px;display:flex;flex-direction:column;justify-content:flex-end;font-size:15px;line-height:1.35;}
+.sw b{font-size:17px;}
+.sw code{font-family:var(--mono);font-size:13px;opacity:.8;}
+.ratio{display:flex;height:22px;margin-top:20px;}
+.ratio span{display:block;height:100%;}
+.ratio-cap{font-size:14px;margin-top:8px;}
+
+/* type */
+.type-row{display:grid;grid-template-columns:1fr;gap:10px 40px;padding:28px 0;border-top:1px solid var(--line);}
+@media (min-width:760px){.type-row{grid-template-columns:220px 1fr;}}
+.type-row .spec{font-size:15px;color:var(--muted);}
+.type-row .spec b{display:block;color:var(--fg);font-size:17px;}
+.s-display{font-family:var(--display);font-size:clamp(36px,6vw,64px);line-height:1;}
+.s-head{font-weight:900;font-size:clamp(30px,4.4vw,48px);line-height:1.05;letter-spacing:-.025em;}
+.s-body{font-size:18px;max-width:58ch;}
+.s-mono{font-family:var(--mono);font-size:16px;}
+
+/* voice */
+.voice{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:40px;}
+.say{list-style:none;padding:0;margin:0;}
+.say li{padding:14px 0;border-bottom:1px solid var(--line);font-size:17px;}
+.say li span{display:block;font-size:14px;color:var(--muted);}
+.no{text-decoration:line-through;text-decoration-color:var(--rec);color:var(--muted);}
+.taglines{margin-top:48px;display:grid;gap:4px;}
+.tag{background:var(--panel);padding:22px 24px;font-weight:700;font-size:clamp(20px,2.6vw,28px);letter-spacing:-.015em;line-height:1.2;}
+.tag small{display:block;font-weight:400;font-size:14px;color:var(--muted);letter-spacing:0;margin-top:6px;}
+
+/* applications */
+.apps{display:grid;grid-template-columns:1fr;gap:4px;}
+@media (min-width:900px){.apps{grid-template-columns:1.5fr 1fr;}}
+.mock{background:#000;color:#F4F4EE;padding:0;overflow:hidden;}
+.mock-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #222;gap:12px;flex-wrap:wrap;}
+.mock-bar .wm{font-size:18px;}
+.mock-body{padding:22px 18px 26px;}
+.mock-title{font-weight:700;font-size:21px;margin:0 0 2px;}
+.mock-meta{color:#8C8C84;font-size:14px;margin:0 0 18px;}
+.mock .tline{font-size:16px;}
+.mark{background:var(--foco);color:#000;padding:0 3px;}
+.btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px;}
+.btn{font-family:var(--sans);font-weight:700;font-size:15px;padding:11px 16px;border:2px solid var(--foco);cursor:pointer;}
+.btn.primary{background:var(--foco);color:#000;}
+.btn.ghost{background:transparent;color:var(--foco);}
+.side{display:grid;gap:4px;}
+.icons{background:var(--panel);padding:28px;display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap;}
+.icons figure{margin:0;text-align:center;font-size:13px;color:var(--muted);}
+.icons svg{display:block;margin:0 auto 8px;}
+.empty{background:var(--panel);padding:28px;}
+.empty .ttl{font-weight:700;font-size:19px;margin-bottom:4px;}
+.empty p{font-size:16px;margin-bottom:16px;}
+.drop{border:2px dashed var(--muted);padding:22px;text-align:center;font-size:15px;color:var(--muted);}
+
+footer{border-top:1px solid var(--line);padding:28px 0;font-size:14px;color:var(--muted);}
+.scroll-x{overflow-x:auto;}
+</style>
+</head>
+<body>
+
+<!-- Símbolo reutilizable: S pixelada + cursor -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <g id="mark">
+      <!-- S en rejilla 5x7, unidad 10 -->
+      <rect x="10" y="0" width="40" height="10"/>
+      <rect x="0" y="10" width="10" height="20"/>
+      <rect x="10" y="30" width="30" height="10"/>
+      <rect x="40" y="40" width="10" height="20"/>
+      <rect x="0" y="60" width="40" height="10"/>
+      <!-- cursor -->
+      <rect x="62" y="0" width="12" height="70"/>
+    </g>
+  </defs>
+</svg>
+
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <div class="lockup" style="margin-bottom:40px">
+        <svg viewBox="0 0 74 70" fill="#F2FF00" aria-hidden="true"><use href="#mark"/></svg>
+        <span class="wordmark">sitinfront</span>
+      </div>
+      <h1>Tú atiende. Nosotros escribimos.</h1>
+      <p class="lead">Guía de marca de sitinfront: transcripción con IA de clases completas, de la primera palabra a la última, como si estuvieras sentado en primera fila.</p>
+    </div>
+
+    <div class="live" aria-label="Ejemplo de transcripción en vivo">
+      <div class="live-head">
+        <span><span class="recdot" aria-hidden="true"></span>Transcribiendo · Historia Contemporánea, tema 4</span>
+        <span style="font-family:var(--mono)">01:12:48</span>
+      </div>
+      <div id="stream"></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- CONCEPTO -->
+  <section class="block">
+    <div class="wrap">
+      <div class="intro">
+        <h2>La idea</h2>
+        <div>
+          <p class="promise">Sentarse delante es la mejor manera de no perderse nada. sitinfront lleva ese asiento a cualquiera, en cualquier clase, por larga que sea.</p>
+        </div>
+      </div>
+      <div class="pillars">
+        <div><h3>Completo</h3><p class="muted">Clases de dos o tres horas, enteras. Nada de resúmenes que se saltan lo que dijo el profe en el minuto 97.</p></div>
+        <div><h3>Presente</h3><p class="muted">El usuario deja de copiar y vuelve a escuchar, preguntar y pensar. La marca siempre habla de atención, no de tecnología.</p></div>
+        <div><h3>Encontrable</h3><p class="muted">Cada frase tiene su minuto. Buscar "eso que dijo del examen" tiene que llevar exactamente ahí.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOGO -->
+  <section class="block">
+    <div class="wrap">
+      <div class="intro">
+        <h2>Logotipo</h2>
+        <p class="muted">Una S pixelada seguida de un cursor de texto: la clase escribiéndose en tiempo real. Conserva el lenguaje de píxel y el brillo amarillo de tu logo actual, pero con un símbolo propio.</p>
+      </div>
+
+      <div class="logo-grid">
+        <div class="tile dark">
+          <div class="wm on-dark">sitinfront<i></i></div>
+          <small>Principal, sobre negro</small>
+        </div>
+        <div class="tile light">
+          <div class="wm on-light">sitinfront<i></i></div>
+          <small>Sobre fondo claro</small>
+        </div>
+        <div class="tile yellow">
+          <div class="wm on-yellow">sitinfront<i></i></div>
+          <small>Sobre amarillo</small>
+        </div>
+        <div class="tile dark">
+          <svg viewBox="0 0 74 70" width="110" fill="#F2FF00" style="filter:drop-shadow(0 0 16px rgba(242,255,0,.5))" aria-label="Símbolo sitinfront"><use href="#mark"/></svg>
+          <small>Símbolo</small>
+        </div>
+      </div>
+
+      <div class="rules">
+        <div><h3>Siempre en minúscula</h3><p class="muted">"sitinfront", en una sola palabra. En texto corrido también: sitinfront, no SitInFront.</p></div>
+        <div><h3>El cursor no se quita</h3><p class="muted">Es parte del logo. En pantalla puede parpadear; en impresión va fijo.</p></div>
+        <div><h3>Espacio de respeto</h3><p class="muted">Deja alrededor, como mínimo, el ancho del cursor multiplicado por dos.</p></div>
+        <div><h3>Tamaño mínimo</h3><p class="muted">Logotipo: 96 px de ancho. Símbolo: 16 px (favicon).</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COLOR -->
+  <section class="block">
+    <div class="wrap">
+      <div class="intro">
+        <h2>Color</h2>
+        <p class="muted">Negro de sala y amarillo de foco, como el escenario de un aula con la luz sobre el profesor. El amarillo marca lo importante; si aparece en todas partes, deja de significar algo.</p>
+      </div>
+      <div class="swatches">
+        <div class="sw" style="background:#F2FF00;color:#000"><b>Foco</b><code>#F2FF00</code>Acción principal, cursor, resaltados</div>
+        <div class="sw" style="background:#000;color:#F4F4EE;border:1px solid var(--line)"><b>Sala</b><code>#000000</code>Fondo de la app y del logo</div>
+        <div class="sw" style="background:#FFFFFF;color:#000;border:1px solid var(--line)"><b>Papel</b><code>#FFFFFF</code>Documentos exportados, modo claro</div>
+        <div class="sw" style="background:#3B3B38;color:#F4F4EE"><b>Grafito</b><code>#3B3B38</code>Texto secundario, marcas de tiempo</div>
+        <div class="sw" style="background:#E6E6DF;color:#000"><b>Tiza</b><code>#E6E6DF</code>Líneas, bordes, separadores</div>
+        <div class="sw" style="background:#FF3B30;color:#000"><b>Grabando</b><code>#FF3B30</code>Solo para el estado de grabación</div>
+      </div>
+      <div class="ratio" aria-hidden="true">
+        <span style="width:62%;background:#000;border:1px solid var(--line)"></span>
+        <span style="width:22%;background:#FFFFFF;border:1px solid var(--line)"></span>
+        <span style="width:9%;background:#3B3B38"></span>
+        <span style="width:6%;background:#F2FF00"></span>
+        <span style="width:1%;background:#FF3B30"></span>
+      </div>
+      <p class="ratio-cap muted">Proporción aproximada en pantalla. El amarillo nunca se usa para texto sobre blanco: no se lee.</p>
+    </div>
+  </section>
+
+  <!-- TIPOGRAFÍA -->
+  <section class="block">
+    <div class="wrap">
+      <div class="intro">
+        <h2>Tipografía</h2>
+        <p class="muted">Tres familias, cada una con un solo trabajo. Todas gratuitas en Google Fonts.</p>
+      </div>
+      <div class="type-row">
+        <div class="spec"><b>Silkscreen</b>Logotipo y momentos de marca. Nunca en párrafos.</div>
+        <div class="s-display">sitinfront</div>
+      </div>
+      <div class="type-row">
+        <div class="spec"><b>Schibsted Grotesk</b>Titulares en Black 900, interfaz en Bold 700.</div>
+        <div class="s-head">Tres horas de clase, listas para repasar.</div>
+      </div>
+      <div class="type-row">
+        <div class="spec"><b>Schibsted Grotesk</b>Transcripciones y texto de lectura, Regular 400, 18 px, interlineado 1,55.</div>
+        <div class="s-body">Bien, entonces lo que tenéis que entender del Congreso de Viena es que no se trata solo de fronteras, sino de un equilibrio pensado para que ninguna potencia pudiera dominar el continente.</div>
+      </div>
+      <div class="type-row">
+        <div class="spec"><b>IBM Plex Mono</b>Solo marcas de tiempo y duraciones.</div>
+        <div class="s-mono">00:47:12 · 2 h 38 min · 01:12:48</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VOZ -->
+  <section class="block">
+    <div class="wrap">
+      <div class="intro">
+        <h2>Voz</h2>
+        <p class="muted">Como el compañero que se sienta delante y te pasa los apuntes: cercano, claro y sin rollo. Tutea, habla de la clase y no de la IA.</p>
+      </div>
+      <div class="voice">
+        <div>
+          <h3>Así sí</h3>
+          <ul class="say">
+            <li>Sube la grabación. Te avisamos cuando esté lista.<span>Dice qué pasa y qué viene después.</span></li>
+            <li>Tu clase de 2 h 38 min ya está transcrita.<span>Datos concretos, no adjetivos.</span></li>
+            <li>No hemos podido leer el audio a partir del minuto 84. Prueba a subir el archivo otra vez.<span>Los errores explican y dan salida.</span></li>
+          </ul>
+        </div>
+        <div>
+          <h3>Así no</h3>
+          <ul class="say">
+            <li class="no">Revoluciona tu aprendizaje con IA de última generación.</li>
+            <li class="no">¡Ups! Algo salió mal 😅</li>
+            <li class="no">Procesando tu contenido multimedia…</li>
+          </ul>
+        </div>
+      </div>
+      <div class="taglines">
+        <div class="tag">Tú atiende. Nosotros escribimos.<small>Eslogan principal</small></div>
+        <div class="tag">La clase entera, palabra por palabra.<small>Para explicar el producto en una línea</small></div>
+        <div class="tag">Primera fila, siempre.<small>Para redes y piezas cortas</small></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- APLICACIONES -->
+  <section class="block">
+    <div class="wrap">
+      <div class="intro">
+        <h2>Aplicaciones</h2>
+        <p class="muted">Cómo se ve la marca dentro del producto. El resaltado amarillo es lo único que brilla en la pantalla de lectura.</p>
+      </div>
+      <div class="apps">
+        <div class="mock">
+          <div class="mock-bar">
+            <div class="wm on-dark">sitinfront<i></i></div>
+            <span style="color:#8C8C84;font-size:14px">Mis clases</span>
+          </div>
+          <div class="mock-body">
+            <p class="mock-title">Biología Celular · Mitosis y meiosis</p>
+            <p class="mock-meta">Martes 22 de septiembre · <span style="font-family:var(--mono)">2 h 11 min</span></p>
+            <div class="tline"><time>00:31:05</time><div><span class="who">Profesora</span>La profase es donde la cromatina se condensa, así que si veis cromosomas visibles, ya estáis ahí.</div></div>
+            <div class="tline"><time>00:31:22</time><div><span class="who">Alumno</span>¿Y eso entra tal cual?</div></div>
+            <div class="tline"><time>00:31:26</time><div><span class="who">Profesora</span><span class="mark">Esto va seguro al examen</span>: diferenciar la anafase I de la anafase II.</div></div>
+            <div class="btns">
+              <button class="btn primary" type="button">Exportar apuntes</button>
+              <button class="btn ghost" type="button">Buscar en la clase</button>
+            </div>
+          </div>
+        </div>
+        <div class="side">
+          <div class="icons">
+            <figure>
+              <svg width="96" height="96" viewBox="0 0 96 96" aria-label="Icono de app"><rect width="96" height="96" rx="22" fill="#000"/><g transform="translate(19 25) scale(.78)" fill="#F2FF00"><use href="#mark"/></g></svg>
+              App
+            </figure>
+            <figure>
+              <svg width="56" height="56" viewBox="0 0 96 96" aria-label="Avatar redes"><circle cx="48" cy="48" r="48" fill="#F2FF00"/><g transform="translate(21 27) scale(.72)" fill="#000"><use href="#mark"/></g></svg>
+              Redes
+            </figure>
+            <figure>
+              <svg width="24" height="24" viewBox="0 0 96 96" aria-label="Favicon"><rect width="96" height="96" fill="#000"/><g transform="translate(12 18) scale(.95)" fill="#F2FF00"><use href="#mark"/></g></svg>
+              Favicon
+            </figure>
+          </div>
+          <div class="empty">
+            <div class="ttl">Aún no tienes clases</div>
+            <p class="muted">Sube la grabación de una clase y la tendrás transcrita, con cada frase en su minuto.</p>
+            <div class="drop">Arrastra aquí un audio o vídeo<br>MP3, M4A, WAV o MP4, hasta 4 horas</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap">sitinfront · guía de marca v1 · septiembre 2026</div></footer>
+
+<script>
+(function(){
+  const lines = [
+    ["01:12:31","Profesor","Vale, recapitulamos antes del descanso."],
+    ["01:12:37","Profesor","El Congreso de Viena no restaura el mapa de 1789, restaura un equilibrio."],
+    ["01:12:44","Alumna","¿Eso es lo que hay que poner en la pregunta larga?"],
+    ["01:12:48","Profesor","Exacto, y citad a Metternich, que eso suma."]
+  ];
+  const box = document.getElementById("stream");
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function row(t,who){
+    const d=document.createElement("div");d.className="tline";
+    d.innerHTML='<time>'+t+'</time><div><span class="who">'+who+'</span><span class="txt"></span></div>';
+    box.appendChild(d);return d.querySelector(".txt");
+  }
+  const caret=document.createElement("span");caret.className="caret";caret.setAttribute("aria-hidden","true");
+  if(reduce){
+    lines.forEach(l=>{row(l[0],l[1]).textContent=l[2];});
+    box.lastChild.querySelector("div").appendChild(caret);
+    return;
+  }
+  let i=0;
+  function next(){
+    if(i>=lines.length) return;
+    const [t,who,text]=lines[i++];
+    const el=row(t,who);el.after(caret);
+    let k=0;
+    (function type(){
+      el.textContent=text.slice(0,++k);
+      if(k<text.length) setTimeout(type, 22+Math.random()*30);
+      else setTimeout(next, 520);
+    })();
+  }
+  next();
+})();
+</script>
+</body>
+</html>

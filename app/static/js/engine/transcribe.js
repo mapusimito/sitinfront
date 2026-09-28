@@ -40,13 +40,15 @@
 
             getSummary() {
                 const totalFailures = this.failures.length;
-                const totalSegments = totalSegments;
-                const completed = totalSegments - totalFailures;
+                // The global from engine/state.js (main chunks in this run). A local
+                // `const totalSegments = totalSegments` shadowed it and threw a TDZ error.
+                const total = totalSegments;
+                const completed = total - totalFailures;
                 return {
-                    total: totalSegments,
+                    total,
                     completed,
                     failed: totalFailures,
-                    percentage: totalSegments > 0 ? Math.round((completed / totalSegments) * 100) : 0
+                    percentage: total > 0 ? Math.round((completed / total) * 100) : 0
                 };
             }
         }

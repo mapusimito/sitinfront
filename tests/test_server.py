@@ -740,3 +740,44 @@ def test_reloaded_server_never_targets_the_real_runs_dir():
     server = _reload_server()
     assert server.RUNS_DIR.resolve() != (REPO_ROOT / "runs").resolve()
     assert REPO_ROOT.resolve() not in server.RUNS_DIR.resolve().parents
+
+
+# ---------------------------------------------------------------------------
+# Partial failure: a run with a permanently failed chunk must still finish visibly
+# ---------------------------------------------------------------------------
+
+def _run_engine_harness(variant, fail_index):
+    import json
+    import shutil
+    import subprocess
+    if shutil.which("node") is None:
+        pytest.skip("node not available in this environment")
+    proc = subprocess.run(
+        ["node", str(REPO_ROOT / "tests" / "harness" / "engine_harness.cjs"), variant, str(fail_index)],
+        capture_output=True, text=True, timeout=30,
+    )
+    assert proc.returncode == 0, proc.stderr
+    return json.loads(proc.stdout.strip().splitlines()[-1])
+
+
+@pytest.mark.parametrize("variant", ["record", "upload"])
+def test_partial_failure_still_shows_summary_and_export_and_marks_run(variant):
+    """Regression: FailedSegmentTracker.getSummary() read a shadowed `totalSegments` (a TDZ
+    ReferenceError), so any run ending with a failed chunk threw before showing the summary
+    card, the Copiar/Exportar buttons, marking the run in IndexedDB, or emitting run:end."""
+    r = _run_engine_harness(variant, fail_index=1)
+    assert r["error"] is None, r["error"]
+    assert r["chunkDone"] == 2 and r["chunkFail"] == 1
+    assert r["summaryCardActive"] is True
+    assert r["copyDisplay"] == "flex" and r["exportDisplay"] == "flex"
+    assert r["marks"] == ["aborted"]          # the existing "not fully done" run status
+    assert r["runEnd"] == [{"outcome": "partial", "failedChunks": ["main-1"]}]
+    assert "2/3" in r["statusText"] and "1 fallados" in r["statusText"]
+
+
+@pytest.mark.parametrize("variant", ["record", "upload"])
+def test_clean_run_still_reports_complete(variant):
+    r = _run_engine_harness(variant, fail_index="none")
+    assert r["error"] is None
+    assert r["marks"] == ["done"]
+    assert r["runEnd"] == [{"outcome": "complete", "failedChunks": []}]

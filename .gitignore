@@ -64,3 +64,4 @@ tools/ux/node_modules/
 # UX baseline text is lecture content; keep local, commit only hashes
 docs/ux-revamp/baseline/4min/
 docs/ux-revamp/baseline/12min/
+docs/ux-revamp/after-*/

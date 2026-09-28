@@ -19,6 +19,19 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(REPO_ROOT / "app"))
 
 
+def _frontend_source():
+    """index.html plus every script/stylesheet it references from /static, concatenated in
+    load order. The frontend was split out of a single index.html (UX revamp L1); these
+    tests guard behavior of the code, wherever it lives, so they read all of it."""
+    import re
+    html_path = REPO_ROOT / "app" / "templates" / "index.html"
+    html = html_path.read_text()
+    parts = [html]
+    for src in re.findall(r'<script src="/static/([^"]+)"', html):
+        parts.append((REPO_ROOT / "app" / "static" / src).read_text())
+    return "\n".join(parts)
+
+
 def _reload_server():
     """(Re)import app.server fresh so module-level DEVICE/COMPUTE_TYPE/DEFAULT_MODEL
     pick up whatever env vars are set right now."""
@@ -95,7 +108,7 @@ def test_ui_default_model_is_small_pending_turbo_availability():
     UI's own selected/default model must stay 'small' until large-v3-turbo's weights are
     confirmed available and its CPU speed is measured (see IMPLEMENTATION_STATUS.md M12/12.4)
     — otherwise a fresh install's out-of-the-box UI transcription fails or hangs offline."""
-    html = (REPO_ROOT / "app" / "templates" / "index.html").read_text()
+    html = _frontend_source()
     assert "let currentModel = 'small';" in html
     assert '<option value="small" selected>' in html
     assert '<option value="large-v3-turbo" selected>' not in html
@@ -325,7 +338,7 @@ def test_keep_audio_on_keeps_chunk_audio(server_module, client, monkeypatch):
 # ---------------------------------------------------------------------------
 
 def test_frontend_has_no_random_confidence():
-    html = (REPO_ROOT / "app" / "templates" / "index.html").read_text()
+    html = _frontend_source()
     assert "calculateConfidence" not in html
     # No Math.random anywhere near "confidence"/"Confianza" text used for a displayed score.
     assert "Math.random() * 15" not in html
@@ -338,7 +351,7 @@ def test_frontend_confidence_not_random_source():
     all. Includes createOrderedSegmentAppender (and its nested flushOne), since round-2 audit
     found a randomised badge injected there survives a check that only covers the three
     lower-level helper functions."""
-    html = (REPO_ROOT / "app" / "templates" / "index.html").read_text()
+    html = _frontend_source()
     for fn_name in (
         "calculateAvgTokenProb", "calculateAverageTokenProb", "appendSegmentToTranscript",
         "createOrderedSegmentAppender",
@@ -365,7 +378,7 @@ def test_average_token_prob_is_duration_weighted_not_unweighted_mean():
     if shutil.which("node") is None:
         pytest.skip("node not available in this environment")
 
-    html = (REPO_ROOT / "app" / "templates" / "index.html").read_text()
+    html = _frontend_source()
     start = html.index("function calculateAverageTokenProb(")
     end = html.index("\n        function ", start + 1)
     fn_src = html[start:end]
@@ -399,7 +412,7 @@ def test_flush_remaining_prevents_silent_transcript_truncation():
     if shutil.which("node") is None:
         pytest.skip("node not available in this environment")
 
-    html = (REPO_ROOT / "app" / "templates" / "index.html").read_text()
+    html = _frontend_source()
 
     def extract(fn_name):
         start = html.index(f"function {fn_name}(")
@@ -451,7 +464,7 @@ def test_chunk_upload_requests_verbose_json():
     """Targets the actual chunk-upload request-building code (the formData closures used by
     the UI's chunked-transcription flows), not a whole-file grep, so removing verbose_json
     from just that code is caught even if 'verbose_json' still appears elsewhere in the file."""
-    html = (REPO_ROOT / "app" / "templates" / "index.html").read_text()
+    html = _frontend_source()
     upload_regions = [m.start() for m in __import__("re").finditer(r"formData\.append\('file', chunkBlob", html)]
     assert len(upload_regions) >= 2, "expected both chunk-upload closures (recorded + uploaded-file flows) to build a FormData for the chunk file"
     for start in upload_regions:
@@ -588,7 +601,7 @@ def test_malicious_run_id_cannot_escape_runs_dir(server_module, client, monkeypa
 # ---------------------------------------------------------------------------
 
 def test_frontend_default_language_is_spanish():
-    html = (REPO_ROOT / "app" / "templates" / "index.html").read_text()
+    html = _frontend_source()
     # The JS state and the <select> must agree, or the UI shows one language
     # and sends another.
     assert "let currentLanguage = 'es';" in html

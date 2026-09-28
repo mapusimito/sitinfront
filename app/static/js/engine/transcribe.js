@@ -1,0 +1,604 @@
+        class FailedSegmentTracker {
+            constructor() {
+                this.failures = [];
+                this.consecutiveFailures = 0;
+                this.failureDetails = {};
+            }
+
+            recordFailure(chunkId, error, attempt, retried) {
+                this.consecutiveFailures++;
+                const details = {
+                    chunkId,
+                    error: error.message || String(error),
+                    timestamp: new Date().toISOString(),
+                    attempt,
+                    retried
+                };
+                this.failures.push(details);
+                this.failureDetails[chunkId] = details;
+            }
+
+            recordSuccess() {
+                this.consecutiveFailures = 0;
+            }
+
+            getConsecutiveFailures() {
+                return this.consecutiveFailures;
+            }
+
+            getFailureCount() {
+                return this.failures.length;
+            }
+
+            toJSON() {
+                return {
+                    totalFailures: this.failures.length,
+                    consecutiveFailures: this.consecutiveFailures,
+                    details: this.failures
+                };
+            }
+
+            getSummary() {
+                const totalFailures = this.failures.length;
+                const totalSegments = totalSegments;
+                const completed = totalSegments - totalFailures;
+                return {
+                    total: totalSegments,
+                    completed,
+                    failed: totalFailures,
+                    percentage: totalSegments > 0 ? Math.round((completed / totalSegments) * 100) : 0
+                };
+            }
+        }
+
+        function isRetryableError(error, statusCode) {
+            if (statusCode === undefined) {
+                const message = error.message || String(error);
+                return message.includes('timeout') ||
+                       message.includes('network') ||
+                       message.includes('failed to fetch') ||
+                       message.includes('NetworkError');
+            }
+            return RETRYABLE_STATUS_CODES.includes(statusCode);
+        }
+
+        async function transcribeChunkWithRetry(
+            audioBlob,
+            chunk,
+            chunkId,
+            formDataFactory,
+            onSuccess,
+            onFailure
+        ) {
+            let lastError = null;
+
+            for (let attempt = 0; attempt <= MAX_RETRIES_PER_CHUNK; attempt++) {
+                if (isAbortingTranscription) {
+                    throw new Error('Transcription aborted');
+                }
+
+                try {
+                    const formData = formDataFactory();
+                    const response = await fetch('/v1/audio/transcriptions', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        lastError = new Error(`HTTP ${response.status}`);
+
+                        if (!isRetryableError(null, response.status)) {
+                            failedSegmentTracker.recordFailure(chunkId, lastError, attempt, false);
+                            onFailure(lastError, false);
+                            return {
+                                ...chunk,
+                                text: '',
+                                error: true,
+                                errorMessage: lastError.message,
+                                permanently_failed: true
+                            };
+                        }
+
+                        if (attempt < MAX_RETRIES_PER_CHUNK) {
+                            const delay = RETRY_DELAYS[attempt];
+                            showErrorToast(
+                                `Segment ${chunkId} failed (${response.status}). Retrying... (${attempt + 1}/${MAX_RETRIES_PER_CHUNK})`,
+                                chunkId,
+                                []
+                            );
+                            await new Promise(resolve => setTimeout(resolve, delay));
+                            continue;
+                        } else {
+                            failedSegmentTracker.recordFailure(chunkId, lastError, attempt, true);
+                            onFailure(lastError, true);
+                            return {
+                                ...chunk,
+                                text: '',
+                                error: true,
+                                errorMessage: `Failed after ${MAX_RETRIES_PER_CHUNK} retries: ${response.status}`,
+                                permanently_failed: true
+                            };
+                        }
+                    }
+
+                    const data = await response.json();
+                    failedSegmentTracker.recordSuccess();
+                    onSuccess(data);
+                    return {
+                        ...chunk,
+                        text: data.text || '',
+                        segments: data.segments || null
+                    };
+
+                } catch (err) {
+                    lastError = err;
+
+                    if (!isRetryableError(err)) {
+                        failedSegmentTracker.recordFailure(chunkId, err, attempt, false);
+                        onFailure(err, false);
+                        return {
+                            ...chunk,
+                            text: '',
+                            error: true,
+                            errorMessage: err.message,
+                            permanently_failed: true
+                        };
+                    }
+
+                    if (attempt < MAX_RETRIES_PER_CHUNK) {
+                        const delay = RETRY_DELAYS[attempt];
+                        showErrorToast(
+                            `Segmento ${chunkId} agotado. Reintentando... (${attempt + 1}/${MAX_RETRIES_PER_CHUNK})`,
+                            chunkId,
+                            []
+                        );
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        continue;
+                    } else {
+                        failedSegmentTracker.recordFailure(chunkId, err, attempt, true);
+                        onFailure(err, true);
+                        return {
+                            ...chunk,
+                            text: '',
+                            error: true,
+                            errorMessage: `Falló después de ${MAX_RETRIES_PER_CHUNK} intentos: ${err.message}`,
+                            permanently_failed: true
+                        };
+                    }
+                }
+            }
+
+            failedSegmentTracker.recordFailure(chunkId, lastError, MAX_RETRIES_PER_CHUNK, true);
+            onFailure(lastError, true);
+            return {
+                ...chunk,
+                text: '',
+                error: true,
+                errorMessage: lastError?.message || 'Unknown error',
+                permanently_failed: true
+            };
+        }
+
+        class ConcurrencyLimiter {
+            constructor(limit) {
+                this.limit = limit;
+                this.active = 0;
+                this.queue = [];
+            }
+
+            async run(fn) {
+                while (this.active >= this.limit) {
+                    await new Promise(resolve => this.queue.push(resolve));
+                }
+                this.active++;
+                try {
+                    return await fn();
+                } finally {
+                    this.active--;
+                    const resolve = this.queue.shift();
+                    if (resolve) resolve();
+                }
+            }
+        }
+
+        async function transcribeInChunks(audioBlob, totalSeconds, resumeOpts) {
+            const { resumeRunId = null, doneMap = {} } = resumeOpts || {};
+            const chunks = buildChunkPlan(totalSeconds);
+            const mainChunks = chunks.filter(c => c.type === 'main');
+            totalSegments = mainChunks.length;
+            const runId = resumeRunId || crypto.randomUUID();
+            segmentCount = 0;
+            transcriptionStart = Date.now();
+            segmentConfidences = [];
+            segmentDurationsSec = [];
+            segmentTexts = [];
+            isAbortingTranscription = false;
+            failedSegmentTracker = new FailedSegmentTracker();
+            etaChunkSamples = [];
+            etaCompletedRawSec = 0;
+            etaTotalRawSec = totalSeconds;
+            startEtaTicker();
+
+            document.getElementById('progressSection').classList.add('active');
+            document.getElementById('simpleProgress').classList.add('active');
+            document.getElementById('chunkProgress').innerHTML = '';
+            document.getElementById('chunkProgress').style.display = 'none';
+            hideSummaryCard();
+            document.getElementById('errorBoundary').classList.remove('show');
+
+            for (const chunk of chunks) {
+                const div = document.createElement('div');
+                div.className = 'chunk-item';
+                div.id = `chunk-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+                const label = chunk.type === 'main'
+                    ? `Principal ${chunk.mainIndex + 1}`
+                    : `Puente ${chunk.mainIndex}→${chunk.bridgeMainIndex}`;
+                div.innerHTML = `
+                    <div class="chunk-header">
+                        <div class="chunk-status pending" id="status-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}">
+                            <span class="dot"></span>
+                        </div>
+                        <div class="chunk-info" style="${chunk.type === 'bridge' ? 'font-size: 12px; opacity: 0.8;' : ''}">${label}</div>
+                        <div class="chunk-eta" id="eta-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}"></div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="fill-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}"></div>
+                    </div>
+                `;
+                document.getElementById('chunkProgress').appendChild(div);
+            }
+
+            // Initialize transcript display
+            const transcriptBox = document.getElementById('transcript');
+            transcriptBox.innerHTML = '';
+            transcriptBox.classList.remove('empty');
+
+            if (!resumeRunId) {
+                RunStore.createRun({
+                    runId, source: 'mic', model: currentModel, language: currentLanguage,
+                    context: currentContext, totalSeconds, audioBlob, chunkPlan: chunks
+                }).catch(err => console.error('RunStore.createRun failed', err));
+            }
+
+            const chunkResults = [];
+            const limiter = new ConcurrencyLimiter(MAX_CONCURRENT_REQUESTS);
+            const chunkStartTimes = new Map();
+            const submitSegment = createOrderedSegmentAppender(totalSegments);
+
+            // Rehydrate already-completed chunks (resume path) instantly, no network.
+            for (const chunk of chunks) {
+                const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+                const done = doneMap[chunkId];
+                if (!done) continue;
+                updateChunkStatus(chunkId, 'done');
+                updateProgressBar(chunkId, 100);
+                if (chunk.type === 'main') {
+                    etaCompletedRawSec += (chunk.endMs - chunk.startMs) / 1000;
+                    if (done.text) {
+                        submitSegment(chunk.mainIndex, done.text, chunk.startMs, done.segments);
+                    }
+                }
+            }
+
+            const tasks = chunks.filter(chunk => {
+                const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+                return !doneMap[chunkId];
+            }).map(chunk => limiter.run(async () => {
+                const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+                updateChunkStatus(chunkId, 'processing');
+                chunkStartTimes.set(chunkId, Date.now());
+                if (chunk.type === 'main') {
+                    markSegmentInProgress(chunk.mainIndex, totalSegments);
+                }
+
+                try {
+                    const chunkBlob = await extractAudioChunk(audioBlob, chunk.startMs, chunk.endMs);
+                    const startFetch = Date.now();
+
+                    const result = await transcribeChunkWithRetry(
+                        audioBlob,
+                        chunk,
+                        chunkId,
+                        () => {
+                            const formData = new FormData();
+                            formData.append('file', chunkBlob, `${chunk.type}-${chunk.mainIndex}.wav`);
+                            formData.append('model', currentModel);
+                            formData.append('language', currentLanguage);
+                            formData.append('response_format', 'verbose_json');
+                            formData.append('run_id', runId);
+                            formData.append('chunk_index', String(chunk.mainIndex));
+                            formData.append('chunk_type', chunk.type);
+                            formData.append('chunk_start_ms', String(chunk.startMs));
+                            formData.append('chunk_end_ms', String(chunk.endMs));
+                            if (currentContext) {
+                                formData.append('prompt', currentContext);
+                            }
+                            return formData;
+                        },
+                        (data) => {
+                            const elapsed = Date.now() - startFetch;
+                            updateProgressBar(chunkId, 100);
+                            updateChunkStatus(chunkId, 'done');
+                            updateChunkETA(chunkId, elapsed, chunk.index, chunks.length);
+                            if (chunk.type === 'main') {
+                                recordChunkEtaSample((chunk.endMs - chunk.startMs) / 1000, elapsed / 1000);
+                            }
+                            RunStore.updateChunk(runId, chunkId, {
+                                status: 'done', text: data.text, segments: data.segments,
+                                startMs: chunk.startMs, endMs: chunk.endMs
+                            }).catch(() => {});
+                        },
+                        (error, retried) => {
+                            updateChunkStatus(chunkId, 'error');
+                            RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch(() => {});
+                            if (failedSegmentTracker.getConsecutiveFailures() >= MAX_CONSECUTIVE_FAILURES) {
+                                triggerErrorBoundary();
+                            }
+                        }
+                    );
+
+                    // Append main chunks to transcript in chunk order (not fetch-completion order)
+                    if (chunk.type === 'main' && result.text) {
+                        submitSegment(chunk.mainIndex, result.text, chunk.startMs, result.segments);
+                    }
+
+                    return result;
+
+                } catch (err) {
+                    updateChunkStatus(chunkId, 'error');
+                    showStatus(`Error en ${chunk.type} ${chunk.mainIndex}: ${err.message}`, 'error');
+                    RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch(() => {});
+                    return {
+                        ...chunk,
+                        text: '',
+                        error: true
+                    };
+                }
+            }));
+
+            const results = await Promise.all(tasks);
+            // Flush any main chunks that never became displayable in strict
+            // order (e.g. an earlier chunk failed/returned empty text) so
+            // later chunks are never silently dropped from the transcript.
+            submitSegment.flushRemaining();
+
+            document.getElementById('simpleProgress').classList.remove('active');
+            stopEtaTicker();
+
+            if (isAbortingTranscription) {
+                showStatus('Transcripción interrumpida por errores repetidos', 'error');
+                RunStore.markRunStatus(runId, 'aborted').catch(() => {});
+                RunStore.pruneOldRuns().catch(() => {});
+                return;
+            }
+
+            if (results.some(r => r.error)) {
+                const failureCount = failedSegmentTracker.getFailureCount();
+                if (failureCount === 0) {
+                    showStatus('Algunos segmentos fallaron en la transcripción', 'error');
+                } else {
+                    const summary = failedSegmentTracker.getSummary();
+                    showStatus(`Completado parcialmente: ${summary.completed}/${summary.total} segmentos (${summary.failed} fallados)`, 'warning');
+                }
+                const processingTime = Date.now() - transcriptionStart;
+                displaySummaryCard(processingTime);
+                document.getElementById('copyBtn').style.display = 'flex';
+                document.getElementById('exportBtn').style.display = 'flex';
+                RunStore.markRunStatus(runId, 'aborted').catch(() => {});
+                RunStore.pruneOldRuns().catch(() => {});
+                return;
+            }
+
+            // Hide progress bar and show summary
+            const processingTime = Date.now() - transcriptionStart;
+            displaySummaryCard(processingTime);
+
+            document.getElementById('copyBtn').style.display = 'flex';
+            document.getElementById('exportBtn').style.display = 'flex';
+
+            showStatus('Todos los segmentos transcriptos', 'success');
+            RunStore.markRunStatus(runId, 'done').catch(() => {});
+            RunStore.pruneOldRuns().catch(() => {});
+        }
+
+        async function transcribeUploadedChunks(audioBuffer, totalSeconds, _numChunks, originalFile, resumeOpts) {
+            const { resumeRunId = null, doneMap = {} } = resumeOpts || {};
+            const chunks = buildChunkPlan(totalSeconds);
+            const mainChunks = chunks.filter(c => c.type === 'main');
+            totalSegments = mainChunks.length;
+            const runId = resumeRunId || crypto.randomUUID();
+            segmentCount = 0;
+            transcriptionStart = Date.now();
+            segmentConfidences = [];
+            segmentDurationsSec = [];
+            segmentTexts = [];
+            isAbortingTranscription = false;
+            failedSegmentTracker = new FailedSegmentTracker();
+            etaChunkSamples = [];
+            etaCompletedRawSec = 0;
+            etaTotalRawSec = totalSeconds;
+            startEtaTicker();
+
+            document.getElementById('progressSection').classList.add('active');
+            document.getElementById('simpleProgress').classList.add('active');
+            document.getElementById('chunkProgress').innerHTML = '';
+            document.getElementById('chunkProgress').style.display = 'none';
+            hideSummaryCard();
+            document.getElementById('errorBoundary').classList.remove('show');
+
+            for (const chunk of chunks) {
+                const div = document.createElement('div');
+                div.className = 'chunk-item';
+                div.id = `chunk-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+                const label = chunk.type === 'main'
+                    ? `Principal ${chunk.mainIndex + 1}`
+                    : `Puente ${chunk.mainIndex}→${chunk.bridgeMainIndex}`;
+                div.innerHTML = `
+                    <div class="chunk-header">
+                        <div class="chunk-status pending" id="status-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}">
+                            <span class="dot"></span>
+                        </div>
+                        <div class="chunk-info" style="${chunk.type === 'bridge' ? 'font-size: 12px; opacity: 0.8;' : ''}">${label}</div>
+                        <div class="chunk-eta" id="eta-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}"></div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="fill-${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}"></div>
+                    </div>
+                `;
+                document.getElementById('chunkProgress').appendChild(div);
+            }
+
+            // Initialize transcript display
+            const transcriptBox = document.getElementById('transcript');
+            transcriptBox.innerHTML = '';
+            transcriptBox.classList.remove('empty');
+
+            if (!resumeRunId && originalFile) {
+                RunStore.createRun({
+                    runId, source: 'upload', model: currentModel, language: currentLanguage,
+                    context: currentContext, totalSeconds, audioBlob: originalFile, chunkPlan: chunks
+                }).catch(err => console.error('RunStore.createRun failed', err));
+            }
+
+            const limiter = new ConcurrencyLimiter(MAX_CONCURRENT_REQUESTS);
+            const chunkStartTimes = new Map();
+            const submitSegment = createOrderedSegmentAppender(totalSegments);
+
+            // Rehydrate already-completed chunks (resume path) instantly, no network.
+            for (const chunk of chunks) {
+                const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+                const done = doneMap[chunkId];
+                if (!done) continue;
+                updateChunkStatus(chunkId, 'done');
+                updateProgressBar(chunkId, 100);
+                if (chunk.type === 'main') {
+                    etaCompletedRawSec += (chunk.endMs - chunk.startMs) / 1000;
+                    if (done.text) {
+                        submitSegment(chunk.mainIndex, done.text, chunk.startMs, done.segments);
+                    }
+                }
+            }
+
+            const tasks = chunks.filter(chunk => {
+                const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+                return !doneMap[chunkId];
+            }).map(chunk => limiter.run(async () => {
+                const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+                updateChunkStatus(chunkId, 'processing');
+                updateProgressBar(chunkId, 0);
+                chunkStartTimes.set(chunkId, Date.now());
+                if (chunk.type === 'main') {
+                    markSegmentInProgress(chunk.mainIndex, totalSegments);
+                }
+
+                try {
+                    updateProgressBar(chunkId, 25);
+                    const chunkBlob = await extractAudioChunkFromBuffer(audioBuffer, chunk.startMs, chunk.endMs);
+                    updateProgressBar(chunkId, 50);
+                    const startFetch = Date.now();
+
+                    const result = await transcribeChunkWithRetry(
+                        null,
+                        chunk,
+                        chunkId,
+                        () => {
+                            const formData = new FormData();
+                            formData.append('file', chunkBlob, `${chunk.type}-${chunk.mainIndex}.wav`);
+                            formData.append('model', currentModel);
+                            formData.append('language', currentLanguage);
+                            formData.append('response_format', 'verbose_json');
+                            formData.append('run_id', runId);
+                            formData.append('chunk_index', String(chunk.mainIndex));
+                            formData.append('chunk_type', chunk.type);
+                            formData.append('chunk_start_ms', String(chunk.startMs));
+                            formData.append('chunk_end_ms', String(chunk.endMs));
+                            if (currentContext) {
+                                formData.append('prompt', currentContext);
+                            }
+                            return formData;
+                        },
+                        (data) => {
+                            const elapsed = Date.now() - startFetch;
+                            updateProgressBar(chunkId, 100);
+                            updateChunkStatus(chunkId, 'done');
+                            updateChunkETA(chunkId, elapsed, chunk.index, chunks.length);
+                            if (chunk.type === 'main') {
+                                recordChunkEtaSample((chunk.endMs - chunk.startMs) / 1000, elapsed / 1000);
+                            }
+                            RunStore.updateChunk(runId, chunkId, {
+                                status: 'done', text: data.text, segments: data.segments,
+                                startMs: chunk.startMs, endMs: chunk.endMs
+                            }).catch(() => {});
+                        },
+                        (error, retried) => {
+                            updateChunkStatus(chunkId, 'error');
+                            RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch(() => {});
+                            if (failedSegmentTracker.getConsecutiveFailures() >= MAX_CONSECUTIVE_FAILURES) {
+                                triggerErrorBoundary();
+                            }
+                        }
+                    );
+
+                    // Append main chunks to transcript in chunk order (not fetch-completion order)
+                    if (chunk.type === 'main' && result.text) {
+                        submitSegment(chunk.mainIndex, result.text, chunk.startMs, result.segments);
+                    }
+
+                    return result;
+
+                } catch (err) {
+                    updateChunkStatus(chunkId, 'error');
+                    showStatus(`Error en ${chunk.type} ${chunk.mainIndex}: ${err.message}`, 'error');
+                    RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch(() => {});
+                    return {
+                        ...chunk,
+                        text: '',
+                        error: true
+                    };
+                }
+            }));
+
+            const results = await Promise.all(tasks);
+            // Flush any main chunks that never became displayable in strict
+            // order (e.g. an earlier chunk failed/returned empty text) so
+            // later chunks are never silently dropped from the transcript.
+            submitSegment.flushRemaining();
+
+            document.getElementById('simpleProgress').classList.remove('active');
+            stopEtaTicker();
+
+            if (isAbortingTranscription) {
+                showStatus('Transcripción interrumpida por errores repetidos', 'error');
+                RunStore.markRunStatus(runId, 'aborted').catch(() => {});
+                RunStore.pruneOldRuns().catch(() => {});
+                return;
+            }
+
+            if (results.some(r => r.error)) {
+                const failureCount = failedSegmentTracker.getFailureCount();
+                if (failureCount === 0) {
+                    showStatus('Algunos segmentos fallaron en la transcripción', 'error');
+                } else {
+                    const summary = failedSegmentTracker.getSummary();
+                    showStatus(`Completado parcialmente: ${summary.completed}/${summary.total} segmentos (${summary.failed} fallados)`, 'warning');
+                }
+                const processingTime = Date.now() - transcriptionStart;
+                displaySummaryCard(processingTime);
+                document.getElementById('copyBtn').style.display = 'flex';
+                document.getElementById('exportBtn').style.display = 'flex';
+                RunStore.markRunStatus(runId, 'aborted').catch(() => {});
+                RunStore.pruneOldRuns().catch(() => {});
+                return;
+            }
+
+            // Hide progress bar and show summary
+            const processingTime = Date.now() - transcriptionStart;
+            displaySummaryCard(processingTime);
+
+            document.getElementById('copyBtn').style.display = 'flex';
+            document.getElementById('exportBtn').style.display = 'flex';
+
+            showStatus('Todos los segmentos transcriptos', 'success');
+            RunStore.markRunStatus(runId, 'done').catch(() => {});
+            RunStore.pruneOldRuns().catch(() => {});
+        }

@@ -69,6 +69,8 @@ for (const c of art.chunks || []) {
   delete c.request_id;
   delete c.processing_seconds;
 }
+// The server appends chunks in completion order, which varies with concurrency.
+if (art.chunks) art.chunks.sort((a, b) => a.index - b.index);
 fs.writeFileSync(path.join(out, 'run_artifact.json'), JSON.stringify(art, null, 2) + '\n');
 
 console.log(

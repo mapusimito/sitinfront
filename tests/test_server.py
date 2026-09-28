@@ -616,12 +616,7 @@ def test_frontend_default_language_is_spanish():
 # Files still carrying pre-revamp hardcoded values. Each UX milestone that
 # replaces a screen removes its files from this set; the final verification
 # milestone requires it to be empty.
-_UNTOKENIZED_LEGACY = {
-    "css/legacy.css",
-    "js/status/logs.js",
-    "js/transcript/segment.js",
-    "../templates/index.html",
-}
+_UNTOKENIZED_LEGACY = set()
 
 
 def test_no_hardcoded_colors_or_fonts_outside_tokens():
@@ -685,3 +680,35 @@ def test_event_bus_contract():
     assert r["seen"] == [1]          # unsubscribed handler not called; throwing handler isolated
     assert r["unknownThrows"] and r["unknownEmitThrows"]
     assert r["hasSegment"]           # reserved integration point for future streaming
+
+
+def test_every_css_variable_used_is_defined():
+    """A var(--x) with no definition silently computes to nothing (the old :root block was
+    removed in the UX revamp, so a stale reference would render as an unstyled property)."""
+    import re
+    static = REPO_ROOT / "app" / "static"
+    sources = [p for p in static.rglob("*") if p.suffix in {".css", ".js", ".html"}]
+    sources.append(REPO_ROOT / "app" / "templates" / "index.html")
+    defined, used = set(), {}
+    for p in sources:
+        text = p.read_text()
+        defined |= set(re.findall(r"(--[\w-]+)\s*:", text))
+        for name in re.findall(r"var\((--[\w-]+)", text):
+            used.setdefault(name, p.name)
+    missing = {n: f for n, f in used.items() if n not in defined}
+    assert not missing, f"undefined CSS variables: {missing}"
+
+
+def test_engine_emits_the_documented_progress_events():
+    """The progress interface (UX_REVAMP_PLAN.md section 6) is the only channel from the
+    engine to the UI. Every documented event except the reserved 'segment' must be emitted by
+    engine code; 'segment' must NOT be emitted until the server can really stream segments."""
+    import re
+    engine = "\n".join(p.read_text() for p in sorted((REPO_ROOT / "app" / "static" / "js" / "engine").glob("*.js")))
+    emitted = set(re.findall(r"sf\.events\.emit\('([\w:]+)'", engine))
+    documented = {"run:start", "phase", "chunk:start", "chunk:retry", "chunk:done", "chunk:fail", "eta", "run:end"}
+    assert documented <= emitted, f"engine never emits: {documented - emitted}"
+    assert "segment" not in emitted, "'segment' is reserved for server streaming; no fake segment events"
+    # The bus must load before any engine script that emits.
+    html = (REPO_ROOT / "app" / "templates" / "index.html").read_text()
+    assert html.index("core/events.js") < html.index("engine/state.js")

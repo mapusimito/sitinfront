@@ -40,10 +40,12 @@
             const progressEta = document.getElementById('progressEta');
             if (etaAnchorMs === null) {
                 if (progressEta) progressEta.textContent = '';
+                sf.events.emit('eta', { runId: currentRunId, remainingSec: null, basedOnChunks: etaChunkSamples.length });
                 return;
             }
             const elapsedSinceAnchor = (Date.now() - etaAnchorMs) / 1000;
             const remaining = Math.max(0, etaRemainingAtAnchor - elapsedSinceAnchor);
+            sf.events.emit('eta', { runId: currentRunId, remainingSec: remaining, basedOnChunks: etaChunkSamples.length });
             const text = remaining > 0 ? `ETA: ${formatEta(remaining)}` : 'Finalizando...';
             if (progressEta) progressEta.textContent = text;
 

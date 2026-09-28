@@ -101,6 +101,7 @@
 
                         if (attempt < MAX_RETRIES_PER_CHUNK) {
                             const delay = RETRY_DELAYS[attempt];
+                            sf.events.emit('chunk:retry', { runId: currentRunId, index: chunk.mainIndex, attempt: attempt + 1, max: MAX_RETRIES_PER_CHUNK, status: response.status, reason: `HTTP ${response.status}` });
                             showErrorToast(
                                 `Segment ${chunkId} failed (${response.status}). Retrying... (${attempt + 1}/${MAX_RETRIES_PER_CHUNK})`,
                                 chunkId,
@@ -147,6 +148,7 @@
 
                     if (attempt < MAX_RETRIES_PER_CHUNK) {
                         const delay = RETRY_DELAYS[attempt];
+                        sf.events.emit('chunk:retry', { runId: currentRunId, index: chunk.mainIndex, attempt: attempt + 1, max: MAX_RETRIES_PER_CHUNK, status: null, reason: err.message });
                         showErrorToast(
                             `Segmento ${chunkId} agotado. Reintentando... (${attempt + 1}/${MAX_RETRIES_PER_CHUNK})`,
                             chunkId,
@@ -207,6 +209,7 @@
             const mainChunks = chunks.filter(c => c.type === 'main');
             totalSegments = mainChunks.length;
             const runId = resumeRunId || crypto.randomUUID();
+            currentRunId = runId;
             segmentCount = 0;
             transcriptionStart = Date.now();
             segmentConfidences = [];
@@ -218,6 +221,8 @@
             etaCompletedRawSec = 0;
             etaTotalRawSec = totalSeconds;
             startEtaTicker();
+            sf.events.emit('run:start', { runId, source: 'record', totalSeconds, chunkCount: totalSegments, model: currentModel, language: currentLanguage });
+            sf.events.emit('phase', { runId, name: 'transcribing' });
 
             document.getElementById('progressSection').classList.add('active');
             document.getElementById('simpleProgress').classList.add('active');
@@ -286,6 +291,7 @@
             }).map(chunk => limiter.run(async () => {
                 const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
                 updateChunkStatus(chunkId, 'processing');
+                sf.events.emit('chunk:start', { runId, index: chunk.mainIndex, total: totalSegments, startMs: chunk.startMs, endMs: chunk.endMs });
                 chunkStartTimes.set(chunkId, Date.now());
                 if (chunk.type === 'main') {
                     markSegmentInProgress(chunk.mainIndex, totalSegments);
@@ -317,6 +323,7 @@
                         },
                         (data) => {
                             const elapsed = Date.now() - startFetch;
+                            sf.events.emit('chunk:done', { runId, index: chunk.mainIndex, total: totalSegments, text: data.text, segments: data.segments, wallSec: elapsed / 1000, rawSec: (chunk.endMs - chunk.startMs) / 1000 });
                             updateProgressBar(chunkId, 100);
                             updateChunkStatus(chunkId, 'done');
                             updateChunkETA(chunkId, elapsed, chunk.index, chunks.length);
@@ -329,6 +336,7 @@
                             }).catch(() => {});
                         },
                         (error, retried) => {
+                            sf.events.emit('chunk:fail', { runId, index: chunk.mainIndex, status: null, reason: error.message || String(error), willAbort: failedSegmentTracker.getConsecutiveFailures() >= MAX_CONSECUTIVE_FAILURES });
                             updateChunkStatus(chunkId, 'error');
                             RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch(() => {});
                             if (failedSegmentTracker.getConsecutiveFailures() >= MAX_CONSECUTIVE_FAILURES) {
@@ -347,6 +355,7 @@
                 } catch (err) {
                     updateChunkStatus(chunkId, 'error');
                     showStatus(`Error en ${chunk.type} ${chunk.mainIndex}: ${err.message}`, 'error');
+                    sf.events.emit('chunk:fail', { runId, index: chunk.mainIndex, status: null, reason: err.message, willAbort: false });
                     RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch(() => {});
                     return {
                         ...chunk,
@@ -367,6 +376,7 @@
 
             if (isAbortingTranscription) {
                 showStatus('Transcripción interrumpida por errores repetidos', 'error');
+                sf.events.emit('run:end', { runId, outcome: 'aborted', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
                 RunStore.markRunStatus(runId, 'aborted').catch(() => {});
                 RunStore.pruneOldRuns().catch(() => {});
                 return;
@@ -384,6 +394,7 @@
                 displaySummaryCard(processingTime);
                 document.getElementById('copyBtn').style.display = 'flex';
                 document.getElementById('exportBtn').style.display = 'flex';
+                sf.events.emit('run:end', { runId, outcome: 'partial', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
                 RunStore.markRunStatus(runId, 'aborted').catch(() => {});
                 RunStore.pruneOldRuns().catch(() => {});
                 return;
@@ -397,6 +408,7 @@
             document.getElementById('exportBtn').style.display = 'flex';
 
             showStatus('Todos los segmentos transcriptos', 'success');
+            sf.events.emit('run:end', { runId, outcome: 'complete', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
             RunStore.markRunStatus(runId, 'done').catch(() => {});
             RunStore.pruneOldRuns().catch(() => {});
         }
@@ -407,6 +419,7 @@
             const mainChunks = chunks.filter(c => c.type === 'main');
             totalSegments = mainChunks.length;
             const runId = resumeRunId || crypto.randomUUID();
+            currentRunId = runId;
             segmentCount = 0;
             transcriptionStart = Date.now();
             segmentConfidences = [];
@@ -418,6 +431,8 @@
             etaCompletedRawSec = 0;
             etaTotalRawSec = totalSeconds;
             startEtaTicker();
+            sf.events.emit('run:start', { runId, source: 'upload', totalSeconds, chunkCount: totalSegments, model: currentModel, language: currentLanguage });
+            sf.events.emit('phase', { runId, name: 'transcribing' });
 
             document.getElementById('progressSection').classList.add('active');
             document.getElementById('simpleProgress').classList.add('active');
@@ -485,6 +500,7 @@
             }).map(chunk => limiter.run(async () => {
                 const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
                 updateChunkStatus(chunkId, 'processing');
+                sf.events.emit('chunk:start', { runId, index: chunk.mainIndex, total: totalSegments, startMs: chunk.startMs, endMs: chunk.endMs });
                 updateProgressBar(chunkId, 0);
                 chunkStartTimes.set(chunkId, Date.now());
                 if (chunk.type === 'main') {
@@ -519,6 +535,7 @@
                         },
                         (data) => {
                             const elapsed = Date.now() - startFetch;
+                            sf.events.emit('chunk:done', { runId, index: chunk.mainIndex, total: totalSegments, text: data.text, segments: data.segments, wallSec: elapsed / 1000, rawSec: (chunk.endMs - chunk.startMs) / 1000 });
                             updateProgressBar(chunkId, 100);
                             updateChunkStatus(chunkId, 'done');
                             updateChunkETA(chunkId, elapsed, chunk.index, chunks.length);
@@ -531,6 +548,7 @@
                             }).catch(() => {});
                         },
                         (error, retried) => {
+                            sf.events.emit('chunk:fail', { runId, index: chunk.mainIndex, status: null, reason: error.message || String(error), willAbort: failedSegmentTracker.getConsecutiveFailures() >= MAX_CONSECUTIVE_FAILURES });
                             updateChunkStatus(chunkId, 'error');
                             RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch(() => {});
                             if (failedSegmentTracker.getConsecutiveFailures() >= MAX_CONSECUTIVE_FAILURES) {
@@ -549,6 +567,7 @@
                 } catch (err) {
                     updateChunkStatus(chunkId, 'error');
                     showStatus(`Error en ${chunk.type} ${chunk.mainIndex}: ${err.message}`, 'error');
+                    sf.events.emit('chunk:fail', { runId, index: chunk.mainIndex, status: null, reason: err.message, willAbort: false });
                     RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch(() => {});
                     return {
                         ...chunk,
@@ -569,6 +588,7 @@
 
             if (isAbortingTranscription) {
                 showStatus('Transcripción interrumpida por errores repetidos', 'error');
+                sf.events.emit('run:end', { runId, outcome: 'aborted', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
                 RunStore.markRunStatus(runId, 'aborted').catch(() => {});
                 RunStore.pruneOldRuns().catch(() => {});
                 return;
@@ -586,6 +606,7 @@
                 displaySummaryCard(processingTime);
                 document.getElementById('copyBtn').style.display = 'flex';
                 document.getElementById('exportBtn').style.display = 'flex';
+                sf.events.emit('run:end', { runId, outcome: 'partial', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
                 RunStore.markRunStatus(runId, 'aborted').catch(() => {});
                 RunStore.pruneOldRuns().catch(() => {});
                 return;
@@ -599,6 +620,7 @@
             document.getElementById('exportBtn').style.display = 'flex';
 
             showStatus('Todos los segmentos transcriptos', 'success');
+            sf.events.emit('run:end', { runId, outcome: 'complete', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
             RunStore.markRunStatus(runId, 'done').catch(() => {});
             RunStore.pruneOldRuns().catch(() => {});
         }

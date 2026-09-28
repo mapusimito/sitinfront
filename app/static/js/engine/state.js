@@ -33,3 +33,4 @@
 
         let isAbortingTranscription = false;
         let failedSegmentTracker = null;
+        let currentRunId = null; // run being transcribed; stamped onto progress events

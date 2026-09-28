@@ -1,6 +1,6 @@
 # UX Revamp Plan
 
-> **Status**: DRAFT, awaiting user approval. No code has been changed.
+> **Status**: APPROVED 2026-09-28 (see section 10). Foundation (L1 to L3) complete; relay in progress.
 > **Date**: 2026-09-28 (updated for ETA commit `71aae64`)
 > **Brand guide**: `docs/brand-guide.html` (byte-identical to `sitinfront — guía de marca.html` at repo root)
 > **Audit method**: real run on Playwright (desktop 1280 and 375px), tiny model on CPU, `tests/fixtures/sample_es_4min.m4a`. Screenshots in `docs/ux-revamp/audit/`.
@@ -209,4 +209,45 @@ Rule: the UI never invents an event. If `segment` events never arrive, the UI st
 
 ## 9. Decision log
 
-(empty; agents append here)
+Agents append here (newest last). Format: `ID | milestone | decision | why`.
+
+| ID | Milestone | Decision | Why |
+|---|---|---|---|
+| D1 | pre-L1 | Bridge-chunk removal and real upload progress were **already done** in `45f49a8` (before the plan). Only the default-language change was needed (`68084e1`). The stale bridge count in the upload log line was removed (`d287cec`). | Approval item 1 and 2 were based on an older tree. `mergeWithConsensus` and the consensus functions no longer exist in the frontend at all, so "keep their source untouched" is vacuously satisfied. |
+| D2 | L1 | The `Identifier 'Infinity' has already been declared` SyntaxError came from the third-party `lucide@latest` CDN script (a build declaring a top-level `const Infinity`), not from app code. `window.lucide` was always undefined, so every `data-lucide` icon (the cancel-upload X) rendered blank. No engine code was affected. | Diagnosed in the browser: inline app functions all defined, only script 1 failed. Fixed in L2 by removing the CDN. |
+| D3 | L1 | Frontend split into **classic scripts with verbatim lines and 8-space indentation** under `app/static/js`, one CSS file `legacy.css`. Integrity proven by a line-multiset check (`tools/ux/split_index.py`). Tests read all files through `_frontend_source()`. | Modules would change scoping. Tests slice function bodies by that indentation. |
+| D4 | L1 | Baseline = 6 SHA-256 hashes (`docs/ux-revamp/baseline/SHA256SUMS`); transcripts stay local and gitignored. Run artifacts are normalized (volatile fields dropped, chunks sorted by index, because the server appends them in completion order). Both fixtures were run twice each and were bit-identical, so the check is meaningful. | Lecture text is other people's speech (`tests/fixtures/README.md` policy). |
+| D5 | L2 | Focus ring is `3px solid var(--focus)` with `outline-offset: 3px` in both themes (`--focus` is black in light, yellow in dark). Supersedes the earlier "2px inner gap" wording. | Offset gives the gap; simpler and passes 3:1 on both. |
+| D6 | L2 | Added token `--accent-edge` (black in light, yellow in dark) for the border of yellow-filled controls, and `--accent-text` for yellow-as-text. | Yellow on white is 1.08:1; the guide itself outlines the light logo cursor in black. |
+| D7 | L2 | Fonts self-hosted (latin subset, OFL) in `app/static/fonts`; icons are a generated sprite from pinned `lucide-static` 1.48.0 (`tools/ux/build_icons.mjs`). No CDN remains in the page. | Offline claim, pinned dependency, removes D2. |
+| D8 | L2 | Component prefix `sf-`; JS namespace `window.sf` (`events`, `icon`, `theme`, `toast`, `dialog`, `confirm`). Dialogs use native `<dialog>`. | One system; platform focus trap and Esc. |
+| D9 | L3 | Screens keep their **regions inside `index.html`** (`#region-status`, `#region-input`, `#region-transcript`, `#region-history`), edited by whichever relay agent owns them. | The relay is sequential, so no merge conflicts; avoids inventing a templating layer. |
+| D10 | L3 | `legacy.css` was **kept but mechanically moved onto tokens** (no hex, no font names, header/body/grid rules removed), so the interim UI is theme-correct in light and dark. Agents delete legacy rules for the screens they replace; the file must be gone before F. | A theme switch on a dark-only legacy UI would look broken in between. |
+| D11 | L3 | Engine emits progress events by **adding** `sf.events.emit(...)` lines next to the existing DOM calls (no engine line replaced). `currentRunId` global added to `engine/state.js`. The `eta` event is emitted from `renderEtaTick`. | Lowest-risk way to give teams the interface while legacy UI still works. Teams remove the legacy DOM calls for their screen. Verified: transcript hashes identical. |
+| D12 | L3 | Hardcoded-value gate and undefined-CSS-variable gate are pytest tests (`test_no_hardcoded_colors_or_fonts_outside_tokens`, `test_every_css_variable_used_is_defined`). `_UNTOKENIZED_LEGACY` may only shrink. | Enforces the tokens rule automatically. |
+
+## 10. Approval record (2026-09-28)
+
+Approved with these changes and answers:
+- Pre-L1 engine commits: remove bridge chunks; remove simulated upload progress; default language Spanish. (See D1: two were already done.)
+- Diagnose the `Infinity` error before the baseline; if engine code, stop and ask (see D2: not engine code).
+- 0.1 to 0.3 confirmed (ETA code preserved, sequential relay, "M4" means M15).
+- Q2 approved: incremental safe copy of recordings. **Required verification**: reload the page mid-recording, confirm the recording is recovered, decodes to the expected duration and transcribes. MediaRecorder timeslice pieces must be reassembled in order (only the first piece carries the container header).
+- Q3 deferred. Q4 approved (neutral size/speed labels). Q5: no metric cue; log metric values from real runs, threshold decided later from data.
+- Q6 deferred: "surface `analyze_run.py` loop detection in the UI".
+- Q7: copy states only what is enforced. Open issue: the brand guide promises 4 h and MP4, which the app does not support.
+- Q8 approved as UI plus aborting in-flight fetches. The UI must not claim processing stopped immediately: the server keeps working on the chunk in progress. Server-side cancellation is deferred.
+- Deferred until after F: segment streaming (the reserved `segment` event is the integration point).
+
+## 11. Deferred list and open issues
+
+Deferred: (1) surface `scripts/analyze_run.py` loop detection in the UI; (2) server-side cancellation of an in-progress chunk; (3) segment streaming via the reserved `segment` event; (4) export formats SRT/VTT/Markdown (M8); (5) metric threshold cue, pending data from real runs.
+
+Open issues:
+- **Q9 (needs a user decision, engine code)**: `FailedSegmentTracker.getSummary()` in `engine/transcribe.js` declares `const totalSegments = totalSegments;`, a temporal-dead-zone ReferenceError. It runs whenever a run finishes with at least one recorded chunk failure, so that path throws **before** the summary card, Copiar/Exportar buttons, `markRunStatus` and the `run:end` event. Net effect: after a partial failure the transcript is left without its export buttons and the run stays "in progress" in IndexedDB. The fix is one line (read the global), but it changes stored data (the run gets marked) so per the tie-breaker it is NOT made. It blocks the partial-state milestone (T3-b).
+- The brand guide promises "hasta 4 horas" and MP4; the app enforces 500 MB and `accept="audio/*"` only.
+- The app default model is `small` while the backend default differs (M12.4 outstanding); labels must not claim accuracy.
+- The server appends run-artifact chunks in completion order (not index order); tooling normalizes.
+- The pytest suite writes artifacts into the real `runs/` directory.
+- Copy/Export use `#transcript.textContent` (includes timestamps, badges and "Segment N/M"); T2 must keep exported bytes identical or record the change.
+- `appendSegmentToTranscript` interpolates model text into `innerHTML` (`${text}`), an HTML-injection surface; T2 should render it with `textContent` (visually identical for normal text).

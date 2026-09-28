@@ -5,38 +5,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>sitinfront</title>
     <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Schibsted+Grotesk:wght@400;500;700;900&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
+    <script src="/static/js/core/theme.js"></script>
+    <link rel="stylesheet" href="/static/css/tokens.css">
+    <link rel="stylesheet" href="/static/css/base.css">
+    <link rel="stylesheet" href="/static/css/components.css">
     <link rel="stylesheet" href="/static/css/legacy.css">
+    <link rel="stylesheet" href="/static/css/shell.css">
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="header-logo">
-                <img src="/static/brand/sitinfront-mark.svg" alt="" class="header-mark">
-                <span class="header-wordmark">sitinfront</span>
-            </div>
-            <div class="header-text">
-                <p>Tú atiende. Nosotros escribimos.</p>
-            </div>
-            <div class="header-log">
-                <span id="headerStatus">Listo para grabar</span>
+    <a class="sf-skip" href="#main">Saltar al contenido</a>
+
+    <header class="shell-header">
+        <div class="sf-wrap shell-header__inner">
+            <a class="sf-logo" href="/" aria-label="sitinfront, inicio">
+                <svg class="sf-logo__mark" viewBox="0 0 74 70" aria-hidden="true"><use href="/static/icons.svg#mark"></use></svg>
+                <span class="sf-logo__word">sitinfront</span>
+            </a>
+            <h1 class="shell-tagline">Tú atiende. Nosotros escribimos.</h1>
+            <div class="shell-actions" id="shellActions">
+                <span id="headerStatus" class="shell-status-text" role="status">Listo para grabar</span>
                 <button class="header-log-toggle" id="progressToggle" onclick="toggleProgressDrawer()" style="display: none;">
                     <span id="toggleIcon">▼</span> Progreso
                 </button>
+                <fieldset class="sf-segctl shell-theme">
+                    <legend class="sf-sr-only">Tema</legend>
+                    <label><input type="radio" name="theme" value="auto"><span>Auto</span></label>
+                    <label><input type="radio" name="theme" value="light"><span>Claro</span></label>
+                    <label><input type="radio" name="theme" value="dark"><span>Oscuro</span></label>
+                </fieldset>
             </div>
         </div>
+    </header>
 
-        <div class="grid">
+    <main id="main" class="sf-wrap shell-main">
+        <!-- region: status (owner: system status team). Progress, failures, notifications. -->
+        <section id="region-status" class="shell-region" aria-label="Estado de la transcripción">
+        <div id="progressSection" class="card progress-section">
+            <div class="section-title">Progreso</div>
+            <div id="simpleProgress" class="simple-progress">
+                <div class="progress-text">
+                    <span id="progressLabel">Procesando...</span>
+                    <span id="progressEta" style="color: var(--accent-text);"></span>
+                </div>
+                <div class="progress-bar-simple">
+                    <div id="progressFill" class="progress-fill-simple"></div>
+                </div>
+            </div>
+            <div id="chunkProgress" class="chunk-progress"></div>
+        </div>
+        </section>
+
+        <div class="shell-grid">
+            <!-- region: input (owner: input team). Settings (moves to a dialog in the status team's milestone), record, upload, resume. -->
+            <section id="region-input" class="shell-region" aria-label="Grabar o subir una clase">
+        <div id="resumeBanner" class="card" style="display:none; border: 1px solid var(--accent-edge);">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+                <div id="resumeBannerLabel" style="font-size:14px;"></div>
+                <div style="display:flex; gap:8px;">
+                    <button id="resumeBtn" onclick="handleResumeClick()" style="padding: 8px 14px; background: var(--foco); color: var(--sala); border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">Continuar</button>
+                    <button id="discardResumeBtn" onclick="handleDiscardClick()" style="padding: 8px 14px; background: transparent; color: var(--fg); border: 1px solid var(--line); border-radius: 4px; cursor: pointer;">Descartar</button>
+                </div>
+            </div>
+        </div>
             <div class="card">
                 <div id="statusBox" class="status-box"></div>
 
                 <div class="section">
                     <div class="section-title">Ajustes</div>
                     <div class="control-row">
-                        <select id="modelSelect">
+                        <select id="modelSelect" aria-label="Modelo">
                             <option value="tiny">Tiny (fastest)</option>
                             <option value="base">Base (balanced)</option>
                             <option value="small" selected>Small (accurate)</option>
@@ -44,7 +81,7 @@
                             <option value="large-v3">Large (best accuracy)</option>
                             <option value="large-v3-turbo">Large v3 Turbo (strongest, needs model download)</option>
                         </select>
-                        <select id="languageSelect">
+                        <select id="languageSelect" aria-label="Idioma de la clase">
                             <option value="en">English</option>
                             <option value="es" selected>Spanish</option>
                             <option value="fr">French</option>
@@ -61,7 +98,7 @@
                         </select>
                     </div>
                     <div class="control-row" style="margin-top: 12px;">
-                        <input type="text" id="contextInput" placeholder="Opcional: ¿de qué es la clase? (p. ej., Historia Contemporánea)" style="padding: 10px 12px; background: var(--panel); border: 1px solid #2A2A27; border-radius: 8px; color: var(--papel); font-size: 14px; width: 100%; font-family: inherit;">
+                        <input type="text" id="contextInput" aria-label="Contexto de la clase" placeholder="Opcional: ¿de qué es la clase? (p. ej., Historia Contemporánea)" style="padding: 10px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; color: var(--fg); font-size: 14px; width: 100%; font-family: inherit;">
                     </div>
                 </div>
 
@@ -120,13 +157,16 @@
                         <div class="upload-text" style="font-size: 12px; margin-top: 8px;">Audio de cualquier duración</div>
                     </div>
                     <div id="uploadButtonGroup" class="upload-button-group">
-                        <button class="btn-cancel-upload" onclick="cancelFileSelection()" title="Cancelar" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0;">
-                            <i data-lucide="x" style="width: 20px; height: 20px;"></i>
+                        <button class="btn-cancel-upload" onclick="cancelFileSelection()" title="Cancelar" aria-label="Cancelar selección de archivo" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; padding: 0;">
+                            <svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-x"></use></svg>
                         </button>
                     </div>
                 </div>
             </div>
+            </section>
 
+            <!-- region: transcript (owner: transcript team). Reading view, summary, copy/export. -->
+            <section id="region-transcript" class="shell-region" aria-label="Transcripción">
             <div class="card">
                 <div class="section">
                     <div class="section-title">Transcripción</div>
@@ -155,43 +195,25 @@
                     </div>
                 </div>
             </div>
+            </section>
         </div>
 
-        <div id="resumeBanner" class="card" style="display:none; border: 1px solid var(--foco);">
-            <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
-                <div id="resumeBannerLabel" style="font-size:14px;"></div>
-                <div style="display:flex; gap:8px;">
-                    <button id="resumeBtn" onclick="handleResumeClick()" style="padding: 8px 14px; background: var(--foco); color: var(--sala); border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">Continuar</button>
-                    <button id="discardResumeBtn" onclick="handleDiscardClick()" style="padding: 8px 14px; background: transparent; color: var(--papel); border: 1px solid #2A2A27; border-radius: 4px; cursor: pointer;">Descartar</button>
-                </div>
-            </div>
-        </div>
-
-        <div id="progressSection" class="card progress-section">
-            <div class="section-title">Progreso</div>
-            <div id="simpleProgress" class="simple-progress">
-                <div class="progress-text">
-                    <span id="progressLabel">Procesando...</span>
-                    <span id="progressEta" style="color: var(--foco);"></span>
-                </div>
-                <div class="progress-bar-simple">
-                    <div id="progressFill" class="progress-fill-simple"></div>
-                </div>
-            </div>
-            <div id="chunkProgress" class="chunk-progress"></div>
-        </div>
-
+        <!-- region: history (owner: system status team). Server-side run log. -->
+        <section id="region-history" class="shell-region" aria-label="Historial de procesos">
         <div id="logsSection" class="card" style="margin-top: 20px;">
             <div class="section-title">Historial de Procesos</div>
-            <div style="max-height: 300px; overflow-y: auto; border: 1px solid #2A2A27; border-radius: 6px; padding: 12px;">
-                <div id="logsList" style="font-family: 'IBM Plex Mono', monospace; font-size: 12px;">
-                    <div style="color: var(--secondary-text);">Cargando registros...</div>
+            <div tabindex="0" role="region" aria-label="Registro de procesos" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--line); border-radius: 6px; padding: 12px;">
+                <div id="logsList" style="font-family: var(--font-mono); font-size: 12px;">
+                    <div style="color: var(--muted);">Cargando registros...</div>
                 </div>
             </div>
             <button onclick="refreshLogs()" style="margin-top: 12px; padding: 8px 12px; background: var(--foco); color: var(--sala); border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">Actualizar</button>
         </div>
-    </div>
+        </section>
+    </main>
 
+    <script src="/static/js/core/icons.js"></script>
+    <script src="/static/js/core/events.js"></script>
     <script src="/static/js/engine/state.js"></script>
     <script src="/static/js/core/format.js"></script>
     <script src="/static/js/engine/run-store.js"></script>
@@ -211,5 +233,6 @@
     <script src="/static/js/input/resume.js"></script>
     <script src="/static/js/core/ui.js"></script>
     <script src="/static/js/main.js"></script>
+    <script src="/static/js/core/shell.js"></script>
 </body>
 </html>

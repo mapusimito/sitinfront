@@ -5,7 +5,7 @@
                 const logsList = document.getElementById('logsList');
 
                 if (!data.logs || data.logs.length === 0) {
-                    logsList.innerHTML = '<div style="color: var(--secondary-text);">Sin registros aún</div>';
+                    logsList.innerHTML = '<div style="color: var(--muted);">Sin registros aún</div>';
                     return;
                 }
 
@@ -13,11 +13,11 @@
                 data.logs.reverse().forEach(log => {
                     const time = new Date(log.timestamp).toLocaleTimeString();
                     const status = log.status === 'success' ? '✓' : log.status === 'error' ? '✗' : '○';
-                    const statusColor = log.status === 'success' ? '#4CAF50' : log.status === 'error' ? '#FF3B30' : '#FFA500';
+                    const statusColor = log.status === 'success' ? 'var(--success)' : log.status === 'error' ? 'var(--danger)' : 'var(--warning)';
                     const duration = log.duration ? ` (${log.duration.toFixed(1)}s)` : '';
                     const error = log.error ? ` - Error: ${log.error}` : '';
 
-                    html += `<div style="padding: 6px 0; border-bottom: 1px solid #1A1A18; color: var(--papel);">
+                    html += `<div style="padding: 6px 0; border-bottom: 1px solid var(--line); color: var(--fg);">
                         <span style="color: ${statusColor};">${status}</span> ${time} | ${log.filename} | ${log.model}${duration}${error}
                     </div>`;
                 });
@@ -25,6 +25,6 @@
                 logsList.innerHTML = html;
             } catch (err) {
                 const logsList = document.getElementById('logsList');
-                logsList.innerHTML = `<div style="color: #FF3B30;">Error al cargar registros: ${err.message}</div>`;
+                logsList.innerHTML = `<div style="color: var(--danger);">Error al cargar registros: ${err.message}</div>`;
             }
         }

@@ -5,6 +5,7 @@
 // through axe (WCAG 2.2 AA). Serious or critical violations fail the run.
 
 export const screens = [
+  { name: 'app-idle', path: '/' },
   { name: 'gallery', path: '/static/gallery.html' },
   {
     name: 'gallery-confirm-dialog',

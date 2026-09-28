@@ -1,0 +1,58 @@
+/* App shell: header, landmarks, region layout. Screens live inside the regions. */
+
+.shell-header {
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+}
+.shell-header__inner {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3) var(--sp-5);
+  padding-block: var(--sp-4);
+}
+.shell-tagline {
+  flex: 1 1 12rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-regular);
+  letter-spacing: 0;
+  line-height: var(--lh-ui);
+}
+.shell-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--sp-3);
+  margin-left: auto;
+}
+.shell-status-text {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+.shell-main {
+  display: grid;
+  gap: var(--sp-5);
+  padding-block: var(--sp-5) var(--sp-7);
+}
+.shell-grid {
+  display: grid;
+  gap: var(--sp-5);
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+@media (min-width: 64rem) {
+  .shell-grid { grid-template-columns: minmax(20rem, 26rem) minmax(0, 1fr); }
+}
+.shell-region { min-width: 0; }
+.shell-region > .card:last-child { margin-bottom: 0; }
+
+/* Legacy panels leave no gap of their own once regions space them. */
+.shell-region .card { border-radius: var(--radius); box-shadow: none; }
+
+/* A long option label must not widen its container past the viewport. */
+.shell-region select,
+.shell-region input,
+.shell-region textarea { max-width: 100%; min-width: 0; }

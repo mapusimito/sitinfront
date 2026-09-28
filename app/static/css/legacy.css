@@ -1,144 +1,16 @@
-        :root {
-            --foco: #F2FF00;
-            --foco-2: #DDE000;
-            --sala: #000000;
-            --papel: #F4F4EE;
-            --grafito: #3B3B38;
-            --tiza: #E6E6DF;
-            --rec: #FF3B30;
-            --secondary-text: #A3A39A;
-            --secondary-text-2: #8C8C84;
-            --panel: #141412;
-        }
-
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
 
-        body {
-            font-family: 'Schibsted Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #000000;
-            min-height: 100vh;
-            padding: 20px;
-            color: var(--papel);
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: left;
-            margin-bottom: 60px;
-            padding-top: 30px;
-            padding-bottom: 30px;
-            border-bottom: 1px solid #1A1A18;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            justify-content: space-between;
-        }
-
-        .header-log {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-left: auto;
-            font-size: 13px;
-            color: var(--secondary-text);
-        }
-
-        .header-log-toggle {
-            background: none;
-            border: 1px solid #2A2A27;
-            color: var(--papel);
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .header-log-toggle:hover {
-            border-color: var(--foco);
-            color: var(--foco);
-        }
-
-        .header-logo {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .header-mark {
-            width: 64px;
-            height: 64px;
-            flex-shrink: 0;
-        }
-
-        .header-wordmark {
-            font-family: 'Silkscreen', monospace;
-            font-size: 32px;
-            font-weight: 700;
-            color: var(--foco);
-            letter-spacing: -1px;
-            position: relative;
-            text-shadow: 0 0 28px rgba(242,255,0,.35);
-        }
-
-        .header-wordmark::after {
-            content: '';
-            display: inline-block;
-            width: 3px;
-            height: 24px;
-            background: var(--foco);
-            margin-left: 4px;
-            animation: blink 1s infinite;
-            box-shadow: 0 0 12px rgba(242,255,0,.6);
-        }
-
-        @keyframes blink {
-            0%, 49%, 100% { opacity: 1; }
-            50%, 99% { opacity: 0; }
-        }
-
-        .header-text {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .header p {
-            color: var(--secondary-text);
-            font-size: 13px;
-            margin: 0;
-            padding: 0;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 2.5fr;
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        @media (max-width: 1024px) {
-            .grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
         .card {
             background: var(--panel);
-            border: 1px solid #2A2A27;
+            border: 1px solid var(--line);
             border-radius: 16px;
             padding: 16px;
             margin-bottom: 16px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 2px 8px var(--overlay);
         }
 
         .grid > .card:first-child {
@@ -161,7 +33,7 @@
         .section-title {
             font-size: 13px;
             font-weight: 700;
-            color: var(--papel);
+            color: var(--fg);
             margin-bottom: 20px;
             text-transform: capitalize;
         }
@@ -175,13 +47,13 @@
             font-weight: 500;
             letter-spacing: 2px;
             text-align: center;
-            font-family: 'IBM Plex Mono', monospace;
-            color: var(--papel);
+            font-family: var(--font-mono);
+            color: var(--fg);
             margin: 24px 0;
             padding: 20px;
             background: var(--panel);
             border-radius: 12px;
-            border: 1px solid #2A2A27;
+            border: 1px solid var(--line);
             display: none;
         }
 
@@ -252,7 +124,7 @@
         }
 
         .btn-start:focus-visible {
-            outline: 3px solid var(--foco);
+            outline: 3px solid var(--accent-edge);
             outline-offset: 3px;
         }
 
@@ -263,17 +135,17 @@
 
         .btn-stop {
             background: transparent;
-            color: var(--papel);
+            color: var(--fg);
             border: 1px solid var(--grafito);
         }
 
         .btn-stop:hover:not(:disabled) {
-            background: rgba(59, 59, 56, 0.2);
-            border-color: var(--papel);
+            background: color-mix(in srgb, var(--muted) 12%, transparent);
+            border-color: var(--fg);
         }
 
         .btn-stop:focus-visible {
-            outline: 3px solid var(--foco);
+            outline: 3px solid var(--accent-edge);
             outline-offset: 3px;
         }
 
@@ -284,19 +156,19 @@
 
         .btn-secondary {
             background: transparent;
-            color: var(--papel);
+            color: var(--fg);
             border: 1px solid var(--grafito);
             font-size: 13px;
             padding: 10px 16px;
         }
 
         .btn-secondary:hover:not(:disabled) {
-            background: rgba(59, 59, 56, 0.2);
-            border-color: var(--papel);
+            background: color-mix(in srgb, var(--muted) 12%, transparent);
+            border-color: var(--fg);
         }
 
         .btn-secondary:focus-visible {
-            outline: 3px solid var(--foco);
+            outline: 3px solid var(--accent-edge);
             outline-offset: 3px;
         }
 
@@ -308,9 +180,9 @@
         select {
             padding: 10px 12px;
             background: var(--panel);
-            border: 1px solid #2A2A27;
+            border: 1px solid var(--line);
             border-radius: 8px;
-            color: var(--papel);
+            color: var(--fg);
             font-size: 14px;
             cursor: pointer;
         }
@@ -320,7 +192,7 @@
         }
 
         select:focus-visible {
-            outline: 3px solid var(--foco);
+            outline: 3px solid var(--accent-edge);
             outline-offset: 3px;
         }
 
@@ -338,21 +210,21 @@
         }
 
         .status-box.info {
-            background: rgba(242, 255, 0, 0.05);
-            border-color: var(--foco);
-            color: var(--papel);
+            background: color-mix(in srgb, var(--accent-text) 6%, transparent);
+            border-color: var(--accent-edge);
+            color: var(--fg);
         }
 
         .status-box.success {
-            background: rgba(242, 255, 0, 0.05);
-            border-color: var(--foco);
-            color: var(--papel);
+            background: color-mix(in srgb, var(--accent-text) 6%, transparent);
+            border-color: var(--accent-edge);
+            color: var(--fg);
         }
 
         .status-box.error {
-            background: rgba(59, 59, 56, 0.2);
+            background: color-mix(in srgb, var(--muted) 12%, transparent);
             border-color: var(--grafito);
-            color: var(--papel);
+            color: var(--fg);
         }
 
         .progress-section {
@@ -373,8 +245,8 @@
         }
 
         .chunk-item {
-            background: rgba(59, 59, 56, 0.2);
-            border: 1px solid #2A2A27;
+            background: color-mix(in srgb, var(--muted) 12%, transparent);
+            border: 1px solid var(--line);
             border-radius: 8px;
             padding: 12px;
             margin-bottom: 10px;
@@ -393,7 +265,7 @@
             gap: 6px;
             font-size: 12px;
             min-width: 100px;
-            color: var(--secondary-text);
+            color: var(--muted);
         }
 
         .chunk-status .dot {
@@ -424,18 +296,18 @@
         .chunk-info {
             flex: 1;
             font-size: 13px;
-            color: var(--papel);
+            color: var(--fg);
         }
 
         .chunk-eta {
             font-size: 12px;
-            color: var(--secondary-text);
+            color: var(--muted);
         }
 
         .progress-bar {
             width: 100%;
             height: 4px;
-            background: #2A2A27;
+            background: var(--line);
             border-radius: 2px;
             overflow: hidden;
         }
@@ -461,7 +333,7 @@
 
         .transcript-box {
             background: var(--panel);
-            border: 1px solid #2A2A27;
+            border: 1px solid var(--line);
             border-radius: 8px;
             padding: 20px;
             min-height: 250px;
@@ -470,13 +342,13 @@
             font-size: 18px;
             line-height: 1.55;
             max-width: 70ch;
-            color: var(--papel);
+            color: var(--fg);
             white-space: normal;
             word-wrap: break-word;
         }
 
         .transcript-box.empty {
-            color: var(--secondary-text);
+            color: var(--muted);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -486,25 +358,25 @@
         .segment {
             margin-bottom: 24px;
             padding: 12px;
-            border-left: 3px solid #2A2A27;
+            border-left: 3px solid var(--line);
             border-radius: 4px;
             animation: fadeInSegment 0.5s ease-in;
         }
 
         .segment.highlight {
-            background: rgba(242, 255, 0, 0.05);
-            border-left-color: var(--foco);
+            background: color-mix(in srgb, var(--accent-text) 6%, transparent);
+            border-left-color: var(--accent-edge);
             animation: highlightSegment 1.5s ease-out forwards;
         }
 
         @keyframes highlightSegment {
             0% {
-                background: rgba(242, 255, 0, 0.1);
-                border-left-color: var(--foco);
+                background: color-mix(in srgb, var(--accent-text) 10%, transparent);
+                border-left-color: var(--accent-edge);
             }
             100% {
-                background: rgba(242, 255, 0, 0.05);
-                border-left-color: #2A2A27;
+                background: color-mix(in srgb, var(--accent-text) 6%, transparent);
+                border-left-color: var(--line);
             }
         }
 
@@ -525,20 +397,20 @@
             gap: 12px;
             margin-bottom: 8px;
             font-size: 13px;
-            color: var(--secondary-text);
+            color: var(--muted);
             font-weight: 600;
         }
 
         .segment-timestamp {
-            font-family: 'IBM Plex Mono', monospace;
+            font-family: var(--font-mono);
             color: var(--grafito);
             min-width: 80px;
         }
 
         .segment-badge {
-            background: rgba(59, 59, 56, 0.2);
-            border: 1px solid #2A2A27;
-            color: var(--secondary-text);
+            background: color-mix(in srgb, var(--muted) 12%, transparent);
+            border: 1px solid var(--line);
+            color: var(--muted);
             padding: 2px 8px;
             border-radius: 4px;
             font-size: 11px;
@@ -547,7 +419,7 @@
         }
 
         .segment-text {
-            color: var(--papel);
+            color: var(--fg);
             line-height: 1.7;
             white-space: pre-wrap;
             word-wrap: break-word;
@@ -564,19 +436,19 @@
         }
 
         .upload-area:hover {
-            border-color: var(--foco);
-            background: rgba(242, 255, 0, 0.05);
+            border-color: var(--accent-edge);
+            background: color-mix(in srgb, var(--accent-text) 6%, transparent);
         }
 
         .upload-area:focus-visible {
-            outline: 3px solid var(--foco);
+            outline: 3px solid var(--accent-edge);
             outline-offset: 3px;
         }
 
         .upload-area.dragover {
-            border-color: var(--foco);
-            background: rgba(242, 255, 0, 0.1);
-            box-shadow: 0 0 12px rgba(242, 255, 0, 0.2);
+            border-color: var(--accent-edge);
+            background: color-mix(in srgb, var(--accent-text) 10%, transparent);
+            box-shadow: 0 0 12px color-mix(in srgb, var(--accent-text) 20%, transparent);
         }
 
         .upload-area input {
@@ -584,7 +456,7 @@
         }
 
         .upload-text {
-            color: var(--secondary-text);
+            color: var(--muted);
             font-size: 14px;
         }
 
@@ -597,8 +469,8 @@
         .upload-metadata {
             display: none;
             padding: 16px;
-            background: rgba(59, 59, 56, 0.2);
-            border: 1px solid #2A2A27;
+            background: color-mix(in srgb, var(--muted) 12%, transparent);
+            border: 1px solid var(--line);
             border-radius: 8px;
             margin-bottom: 16px;
             text-align: left;
@@ -610,7 +482,7 @@
 
         .metadata-item {
             font-size: 13px;
-            color: var(--papel);
+            color: var(--fg);
             margin-bottom: 8px;
             display: flex;
             justify-content: space-between;
@@ -621,14 +493,14 @@
         }
 
         .metadata-label {
-            color: var(--secondary-text);
+            color: var(--muted);
         }
 
         .upload-progress {
             display: none;
             padding: 16px;
-            background: rgba(59, 59, 56, 0.2);
-            border: 1px solid #2A2A27;
+            background: color-mix(in srgb, var(--muted) 12%, transparent);
+            border: 1px solid var(--line);
             border-radius: 8px;
             margin-bottom: 16px;
         }
@@ -639,7 +511,7 @@
 
         .progress-text-upload {
             font-size: 13px;
-            color: var(--papel);
+            color: var(--fg);
             margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
@@ -649,7 +521,7 @@
         .progress-bar-upload {
             width: 100%;
             height: 8px;
-            background: #2A2A27;
+            background: var(--line);
             border-radius: 4px;
             overflow: hidden;
             margin-bottom: 8px;
@@ -668,7 +540,7 @@
 
         .upload-eta {
             font-size: 12px;
-            color: var(--secondary-text);
+            color: var(--muted);
             text-align: right;
         }
 
@@ -697,7 +569,7 @@
         }
 
         .btn-upload:focus-visible {
-            outline: 3px solid var(--foco);
+            outline: 3px solid var(--accent-edge);
             outline-offset: 3px;
         }
 
@@ -709,19 +581,19 @@
 
         .btn-cancel-upload {
             background: transparent;
-            color: var(--papel);
+            color: var(--fg);
             border: 1px solid var(--grafito);
             flex: 1;
             min-width: 100px;
         }
 
         .btn-cancel-upload:hover:not(:disabled) {
-            background: rgba(59, 59, 56, 0.2);
-            border-color: var(--papel);
+            background: color-mix(in srgb, var(--muted) 12%, transparent);
+            border-color: var(--fg);
         }
 
         .btn-cancel-upload:focus-visible {
-            outline: 3px solid var(--foco);
+            outline: 3px solid var(--accent-edge);
             outline-offset: 3px;
         }
 
@@ -739,16 +611,16 @@
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: #555552;
+            background: var(--muted);
         }
 
         .simple-progress {
             display: none;
             margin-bottom: 20px;
             padding: 16px;
-            background: rgba(59, 59, 56, 0.2);
+            background: color-mix(in srgb, var(--muted) 12%, transparent);
             border-radius: 8px;
-            border: 1px solid #2A2A27;
+            border: 1px solid var(--line);
         }
 
         .simple-progress.active {
@@ -757,7 +629,7 @@
 
         .progress-text {
             font-size: 13px;
-            color: var(--papel);
+            color: var(--fg);
             margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
@@ -767,7 +639,7 @@
         .progress-bar-simple {
             width: 100%;
             height: 8px;
-            background: #2A2A27;
+            background: var(--line);
             border-radius: 4px;
             overflow: hidden;
             margin-bottom: 8px;
@@ -793,8 +665,8 @@
             display: none;
             margin-top: 24px;
             padding: 20px;
-            background: rgba(242, 255, 0, 0.05);
-            border: 1px solid #2A2A27;
+            background: color-mix(in srgb, var(--accent-text) 6%, transparent);
+            border: 1px solid var(--line);
             border-radius: 8px;
         }
 
@@ -811,9 +683,9 @@
 
         .summary-item {
             padding: 12px;
-            background: rgba(59, 59, 56, 0.2);
+            background: color-mix(in srgb, var(--muted) 12%, transparent);
             border-radius: 6px;
-            border-left: 3px solid var(--foco);
+            border-left: 3px solid var(--accent-edge);
         }
 
         .summary-item-icon {
@@ -824,14 +696,14 @@
 
         .summary-item-label {
             font-size: 11px;
-            color: var(--secondary-text);
+            color: var(--muted);
             margin-bottom: 4px;
         }
 
         .summary-item-value {
             font-size: 18px;
             font-weight: 600;
-            color: var(--foco);
+            color: var(--accent-text);
             display: flex;
             align-items: center;
         }
@@ -840,7 +712,7 @@
             position: fixed;
             bottom: 20px;
             right: 20px;
-            background: rgba(242, 255, 0, 0.9);
+            background: color-mix(in srgb, var(--accent) 90%, transparent);
             color: var(--sala);
             padding: 12px 20px;
             border-radius: 8px;
@@ -851,12 +723,12 @@
         }
 
         .toast.error {
-            background: rgba(59, 59, 56, 0.9);
-            color: var(--papel);
+            background: var(--panel);
+            color: var(--fg);
         }
 
         .toast.warning {
-            background: rgba(242, 255, 0, 0.9);
+            background: color-mix(in srgb, var(--accent) 90%, transparent);
             color: var(--sala);
         }
 
@@ -877,8 +749,8 @@
 
         .toast-button {
             padding: 6px 12px;
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: color-mix(in srgb, var(--fg) 20%, transparent);
+            border: 1px solid color-mix(in srgb, var(--fg) 30%, transparent);
             border-radius: 4px;
             color: inherit;
             font-size: 12px;
@@ -890,15 +762,15 @@
         }
 
         .toast-button:hover {
-            background: rgba(255, 255, 255, 0.3);
+            background: color-mix(in srgb, var(--fg) 30%, transparent);
         }
 
         .error-boundary {
             display: none;
             margin-top: 24px;
             padding: 20px;
-            background: rgba(59, 59, 56, 0.2);
-            border: 1px solid #2A2A27;
+            background: color-mix(in srgb, var(--muted) 12%, transparent);
+            border: 1px solid var(--line);
             border-radius: 8px;
         }
 
@@ -910,24 +782,24 @@
         .error-boundary-title {
             font-size: 16px;
             font-weight: 600;
-            color: var(--papel);
+            color: var(--fg);
             margin-bottom: 12px;
         }
 
         .error-boundary-text {
             font-size: 13px;
-            color: var(--papel);
+            color: var(--fg);
             margin-bottom: 16px;
             line-height: 1.5;
         }
 
         .error-summary {
             padding: 12px;
-            background: rgba(59, 59, 56, 0.2);
+            background: color-mix(in srgb, var(--muted) 12%, transparent);
             border-radius: 6px;
             margin-bottom: 16px;
             font-size: 13px;
-            color: var(--papel);
+            color: var(--fg);
         }
 
         .export-buttons {

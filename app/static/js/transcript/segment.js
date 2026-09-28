@@ -16,7 +16,7 @@
                 <div class="segment-header">
                     <span class="segment-timestamp">[${formatTimestamp(startMs)}]</span>
                     ${statsBadge}
-                    <span style="color: #64748b; font-size: 12px;">Segment ${segmentNumber}/${totalSegs}</span>
+                    <span style="color: var(--muted); font-size: 12px;">Segment ${segmentNumber}/${totalSegs}</span>
                 </div>
                 <div class="segment-text">${text}</div>
             `;

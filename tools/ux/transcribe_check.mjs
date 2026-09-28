@@ -27,7 +27,6 @@ const runsDir = path.resolve(args.runs || '../../runs');
 const timeoutMs = Number(args.timeout || 20 * 60 * 1000);
 
 fs.mkdirSync(out, { recursive: true });
-const before = new Set(fs.existsSync(runsDir) ? fs.readdirSync(runsDir) : []);
 
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROME || undefined });
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
@@ -45,6 +44,7 @@ await page.waitForFunction(
   { timeout: timeoutMs },
 );
 
+const runId = await page.evaluate(() => currentRunId);
 const segments = await page.$$eval('.segment-text', (els) => els.map((e) => e.textContent));
 const exported = await page.$eval('#transcript', (el) => el.textContent);
 await browser.close();
@@ -52,18 +52,13 @@ await browser.close();
 fs.writeFileSync(path.join(out, 'transcript_segments.txt'), segments.join('\n') + '\n');
 fs.writeFileSync(path.join(out, 'transcript_export.txt'), exported);
 
-// Server artifacts are written just before the response returns, so they are
-// on disk by now. Pick the files this run created.
-const fresh = fs
-  .readdirSync(runsDir)
-  .filter((f) => f.endsWith('.json') && !before.has(f))
-  .map((f) => ({ f, t: fs.statSync(path.join(runsDir, f)).mtimeMs }))
-  .sort((a, b) => b.t - a.t);
-if (fresh.length !== 1) {
-  console.error(`expected exactly 1 new run artifact, found ${fresh.length}`);
+// The page stamps every request with its run id; that names the artifact file.
+const artPath = path.join(runsDir, `${runId}.json`);
+if (!runId || !fs.existsSync(artPath)) {
+  console.error(`no run artifact for run id ${runId}`);
   process.exit(2);
 }
-const art = JSON.parse(fs.readFileSync(path.join(runsDir, fresh[0].f), 'utf8'));
+const art = JSON.parse(fs.readFileSync(artPath, 'utf8'));
 for (const k of ['run_id', 'created_at', 'git_commit']) delete art[k];
 for (const c of art.chunks || []) {
   delete c.request_id;

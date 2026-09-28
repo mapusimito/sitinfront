@@ -1,0 +1,10 @@
+{
+  "name": "sitinfront-ux-tools",
+  "private": true,
+  "type": "module",
+  "description": "Verification tooling for the UX revamp: transcript equivalence, screenshots, axe.",
+  "dependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "playwright": "^1.63.0"
+  }
+}

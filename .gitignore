@@ -57,3 +57,10 @@ runs/
 # Local-only test audio fixtures (may contain real recorded speech / other
 # people's voices - keep off the public repo, see tests/fixtures/README.md)
 tests/fixtures/
+
+# UX verification tooling deps
+tools/ux/node_modules/
+
+# UX baseline text is lecture content; keep local, commit only hashes
+docs/ux-revamp/baseline/4min/
+docs/ux-revamp/baseline/12min/

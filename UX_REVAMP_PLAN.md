@@ -142,6 +142,10 @@ Relay order (Phase 3): each row is one new agent. Files listed are owned exclusi
 | **T3-b** | Agent 2 | Failed chunk and retry states, error boundary, toasts wiring, Settings dialog (delivers M4) | `static/js/status/{failures,settings}.js` | T3-a |
 | **T2-a** | Agent 3 | Empty state, transcript reading view, segment display with honest metric, partial-result rendering of failed chunks | `static/css/transcript.css`, `static/js/transcript/{view,segment}.js` | T3-b |
 | **T2-b** | Agent 3 | Search, copy, export UI, summary tiles (real metrics only) | `static/js/transcript/{search,export,summary}.js` | T2-a |
+| **P0** | Investigation agent (read-only) | Audio persistence and playback: what RunStore saves today and when, whether finished runs are kept, MediaRecorder formats per browser and cross-playback, segment timestamp base and VAD mapping to the original timeline, storage used by a 1 hour recording and browser quota. Findings recorded in section 13 before any design. | `docs/ux-revamp/p0-findings.md` only | none (may run now) |
+| **P1** | Agent (after T2-a) | Storage: keep completed runs with original-format audio, absolute-timestamp segments and metadata; `navigator.storage.persist()`; storage-full handling; ONE storage layer integrated with RunStore and resume | `js/persist/**` (new), RunStore integration per P0 findings | P0, T2-a |
+| **P2** | Agent (after P1) | Player with synchronized transcript: controls, click segment to seek and play, current-segment highlight, auto-scroll toggle, keyboard, docked player at 1280 and 375, failed-chunk gap behavior | `js/player/**`, `css/player.css` (new) | P1 |
+| **P3** | Agent (after P2) | Saved classes: list (name, date, duration, size), open, rename, delete with confirmation, total space used | `js/library/**`, `css/library.css` (new) | P2 |
 | **F** | Agent 4 | Full quality gate, all screenshots, axe on every screen, keyboard pass, before/after evidence, IMPLEMENTATION_STATUS.md UX section | docs and status only | T2-b |
 
 Why this order: Team 3's progress and failure components consume events that Team 1's flows start, and Team 2's partial-result rendering needs Team 3's failure data. The prompt's team labels are kept (T1 input, T2 transcript, T3 system status) but the execution order is T1, T3, T2.
@@ -241,6 +245,8 @@ Agents append here (newest last). Format: `ID | milestone | decision | why`.
 | DL1 | fixes | `getSummary()` TDZ fix approved and made in its own commit (`ffa1a40`), with a Node-vm engine harness (`tests/harness/engine_harness.cjs`) for failure-path tests that need no browser. | Honesty rule: a failed chunk must never be hidden; the bug hid the export path. |
 | DL2 | fixes | Test isolation: `_reload_server()` always sets `RUNS_DIR` to a session temp dir (`24c007d`). Nothing needed removing from `runs/`: no test-generated artifacts exist there. `runs/e2e-1790590569.json` is a manual end-to-end artifact cited by IMPLEMENTATION_STATUS.md 16.1, so it was kept. | Verified by counting files around each test file and the full suite. |
 | DL3 | process | **D0 design-direction milestone inserted** after agent 1 (see section 5): three static mockup directions, user picks, then the relay resumes. | The plan had no owner for overall composition; per-team styling inside the legacy layout would give consistent but mediocre screens. |
+| DL4 | T1 review | **D15 approved by the user**: `measureRecordingSeconds()` falls back to `decodeAudioData` only when the element duration is not finite (or not > 0). Regression tests `tests/test_recording_duration.py` (Infinity gives the same chunk plan as the correct finite duration; finite values never touch the decoder; zero also falls back) fail on the old logic and pass now. **Before the fix, Chrome recordings could not be transcribed at all**: measured in Chrome 151, a MediaRecorder blob reports `audio.duration === Infinity` (with `audio/wav` or `audio/webm;codecs=opus` labels alike), the old code passed `Math.ceil(Infinity)` to `buildChunkPlan`, whose loop `for (start = 0; start < totalMs; ...)` never terminates (over 1,000,000 chunks and still growing when capped). In practice the tab hangs or runs out of memory. Firefox and Safari were not measured. | Evidence: `tools/ux/chrome_webm_check.mjs`. |
+| DL5 | P0 (partial, measured) | Chrome MediaRecorder WebM/Opus: `<audio>.duration` is `Infinity` and `seekable.end` is empty (no duration or seek index in the header, same cause as D15). Seeking by `currentTime` still worked in the 12 s test (5 seeks landed exactly, 1 to 16 ms), and the real length can be recovered by decoding (decoded 12.00 s) or by the seek-to-1e101 trick (11.94 s, not exact). **Not yet shown for hour-long files**, where a header without a Cues index can make seeks slow. P1 must store the exact decoded duration as metadata and drive the seek bar from it; P1 must fix or normalise the WebM header (fix-webm-duration or equivalent) if P0 shows the 1 hour case is not acceptable. P2's acceptance test (5 segment seeks within 0.5 s) must pass for Chrome recordings specifically. | `tools/ux/chrome_webm_check.mjs`, headless Chrome 151 with a fake microphone. |
 
 ## 10. Approval record (2026-09-28)
 
@@ -257,7 +263,7 @@ Approved with these changes and answers:
 
 ## 11. Deferred list and open issues
 
-Deferred: (1) surface `scripts/analyze_run.py` loop detection in the UI; (2) server-side cancellation of an in-progress chunk; (3) segment streaming via the reserved `segment` event; (4) export formats SRT/VTT/Markdown (M8); (5) metric threshold cue, pending data from real runs.
+Deferred: (1) surface `scripts/analyze_run.py` loop detection in the UI; (2) server-side cancellation of an in-progress chunk; (3) segment streaming via the reserved `segment` event; (4) export formats SRT/VTT/Markdown (M8); (5) metric threshold cue, pending data from real runs; (6) transcript editing/correction (the audio player lets users check text, but not fix it).
 
 Open issues:
 - **Q9 RESOLVED (user approved, commit `ffa1a40`)**: `FailedSegmentTracker.getSummary()` shadowed the global `totalSegments` (main chunks in the run, `engine/state.js`) and threw a TDZ ReferenceError whenever a run ended with a failed chunk, before the summary card, Copiar/Exportar, `markRunStatus` and `run:end`. Fixed by reading the global into a local `total`. Guarded by `test_partial_failure_still_shows_summary_and_export_and_marks_run` (record and upload variants; fails before, passes after) using `tests/harness/engine_harness.cjs`. Baseline hashes unchanged. **Runs that hit the bug before the fix may remain "in progress" in IndexedDB, and the resume banner will offer them.**
@@ -272,3 +278,38 @@ Open issues:
 
 - **Branches**: `origin/master` (GitHub default branch) contains nothing that `origin/main` lacks: 0 commits are in master and not in main. `main` is 8+ commits ahead (merge base `71aae64`, the ETA commit). All revamp work so far was pushed to `main`, so the default branch on GitHub still shows the pre-revamp code. Other remotes: `publish` (same repo, renamed `mapusimito/sitinfront`) and `upstream` (`neosun100/faster-whisper-web`). Nothing was deleted or merged.
 - **Privacy**: the GitHub repository `mapusimito/sitinfront` is **PUBLIC**. No lecture audio is in the committed history: `tests/fixtures/*.m4a` was never committed (gitignored). The audio files that are committed are upstream faster-whisper test/benchmark assets (`tests/data/*.mp3|wav|flac`, `benchmark/benchmark.m4a`, `docker/jfk.flac`), added by upstream authors. **Lecture text IS in the public history**: commit `d3f4902` (pushed to `origin/main`) contains `docs/ux-revamp/audit/audit-done-desktop.png` and `audit-done-mobile.png` (screenshots showing transcribed lecture text) and `UX_REVAMP_PLAN.md` quotes one repeated phrase from it. The transcripts and run artifacts themselves are gitignored and were never committed. History has not been rewritten; awaiting the user's decision.
+
+## 13. Plan amendment: audio persistence and synchronized playback (user-requested 2026-09-28)
+
+**Goal.** After recording or uploading a lecture, the audio stays saved in the browser together with its transcript, and the user can play it in the app synchronized with the text: click a segment to hear it, see which segment is playing. Saved classes remain available after reloading or coming back later.
+
+**Why.** Students use the transcript to study, and the transcript has errors. Hearing the exact moment behind a sentence is the fastest way to check it. Persistence means an hour-long lecture is never lost and never re-uploaded.
+
+**Scope.** Frontend capability using IndexedDB. NOT a server change: audio is never stored on or sent anywhere beyond the existing transcription requests; the server's `KEEP_AUDIO` copies are not used. NOT a transcript editor (deferred list item 6). NOT a change to transcription behavior.
+
+### P0: investigate current persistence (read-only, first)
+Report with file:line evidence: (1) what RunStore saves today (audio blob, format, transcript, metadata) and when (start, per chunk, end); (2) whether completed runs are kept or deleted after finishing; (3) the audio format the recorder produces in Safari and in Chrome (MediaRecorder mimeType) and whether each plays back in the other; (4) whether segment timestamps are relative to the chunk, and whether faster-whisper's VAD output maps back to the original audio timeline; (5) storage used by a 1 hour recording and the browser quota (`navigator.storage.estimate()`). Findings are recorded here before designing anything. **Already measured (DL5)**: Chrome WebM has no duration or seek index in its header; see the P0 addendum below when the agent finishes.
+
+### P1: storage
+Keep completed runs: the original audio in its original format (never the decoded WAV), transcript segments with absolute timestamps, and metadata (name, date, duration, language, model, outcome). Request persistent storage (`navigator.storage.persist()`) and show the result honestly. If storage is full: say so before or during saving, keep what exists, never lose the recording silently, offer to delete old classes. Integrate with the existing RunStore and resume logic: one storage layer, not two. For Chrome recordings: store the exact duration as metadata and fix the WebM duration/seek metadata after recording if P0 shows it is needed (see DL5).
+
+### P2: player with synchronized transcript
+Controls: play/pause, seek bar with elapsed/total (mono, per brand), skip back/forward 10 s, speed (1x, 1.25x, 1.5x, 2x). Clicking a segment's timestamp or text seeks there and plays. The playing segment is highlighted; auto-scroll follows it, the user can turn it off, and it pauses when they scroll manually. Keyboard: space for play/pause and arrows to skip, only when focus is not in a text field; every control labelled for screen readers. The player stays visible (sticky or docked) while reading a long transcript at 1280px and 375px. Failed-chunk gaps: the audio for that range still plays; the gap marker says the text is missing, not the audio.
+
+### P3: saved classes
+A list of saved classes (name, date, duration, size), newest first; opening one shows its transcript and player. Rename and delete (with a confirmation dialog); deleting removes audio and transcript. Total space used shown clearly.
+
+### D0 impact
+The design directions must include the player (docked, current segment highlighted, on the finished-transcript screen) and a saved-classes list. Recording review ("listen before transcribing") is optional per direction. **Forwarded to the D0 agent on 2026-09-28.**
+
+### Relay placement
+P0 before any other P milestone (read-only, may run in parallel with D0). P1 to P3 go after T2-a (they build on the transcript view) and before F.
+
+### Acceptance criteria
+- Record and upload a file, finish transcription, reload: the class, its transcript and its audio are all still there and play.
+- Clicking 5 segments spread through the 12 minute fixture seeks to within 0.5 s of each segment's start and the audio matches the text (check by listening; record results in HANDOFF.md). For Chrome recordings specifically.
+- Works in Safari and Chrome, for recorded and uploaded audio.
+- A simulated full-storage error shows a clear message and loses nothing already saved.
+- The stored audio size matches the original file, not a WAV.
+- Transcript output and baseline hashes unchanged.
+- Axe clean, keyboard-only player use works, the usual screenshots are taken.

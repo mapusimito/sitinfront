@@ -1178,12 +1178,24 @@
             return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
 
-        function calculateConfidence(text) {
-            if (!text || text.length === 0) return 0;
-            return Math.max(80, Math.min(99, 85 + Math.floor(Math.random() * 15)));
+        // Duration-weighted mean of exp(avg_logprob) across a chunk's Whisper segments.
+        // This is a real measurement of average per-token probability, not a confidence score.
+        // Returns null (not a placeholder number) when no segment stats are available.
+        function calculateAvgTokenProb(segments) {
+            if (!segments || segments.length === 0) return null;
+            let weightedSum = 0;
+            let totalDuration = 0;
+            for (const seg of segments) {
+                if (typeof seg.avg_logprob !== 'number') continue;
+                const dur = Math.max(0, (seg.end || 0) - (seg.start || 0));
+                weightedSum += Math.exp(seg.avg_logprob) * dur;
+                totalDuration += dur;
+            }
+            if (totalDuration === 0) return null;
+            return weightedSum / totalDuration;
         }
 
-        function appendSegmentToTranscript(text, startMs, confidence, segmentNumber, totalSegs) {
+        function appendSegmentToTranscript(text, startMs, avgTokenProb, segmentNumber, totalSegs) {
             const transcriptBox = document.getElementById('transcript');
 
             if (transcriptBox.classList.contains('empty')) {
@@ -1191,12 +1203,16 @@
                 transcriptBox.classList.remove('empty');
             }
 
+            const statsBadge = (avgTokenProb === null || avgTokenProb === undefined)
+                ? ''
+                : `<span class="segment-badge">${Math.round(avgTokenProb * 100)}% avg token prob</span>`;
+
             const segment = document.createElement('div');
             segment.className = 'segment highlight';
             segment.innerHTML = `
                 <div class="segment-header">
                     <span class="segment-timestamp">[${formatTimestamp(startMs)}]</span>
-                    <span class="segment-badge">${confidence}% confidence</span>
+                    ${statsBadge}
                     <span style="color: #64748b; font-size: 12px;">Segment ${segmentNumber}/${totalSegs}</span>
                 </div>
                 <div class="segment-text">${text}</div>
@@ -1206,7 +1222,7 @@
 
             // Track metadata
             segmentTexts.push(text);
-            segmentConfidences.push(confidence);
+            segmentConfidences.push(avgTokenProb);
 
             // Auto-scroll to bottom
             transcriptBox.scrollTop = transcriptBox.scrollHeight;
@@ -1215,6 +1231,27 @@
             setTimeout(() => {
                 segment.classList.remove('highlight');
             }, 1500);
+        }
+
+        function createOrderedSegmentAppender(totalSegs) {
+            const pending = new Map();
+            let nextIndex = 0;
+
+            return function submit(mainIndex, text, startMs, segments) {
+                pending.set(mainIndex, { text, startMs, segments });
+
+                while (pending.has(nextIndex)) {
+                    const { text: readyText, startMs: readyStartMs, segments: readySegments } = pending.get(nextIndex);
+                    pending.delete(nextIndex);
+                    nextIndex++;
+
+                    segmentCount++;
+                    const avgTokenProb = calculateAvgTokenProb(readySegments);
+                    appendSegmentToTranscript(readyText, readyStartMs, avgTokenProb, segmentCount, totalSegs);
+                    updateChunkProgress(segmentCount, totalSegs);
+                    updateSimpleProgress(segmentCount, totalSegs);
+                }
+            };
         }
 
         function updateSimpleProgress(current, total) {
@@ -1253,18 +1290,14 @@
             return Math.ceil(wordCount / WORDS_PER_MINUTE);
         }
 
-        function calculateAverageConfidence() {
-            if (segmentConfidences.length === 0) return 0;
-            const sum = segmentConfidences.reduce((a, b) => a + b, 0);
-            return Math.round(sum / segmentConfidences.length);
-        }
-
-        function getConfidenceLevel(percentage) {
-            if (percentage >= 90) return 'Excelente';
-            if (percentage >= 80) return 'Muy buena';
-            if (percentage >= 70) return 'Buena';
-            if (percentage >= 60) return 'Regular';
-            return 'Baja';
+        // segmentConfidences now holds real avg-token-probability values (0..1) or null
+        // per segment (null when Whisper stats were unavailable for that segment).
+        // Returns null, not a placeholder, when there is nothing real to average.
+        function calculateAverageTokenProb() {
+            const real = segmentConfidences.filter(v => typeof v === 'number');
+            if (real.length === 0) return null;
+            const sum = real.reduce((a, b) => a + b, 0);
+            return sum / real.length;
         }
 
         function formatProcessingTime(milliseconds) {
@@ -1281,15 +1314,14 @@
         function displaySummaryCard(processingTimeMs) {
             const wordCount = calculateWordCount();
             const readingTime = calculateReadingTime(wordCount);
-            const avgConfidence = calculateAverageConfidence();
-            const confidenceLevel = getConfidenceLevel(avgConfidence);
+            const avgTokenProb = calculateAverageTokenProb();
             const processingTime = formatProcessingTime(processingTimeMs);
 
             const summaryItems = [
                 { icon: '', label: 'Palabras', value: wordCount.toLocaleString() },
                 { icon: '', label: 'Tiempo de lectura', value: `~${readingTime} min` },
                 { icon: '', label: 'Segmentos', value: totalSegments },
-                { icon: '', label: 'Confianza', value: `${avgConfidence}% (${confidenceLevel})` },
+                { icon: '', label: 'Prob. media de token', value: avgTokenProb === null ? 'N/D' : `${Math.round(avgTokenProb * 100)}%` },
                 { icon: '', label: 'Idioma', value: currentLanguage.toUpperCase() },
                 { icon: '', label: 'Tiempo de procesamiento', value: processingTime }
             ];
@@ -1584,7 +1616,8 @@
                     onSuccess(data);
                     return {
                         ...chunk,
-                        text: data.text || ''
+                        text: data.text || '',
+                        segments: data.segments || null
                     };
 
                 } catch (err) {
@@ -1771,6 +1804,7 @@
             const chunks = buildChunkPlan(totalSeconds);
             const mainChunks = chunks.filter(c => c.type === 'main');
             totalSegments = mainChunks.length;
+            const runId = crypto.randomUUID();
             segmentCount = 0;
             transcriptionStart = Date.now();
             segmentConfidences = [];
@@ -1815,6 +1849,7 @@
             const chunkResults = [];
             const limiter = new ConcurrencyLimiter(MAX_CONCURRENT_REQUESTS);
             const chunkStartTimes = new Map();
+            const submitSegment = createOrderedSegmentAppender(totalSegments);
 
             const tasks = chunks.map(chunk => limiter.run(async () => {
                 const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
@@ -1834,6 +1869,12 @@
                             formData.append('file', chunkBlob, `${chunk.type}-${chunk.mainIndex}.wav`);
                             formData.append('model', currentModel);
                             formData.append('language', currentLanguage);
+                            formData.append('response_format', 'verbose_json');
+                            formData.append('run_id', runId);
+                            formData.append('chunk_index', String(chunk.mainIndex));
+                            formData.append('chunk_type', chunk.type);
+                            formData.append('chunk_start_ms', String(chunk.startMs));
+                            formData.append('chunk_end_ms', String(chunk.endMs));
                             if (currentContext) {
                                 formData.append('prompt', currentContext);
                             }
@@ -1853,13 +1894,9 @@
                         }
                     );
 
-                    // Append main chunks to transcript in real-time
+                    // Append main chunks to transcript in chunk order (not fetch-completion order)
                     if (chunk.type === 'main' && result.text) {
-                        segmentCount++;
-                        const confidence = calculateConfidence(result.text);
-                        appendSegmentToTranscript(result.text, chunk.startMs, confidence, segmentCount, totalSegments);
-                        updateChunkProgress(segmentCount, totalSegments);
-                        updateSimpleProgress(segmentCount, totalSegments);
+                        submitSegment(chunk.mainIndex, result.text, chunk.startMs, result.segments);
                     }
 
                     return result;
@@ -2226,6 +2263,7 @@
             const chunks = buildChunkPlan(totalSeconds);
             const mainChunks = chunks.filter(c => c.type === 'main');
             totalSegments = mainChunks.length;
+            const runId = crypto.randomUUID();
             segmentCount = 0;
             transcriptionStart = Date.now();
             segmentConfidences = [];
@@ -2269,6 +2307,7 @@
 
             const limiter = new ConcurrencyLimiter(MAX_CONCURRENT_REQUESTS);
             const chunkStartTimes = new Map();
+            const submitSegment = createOrderedSegmentAppender(totalSegments);
 
             const tasks = chunks.map(chunk => limiter.run(async () => {
                 const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
@@ -2291,6 +2330,12 @@
                             formData.append('file', chunkBlob, `${chunk.type}-${chunk.mainIndex}.wav`);
                             formData.append('model', currentModel);
                             formData.append('language', currentLanguage);
+                            formData.append('response_format', 'verbose_json');
+                            formData.append('run_id', runId);
+                            formData.append('chunk_index', String(chunk.mainIndex));
+                            formData.append('chunk_type', chunk.type);
+                            formData.append('chunk_start_ms', String(chunk.startMs));
+                            formData.append('chunk_end_ms', String(chunk.endMs));
                             if (currentContext) {
                                 formData.append('prompt', currentContext);
                             }
@@ -2310,13 +2355,9 @@
                         }
                     );
 
-                    // Append main chunks to transcript in real-time
+                    // Append main chunks to transcript in chunk order (not fetch-completion order)
                     if (chunk.type === 'main' && result.text) {
-                        segmentCount++;
-                        const confidence = calculateConfidence(result.text);
-                        appendSegmentToTranscript(result.text, chunk.startMs, confidence, segmentCount, totalSegments);
-                        updateChunkProgress(segmentCount, totalSegments);
-                        updateSimpleProgress(segmentCount, totalSegments);
+                        submitSegment(chunk.mainIndex, result.text, chunk.startMs, result.segments);
                     }
 
                     return result;

@@ -90,6 +90,17 @@ def test_default_model_is_large_v3_turbo(monkeypatch):
     assert server.DEFAULT_MODEL == "large-v3-turbo"
 
 
+def test_ui_default_model_is_small_pending_turbo_availability():
+    """The backend's MODEL_SIZE default is large-v3-turbo for API clients (above), but the
+    UI's own selected/default model must stay 'small' until large-v3-turbo's weights are
+    confirmed available and its CPU speed is measured (see IMPLEMENTATION_STATUS.md M12/12.4)
+    — otherwise a fresh install's out-of-the-box UI transcription fails or hangs offline."""
+    html = (REPO_ROOT / "app" / "templates" / "index.html").read_text()
+    assert "let currentModel = 'small';" in html
+    assert '<option value="small" selected>' in html
+    assert '<option value="large-v3-turbo" selected>' not in html
+
+
 # ---------------------------------------------------------------------------
 # M2: language-aware prompt selection
 # ---------------------------------------------------------------------------
@@ -323,15 +334,107 @@ def test_frontend_has_no_random_confidence():
 def test_frontend_confidence_not_random_source():
     """Structural check (mutation-resistant): even if a future edit re-implements a random
     confidence score with different code than the literal string above, the functions that
-    actually compute/display the metric must never reference Math.random at all."""
+    actually compute/display the metric must never reference Math.random or crypto's RNG at
+    all. Includes createOrderedSegmentAppender (and its nested flushOne), since round-2 audit
+    found a randomised badge injected there survives a check that only covers the three
+    lower-level helper functions."""
     html = (REPO_ROOT / "app" / "templates" / "index.html").read_text()
-    for fn_name in ("calculateAvgTokenProb", "calculateAverageTokenProb", "appendSegmentToTranscript"):
+    for fn_name in (
+        "calculateAvgTokenProb", "calculateAverageTokenProb", "appendSegmentToTranscript",
+        "createOrderedSegmentAppender",
+    ):
         start = html.index(f"function {fn_name}(")
         # Slice to the next top-level "        function " (8-space indent) after this one,
-        # or end of file — covers each function body without needing a JS parser.
+        # or end of file — covers each function body (including nested closures like
+        # flushOne/flushRemaining inside createOrderedSegmentAppender) without a JS parser.
         next_fn = html.find("\n        function ", start + 1)
         body = html[start:next_fn if next_fn != -1 else len(html)]
         assert "Math.random" not in body, f"{fn_name} must derive its value from real Whisper stats, not Math.random"
+        assert "crypto.getRandomValues" not in body, f"{fn_name} must derive its value from real Whisper stats, not a synthetic RNG"
+
+
+def test_average_token_prob_is_duration_weighted_not_unweighted_mean():
+    """Regression test for the M4 finding that the run-level summary metric was an
+    unweighted mean rather than the duration-weighted mean the spec requires. Extracts the
+    real calculateAverageTokenProb body and runs it in Node against two chunks of very
+    different duration/probability, asserting the result matches the weighted value and NOT
+    the unweighted mean (which would be a visibly different, wrong number)."""
+    import subprocess
+    import shutil
+
+    if shutil.which("node") is None:
+        pytest.skip("node not available in this environment")
+
+    html = (REPO_ROOT / "app" / "templates" / "index.html").read_text()
+    start = html.index("function calculateAverageTokenProb(")
+    end = html.index("\n        function ", start + 1)
+    fn_src = html[start:end]
+
+    script = f"""
+    {fn_src}
+    let segmentConfidences = [0.9, 0.5];
+    let segmentDurationsSec = [290, 10];
+    const result = calculateAverageTokenProb();
+    console.log(result);
+    """
+    proc = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=10)
+    assert proc.returncode == 0, proc.stderr
+    result = float(proc.stdout.strip())
+
+    weighted = (0.9 * 290 + 0.5 * 10) / (290 + 10)
+    unweighted = (0.9 + 0.5) / 2
+    assert result == pytest.approx(weighted, abs=1e-6)
+    assert result != pytest.approx(unweighted, abs=1e-3)
+
+
+def test_flush_remaining_prevents_silent_transcript_truncation():
+    """Regression test for H1: a permanently-skipped chunk index must not block later chunks
+    from ever displaying. Extracts the real createOrderedSegmentAppender + calculateAvgTokenProb
+    from index.html and runs them in Node, simulating chunks 0, 2, 3 submitted (index 1 never
+    arrives, mirroring a failed/empty chunk) — asserts flushRemaining() surfaces 2 and 3 instead
+    of losing them forever."""
+    import subprocess
+    import shutil
+
+    if shutil.which("node") is None:
+        pytest.skip("node not available in this environment")
+
+    html = (REPO_ROOT / "app" / "templates" / "index.html").read_text()
+
+    def extract(fn_name):
+        start = html.index(f"function {fn_name}(")
+        end = html.find("\n        function ", start + 1)
+        return html[start:end if end != -1 else len(html)]
+
+    appender_src = extract("createOrderedSegmentAppender")
+    avg_src = extract("calculateAvgTokenProb")
+
+    script = f"""
+    {avg_src}
+    {appender_src}
+    let segmentCount = 0;
+    const shown = [];
+    function appendSegmentToTranscript(text) {{ shown.push(text); }}
+    function updateChunkProgress() {{}}
+    function updateSimpleProgress() {{}}
+
+    const submit = createOrderedSegmentAppender(4);
+    submit(0, 'chunk0', 0, []);
+    // index 1 never arrives (simulates a permanently failed/empty chunk)
+    submit(2, 'chunk2', 0, []);
+    submit(3, 'chunk3', 0, []);
+    const beforeFlush = shown.slice();
+    submit.flushRemaining();
+    console.log(JSON.stringify({{beforeFlush, afterFlush: shown}}));
+    """
+    proc = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=10)
+    assert proc.returncode == 0, proc.stderr
+    result = json.loads(proc.stdout.strip())
+    assert result["beforeFlush"] == ["chunk0"], "only the contiguous prefix should show before flush"
+    assert result["afterFlush"] == ["chunk0", "chunk2", "chunk3"], (
+        "flushRemaining() must surface every submitted chunk, in ascending order, "
+        "instead of silently losing chunks after a gap"
+    )
 
 
 def test_condition_on_previous_text_form_default_is_false(server_module):
@@ -355,7 +458,102 @@ def test_chunk_upload_requests_verbose_json():
         end = html.find("return formData;", start)
         assert end != -1
         region = html[start:end]
-        assert "formData.append('response_format', 'verbose_json')" in region
+        # Strip full-line JS comments before searching, so commenting the line out (instead
+        # of deleting it) is caught rather than passing a plain substring check.
+        active_lines = "\n".join(
+            line for line in region.splitlines() if not line.strip().startswith("//")
+        )
+        assert "formData.append('response_format', 'verbose_json')" in active_lines
+
+
+def test_sanitize_run_id_rejects_traversal_and_trailing_newline(server_module):
+    assert server_module._sanitize_run_id("../../evil", "fallback") == "fallback"
+    assert server_module._sanitize_run_id("safe-run_123", "fallback") == "safe-run_123"
+    # A regression for a real, exploitable issue: re.match(...$) matches before a
+    # trailing newline, so a run_id ending in "\n" must still be rejected.
+    assert server_module._sanitize_run_id("safe-run\n", "fallback") == "fallback"
+    assert server_module._sanitize_run_id("/abs/path", "fallback") == "fallback"
+
+
+def test_sanitize_chunk_type_only_allows_known_values(server_module):
+    assert server_module._sanitize_chunk_type("main") == "main"
+    assert server_module._sanitize_chunk_type("bridge") == "bridge"
+    # Anything else, including a traversal payload, must fall back to a safe value
+    # rather than being used verbatim in a filesystem path component.
+    assert server_module._sanitize_chunk_type("../../../../cte") == "single"
+    assert server_module._sanitize_chunk_type(None) == "single"
+    assert server_module._sanitize_chunk_type("MAIN") == "single"
+
+
+def test_sanitize_audio_suffix_only_allows_known_extensions(server_module):
+    assert server_module._sanitize_audio_suffix("chunk.wav") == ".wav"
+    assert server_module._sanitize_audio_suffix("chunk.flac") == ".flac"
+    # A malicious or unexpected suffix must never pass through unsanitized.
+    assert server_module._sanitize_audio_suffix("evil.sh") == ".bin"
+    assert server_module._sanitize_audio_suffix("payload") == ".bin"
+    assert server_module._sanitize_audio_suffix("../../evil.py") == ".bin"
+
+
+def test_chunk_type_traversal_cannot_escape_runs_dir_via_kept_audio(server_module, client, monkeypatch):
+    """Regression test targeting chunk_type specifically (not run_id): a malicious
+    chunk_type must not reach the KEEP_AUDIO file path unsanitized."""
+    _install_fake_pipeline(server_module, monkeypatch)
+    monkeypatch.setattr(server_module, "KEEP_AUDIO", True)
+    resp = client.post(
+        "/v1/audio/transcriptions",
+        files={"file": ("chunk.wav", b"fake-audio-bytes", "audio/wav")},
+        data={
+            "language": "es",
+            "run_id": "legit-run",
+            "chunk_type": "../../../../cte",
+            "chunk_index": "0",
+        },
+    )
+    assert resp.status_code == 200
+    written = list(server_module.RUNS_DIR.rglob("*"))
+    for path in written:
+        assert server_module.RUNS_DIR in path.resolve().parents or path.resolve() == server_module.RUNS_DIR.resolve()
+    audio_dir = server_module.RUNS_DIR / "legit-run" / "audio"
+    assert audio_dir.exists()
+    kept = list(audio_dir.iterdir())
+    assert kept, "expected kept audio inside RUNS_DIR using the sanitized chunk_type"
+    assert all("cte" not in p.name for p in kept)
+
+
+def test_malicious_audio_suffix_is_normalized_to_allowlist(server_module, client, monkeypatch):
+    """Regression test targeting the audio filename suffix specifically."""
+    _install_fake_pipeline(server_module, monkeypatch)
+    monkeypatch.setattr(server_module, "KEEP_AUDIO", True)
+    resp = client.post(
+        "/v1/audio/transcriptions",
+        files={"file": ("evil.sh", b"fake-audio-bytes", "audio/wav")},
+        data={"language": "es", "run_id": "suffix-run", "chunk_type": "main", "chunk_index": "0"},
+    )
+    assert resp.status_code == 200
+    audio_dir = server_module.RUNS_DIR / "suffix-run" / "audio"
+    kept = list(audio_dir.iterdir())
+    assert kept
+    assert all(p.suffix == ".bin" for p in kept), f"expected the disallowed .sh suffix to be normalized, got {kept}"
+
+
+def test_artifact_write_failure_does_not_fail_the_transcription(server_module, client, monkeypatch):
+    """Regression test for the finding that a corrupt/unwritable run artifact turned an
+    otherwise-successful transcription into an HTTP 500. The write must be isolated so a
+    failure there never propagates to the response."""
+    _install_fake_pipeline(server_module, monkeypatch)
+
+    async def boom(*args, **kwargs):
+        raise OSError("disk full (simulated)")
+
+    monkeypatch.setattr(server_module, "write_run_chunk_artifact", boom)
+    resp = client.post(
+        "/v1/audio/transcriptions",
+        files={"file": ("chunk.wav", b"fake-audio-bytes", "audio/wav")},
+        data={"language": "es", "run_id": "boom-run", "chunk_type": "main", "chunk_index": "0"},
+    )
+    assert resp.status_code == 200
+    assert "hola mundo" in resp.json()["text"]
+    assert not (server_module.RUNS_DIR / "boom-run.json").exists()
 
 
 def test_malicious_run_id_cannot_escape_runs_dir(server_module, client, monkeypatch):

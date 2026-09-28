@@ -1,131 +1,119 @@
-[English](README.md) | [简体中文](README_CN.md) | [繁體中文](README_TW.md) | [日本語](README_JP.md)
-
 <div align="center">
+  <img src="app/static/brand/sitinfront-mark.svg" width="72" height="72" alt="sitinfront mark" />
 
-# 🎙️ Faster Whisper Web
+  # sitinfront
 
-[![Docker](https://img.shields.io/badge/Docker-neosun%2Ffaster--whisper-blue?logo=docker)](https://hub.docker.com/r/neosun/faster-whisper)
-[![Version](https://img.shields.io/badge/version-v1.3.1-green)](https://github.com/neosun100/faster-whisper-web/releases)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![CTranslate2](https://img.shields.io/badge/engine-CTranslate2-orange)](https://github.com/OpenNMT/CTranslate2)
+  **GPU-accelerated speech transcription, built for real-time work.**
 
-**GPU-accelerated Speech Transcription with Modern Web UI**
-
-*Based on [SYSTRAN/faster-whisper](https://github.com/SYSTRAN/faster-whisper) with CTranslate2 inference engine*
-
-![Screenshot](docs/screenshot.png)
+  [![License](https://img.shields.io/badge/license-MIT-F2FF00.svg?labelColor=000000)](LICENSE)
+  [![Engine](https://img.shields.io/badge/engine-CTranslate2-F2FF00?labelColor=000000)](https://github.com/OpenNMT/CTranslate2)
+  [![Model](https://img.shields.io/badge/model-Whisper-F2FF00?labelColor=000000)](https://github.com/openai/whisper)
+  [![API](https://img.shields.io/badge/API-OpenAI--compatible-F2FF00?labelColor=000000)](#api-reference)
 
 </div>
 
 ---
 
-## ✨ Features
+## What is sitinfront
 
-| Feature | Description |
-|---------|-------------|
-| 🚀 **130x Real-time Speed** | Process 85 min audio in 39 seconds |
-| 🔄 **Streaming Output** | Real-time results via SSE, no waiting |
-| 🎵 **Interactive Timestamps** | Click to seek & play audio |
-| 🌐 **Multi-language UI** | English, 中文, 繁體, 日本語 |
-| 📝 **Multiple Formats** | SRT, VTT, TXT, JSON export |
-| 🐳 **All-in-One Docker** | Turbo model pre-installed, offline ready |
-| 📄 **Swagger API** | OpenAI-compatible REST API |
-| ⚡ **CTranslate2 Engine** | 4x faster than original Whisper |
+sitinfront is a speech-to-text web app built on [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (a CTranslate2 reimplementation of OpenAI's Whisper). It streams transcript segments to the browser as they're produced instead of making you wait for the whole file, handles long recordings by chunking with overlapping bridges for consensus, and exposes an OpenAI-compatible REST API alongside the web UI.
 
-## 🎯 Performance Benchmark
+It started as a fork of Faster Whisper Web and has been rebuilt with its own visual identity, a redesigned two-column interface, and a stronger focus on resilience during long transcription jobs (retry logic, partial-transcript export, failure tracking).
 
-| Metric | Value |
-|--------|-------|
-| Audio Duration | 5087.9s (85 min) |
-| Processing Time | 39.08s |
-| **Speed** | **130.2x real-time** |
-| File Size | 38.86 MB |
-| GPU | NVIDIA L40S |
-| Model | Turbo (FP16) |
+<div align="center">
+  <img src="sitinfront-proper-layout.png" alt="sitinfront interface" width="720" />
+</div>
 
-## 🚀 Quick Start
+## Features
 
-### Docker (Recommended)
+| | |
+|---|---|
+| **Real-time streaming** | Segments appear as they're transcribed, not after the whole job finishes |
+| **Long-audio chunking** | 5-minute chunks with 1-minute overlapping bridges, processed concurrently |
+| **Resilient by design** | Automatic retry on failed segments, auto-abort after repeated failures, partial-transcript export so nothing is lost |
+| **Drag-and-drop upload** | Or record straight from the browser |
+| **Multi-model** | Tiny through Large-v3, pick your speed/accuracy tradeoff per job |
+| **OpenAI-compatible API** | Drop-in `/v1/audio/transcriptions` endpoint with Swagger docs at `/docs` |
+| **GPU-managed** | Models load on demand and idle out after a configurable timeout to free VRAM |
+| **Spanish-first UI** | Built and localized for Spanish speakers, no emoji clutter |
+
+## Brand
+
+sitinfront has its own visual identity, distinct from the upstream project it's built on.
+
+**Palette**
+
+| Token | Value | Role |
+|---|---|---|
+| `--foco` | `#F2FF00` | Primary yellow — accents, focus states |
+| `--sala` | `#000000` | Background |
+| `--papel` | `#F4F4EE` | Primary text (cream) |
+| `--grafito` | `#3B3B38` | Secondary surfaces (dark gray) |
+| `--rec` | `#FF3B30` | Recording indicator only |
+
+**Type**
+
+- **Silkscreen** — logotype only
+- **Schibsted Grotesk** (400/500/700/900) — UI text
+- **IBM Plex Mono** — timestamps
+
+**Mark**
+
+A pixel-art "S" with a blinking cursor, at `app/static/brand/sitinfront-mark.svg`.
+
+**Icons**
+
+[Lucide](https://lucide.dev), loaded from CDN. No emoji anywhere in the product UI — that's a hard brand rule, not an oversight.
+
+## Quick Start
 
 ```bash
-# Pull and run
+git clone https://github.com/mapusimito/sitinfront.git
+cd sitinfront
+
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+./run.sh          # base model, CPU, port 8600
+./run.sh large-v3  # swap in a bigger model
+```
+
+Open `http://localhost:8600`.
+
+### Docker
+
+```bash
 docker run -d --gpus all \
   -p 8600:8600 \
-  --name faster-whisper \
+  -e MODEL_SIZE=turbo \
+  -e COMPUTE_TYPE=float16 \
   neosun/faster-whisper:latest
-
-# Access Web UI
-open http://localhost:8600
 ```
 
-### Docker Compose
-
-```yaml
-version: '3.8'
-services:
-  whisper:
-    image: neosun/faster-whisper:latest
-    container_name: faster-whisper
-    ports:
-      - "8600:8600"
-    environment:
-      - MODEL_SIZE=turbo
-      - COMPUTE_TYPE=float16
-    volumes:
-      - whisper-cache:/root/.cache
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    restart: unless-stopped
-
-volumes:
-  whisper-cache:
-```
-
-```bash
-docker-compose up -d
-```
-
-## ⚙️ Configuration
+## Configuration
 
 | Variable | Default | Description |
-|----------|---------|-------------|
-| `MODEL_SIZE` | `turbo` | Model: tiny, base, small, medium, large-v3, turbo |
-| `COMPUTE_TYPE` | `float16` | Precision: float16, int8, int8_float16 |
-| `DEVICE` | `cuda` | Device: cuda, cpu |
-| `PORT` | `8600` | Web UI port |
-| `IDLE_TIMEOUT` | `300` | Auto-unload model after idle (seconds) |
+|---|---|---|
+| `MODEL_SIZE` | `base` | `tiny`, `base`, `small`, `medium`, `large-v3`, `turbo` |
+| `DEVICE` | `cuda` | `cuda` or `cpu` |
+| `COMPUTE_TYPE` | `float16` | `float16`, `int8`, `int8_float16` |
+| `PORT` | `8600` | Web server port |
+| `IDLE_TIMEOUT` | `300` | Seconds before an idle model unloads from GPU |
 
-### GPU Selection
+## API Reference
 
-```yaml
-# Use specific GPU (e.g., GPU 2)
-deploy:
-  resources:
-    reservations:
-      devices:
-        - driver: nvidia
-          device_ids: ['2']
-          capabilities: [gpu]
-```
-
-## 📡 API Reference
-
-### Transcription (OpenAI Compatible)
+OpenAI-compatible transcription endpoint:
 
 ```bash
 curl -X POST http://localhost:8600/v1/audio/transcriptions \
   -F "file=@audio.mp3" \
-  -F "model=turbo" \
-  -F "language=auto" \
+  -F "model=large-v3" \
+  -F "language=es" \
   -F "response_format=verbose_json"
 ```
 
-### Streaming Transcription
+Streaming (NDJSON):
 
 ```bash
 curl -X POST http://localhost:8600/v1/audio/transcriptions \
@@ -133,94 +121,46 @@ curl -X POST http://localhost:8600/v1/audio/transcriptions \
   -F "stream=true"
 ```
 
-Response (NDJSON):
 ```json
-{"type": "info", "language": "en", "duration": 120.5}
-{"type": "segment", "id": 0, "start": 0.0, "end": 3.2, "text": "Hello world"}
-{"type": "segment", "id": 1, "start": 3.2, "end": 6.5, "text": "Welcome"}
+{"type": "info", "language": "es", "duration": 120.5}
+{"type": "segment", "id": 0, "start": 0.0, "end": 3.2, "text": "Hola mundo"}
 {"type": "done"}
 ```
 
-### API Endpoints
+Full interactive docs at `/docs` once the server is running.
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/v1/audio/transcriptions` | POST | Transcribe audio (OpenAI compatible) |
-| `/v1/models` | GET | List available models |
-| `/v1/models/{name}/load` | POST | Pre-load a model |
-| `/api/gpu/status` | GET | GPU memory & status |
-| `/api/gpu/offload` | POST | Unload model from GPU |
-| `/health` | GET | Health check |
-| `/docs` | GET | Swagger API documentation |
-
-## 🏗️ Project Structure
+## Project Structure
 
 ```
-faster-whisper-web/
+sitinfront/
 ├── app/
-│   ├── server.py          # FastAPI server
+│   ├── server.py           # FastAPI app: routes, model lifecycle, transcription logic
+│   ├── gpu_manager.py       # GPU memory / model idle management
 │   ├── templates/
-│   │   └── index.html     # Web UI
-│   └── static/            # Static assets
-├── faster_whisper/        # Core transcription library
-├── Dockerfile             # All-in-One image
-├── docker-compose.yml     # Compose configuration
-├── .env.example           # Environment template
-└── README.md
+│   │   └── index.html       # Web UI (single-page, inline JS)
+│   └── static/
+│       ├── brand/            # sitinfront logo assets
+│       └── favicon.svg
+├── faster_whisper/          # CTranslate2-based Whisper engine (upstream, unmodified)
+├── tests/                   # Unit tests
+├── IMPLEMENTATION_STATUS.md # Milestone-level work tracker
+└── run.sh                   # Dev server launcher
 ```
 
-## 🛠️ Tech Stack
+## Tech Stack
 
-- **Inference Engine**: [CTranslate2](https://github.com/OpenNMT/CTranslate2) - Optimized Transformer inference
-- **Model**: [Faster Whisper](https://github.com/SYSTRAN/faster-whisper) - Whisper reimplementation
+- **Inference**: [CTranslate2](https://github.com/OpenNMT/CTranslate2)
+- **Model**: [faster-whisper](https://github.com/SYSTRAN/faster-whisper) / [OpenAI Whisper](https://github.com/openai/whisper)
 - **Backend**: FastAPI + Uvicorn
-- **Frontend**: Vanilla JS with modern CSS
-- **Container**: NVIDIA CUDA 12.3.2 + cuDNN9
+- **Frontend**: Vanilla JS, no framework
+- **Icons**: Lucide
 
-## 📋 Changelog
+## License
 
-### v1.3.1 (2026-01-04)
-- ✨ Streaming output via SSE
-- ✨ Click timestamp to seek & play
-- ✨ Swagger API link in UI
-- 🐳 All-in-One Docker with turbo model
+MIT — see [LICENSE](LICENSE). The core transcription engine is inherited from [SYSTRAN/faster-whisper](https://github.com/SYSTRAN/faster-whisper); sitinfront's UI, server logic, and brand identity are original to this repository.
 
-### v1.3.0-docker (2026-01-03)
-- 🐳 Initial Docker deployment
-- 🌐 Multi-language Web UI
-- 📝 Multi-format export (SRT/VTT/TXT/JSON)
-- 📊 Real-time GPU monitoring
+## Acknowledgments
 
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [SYSTRAN/faster-whisper](https://github.com/SYSTRAN/faster-whisper) - Core transcription library
-- [OpenNMT/CTranslate2](https://github.com/OpenNMT/CTranslate2) - Inference engine
-- [OpenAI Whisper](https://github.com/openai/whisper) - Original model
-
----
-
-## ⭐ Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=neosun100/faster-whisper-web&type=Date)](https://star-history.com/#neosun100/faster-whisper-web)
-
-## 📱 Follow Us
-
-<div align="center">
-
-![WeChat](https://img.aws.xin/uPic/扫码_搜索联合传播样式-标准色版.png)
-
-</div>
+- [SYSTRAN/faster-whisper](https://github.com/SYSTRAN/faster-whisper) — transcription engine this project builds on
+- [OpenNMT/CTranslate2](https://github.com/OpenNMT/CTranslate2) — inference runtime
+- [OpenAI Whisper](https://github.com/openai/whisper) — original model

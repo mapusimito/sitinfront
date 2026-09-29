@@ -1,8 +1,8 @@
 # sitinfront - Implementation Status
 
-> **Last Updated**: 2026-09-28
-> **Current Milestone**: 12 🔄 In progress (large-v3-turbo speed measurement still outstanding; its UI default was reverted to `small` in the meantime, see 12.3); Milestones 11, 13-16 ✅ Done, including two post-audit fix rounds (round 1: H1 transcript-truncation and H2 path-traversal findings fixed; round 2: closed the mutation-test gaps a re-audit found in round 1's fixes, corrected a mis-attributed doc claim, reverted the premature UI model-default switch) — Next planned: finish 12.4, 4, 7, 8 (pre-existing UX track, unaffected by this work)
-> **Source**: UX Critique (20 issues identified) + Brand Redesign QA (72→100 compliance); Milestones 11-16 added from "Whisper Transcription Pipeline: Accuracy and Observability Fixes" task spec (2026-09-28)
+> **Last Updated**: 2026-09-29
+> **Current Milestone**: 20 🔄 UX revamp A0 (start, recording and review committed, cleanup pending) and 19 🔄 (Safari checks pending); Milestones 11, 13-18 ✅ Done; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 21, 22, 23, 24, 25, 26, 27, then 12.4, 4, 7, 8
+> **Source**: UX Critique (20 issues identified) + Brand Redesign QA (72→100 compliance); Milestones 11-16 added from "Whisper Transcription Pipeline: Accuracy and Observability Fixes" task spec (2026-09-28); Milestones 17-27 added from the UX/UI revamp brief and plan (UX_REVAMP_PLAN.md, 2026-09-29)
 > **Supersedes**: None
 
 ---
@@ -427,6 +427,272 @@
 
 ---
 
+## Milestone 17: UX revamp: foundation, guards and pre-revamp fixes
+
+**Goal**: Give the UX revamp a safe base: split frontend, design tokens, shell, and proof that transcription output does not change.
+
+**Priority**: P0: every later UX milestone builds on it.
+
+**Status**: ✅ Completed (2026-09-28 to 2026-09-29)
+
+**Source ref**: UX_REVAMP_PLAN.md sections 2 to 9 (decision log D1 to D12, DL1 to DL8)
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 17.1 | Pre-revamp fixes: Spanish default language (state and select agree); stale bridge count removed from upload log (bridge chunks and fake upload progress were already removed in `45f49a8`) | ✅ | commits `68084e1`, `d287cec`; `tests/test_server.py::test_frontend_default_language_is_spanish` |
+| 17.2 | Transcript equivalence baseline: 6 SHA-256 hashes (4 min and 12 min fixtures, both run twice and bit-identical) plus the check script | ✅ | `docs/ux-revamp/baseline/SHA256SUMS`, `tools/ux/transcribe_check.mjs` (`cb0c8fb`); text stays local because it is lecture content |
+| 17.3 | L1: split `index.html` into `app/static/js/**` and `css/legacy.css`, lines verbatim, tests read all files | ✅ | `a91620f`; integrity proven by `tools/ux/split_index.py` line-multiset check; hashes identical |
+| 17.4 | L2: design tokens (light and dark), self-hosted fonts, pinned icon sprite, shared `sf-` components, event bus, toast, dialog, theme, component gallery, contrast and axe tooling | ✅ | `c5431aa`; `app/static/css/tokens.css`, `app/static/gallery.html`, `tools/ux/contrast.mjs`, `tools/ux/screens.mjs` |
+| 17.5 | L3: app shell, engine progress events (additive), legacy CSS moved onto tokens, hardcoded-value and undefined-variable pytest gates | ✅ | `f7d8a23`; `app/static/js/engine/transcribe.js` emits run:start, chunk:*, eta, run:end; hashes identical |
+| 17.6 | Fixes found on the way: `FailedSegmentTracker.getSummary()` TDZ error hid export after a failed chunk; test `RUNS_DIR` isolation; recorder blob labelled with the recorder's real MIME type | ✅ | `ffa1a40` (+ `tests/harness/engine_harness.cjs`, 4 tests), `24c007d`, `f0bd24e`; hashes unchanged; pytest 79 passed at `f0bd24e` |
+
+---
+
+## Milestone 18: UX revamp: input (record, upload, resume, safe copy)
+
+**Goal**: Make recording and uploading clear, safe and honest, and never lose a recording.
+
+**Priority**: P0: input is the first thing users touch.
+
+**Status**: ✅ Completed (2026-09-28); markup is being re-homed to Direction A by Milestone 20
+
+**Depends on**: Milestone 17
+
+**Source ref**: UX_REVAMP_PLAN.md decisions D13 to D24, DL4
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 18.1 | Record screen: labelled Grabar, real elapsed time, real level meter, Parar, review step (Transcribir or Descartar), six mic error states with next steps | ✅ | `f275077`; `app/static/js/input/recorder.js`; tests/test_input.py |
+| 18.2 | Upload: drop zone states, validation before processing (type, 500 MB, empty, undecodable), file card, real FileReader progress then honest indeterminate decoding, no invented time estimate | ✅ | `f275077`; `app/static/js/input/upload.js` |
+| 18.3 | Resume banner with real data (source, length, chunks done, age) and confirmed discard | ✅ | `f275077`; `app/static/js/input/resume.js` |
+| 18.4 | Local safe copy of recordings: MediaRecorder pieces stored incrementally, reassembled in index order, recovered after a reload mid-recording | ✅ | `afa852a`; `app/static/js/input/safe-copy.js`; `tools/ux/safe_copy_check.mjs` 29 checks pass (recovered blob 10.02 s vs 10 s expected, transcribes through the server) |
+| 18.5 | D15: Chrome recordings report `Infinity` duration; fall back to the decoded duration only for non-finite values. Before this fix Chrome recordings could not be transcribed (the chunk plan never terminates) | ✅ | `f275077`; `tests/test_recording_duration.py` (3 tests, fail on the old logic); `5e0026e`; measured with `tools/ux/chrome_webm_check.mjs` |
+
+---
+
+## Milestone 19: UX revamp: design direction and audio persistence investigation
+
+**Goal**: Choose the overall composition and establish the facts needed for saved audio and synchronized playback.
+
+**Priority**: P0: no screen should be built before its composition is chosen.
+
+**Status**: 🔄 In progress: 4 of 6 done; Safari checks wait for the user enabling Safari automation and for elapsed days
+
+**Source ref**: UX_REVAMP_PLAN.md sections 12 to 14, DL5 to DL12; `docs/ux-revamp/p0-findings.md`
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 19.1 | D0: three design directions as static mockups, 8 views each, 1280 and 375, light and dark, comparison page | ✅ | `c7b8056`; `docs/ux-revamp/directions/index.html`; 100 axe rows, 0 serious or critical, 96 screenshots |
+| 19.2 | Direction chosen by the user: A for all states (first C with A's start, revised the same day) | ✅ | `43c9ab9`, `0f9d14d`; plan decisions DL10 to DL12 |
+| 19.3 | P0 investigation: what RunStore saves, timestamp mapping (median error 0.01 s), formats, storage numbers, quota behavior | ✅ | `f308c63`; `docs/ux-revamp/p0-findings.md` |
+| 19.4 | 16 minute real Chrome MediaRecorder seek test: duration shown is Infinity, 7 seeks landed exactly in 1 to 16 ms; store the decoded duration, no WebM rewrite needed | ✅ | `eb2f56d`; `docs/ux-revamp/p0-long-recording-result.json`, `tools/ux/chrome_long_recording_check.mjs` |
+| 19.5 | Safari checks through WebDriver (recorder format, WebM playback, duration and seek, IndexedDB, quota) | ⚠️ | Blocked: needs the user to run `safaridriver --enable` and enable Remote Automation (steps in HANDOFF.md); cached WebKit build cannot run here |
+| 19.6 | Test whether Safari deletes localhost storage after a period without use | ⬜ | Deferred: time-based (write on day 0, check on days 8 and 15), needs 19.5; protocol in HANDOFF.md |
+
+---
+
+## Milestone 20: UX revamp: adaptation to Direction A (A0)
+
+**Goal**: Restyle the input flow into Direction A's single centered column, keeping behavior unchanged.
+
+**Priority**: P0: sets the frame every later screen lives in.
+
+**Status**: 🔄 In progress: 3 of 4 commits made, not yet verified by the lead; the agent was stopped by a session rate limit before the cleanup commit
+
+**Depends on**: Milestone 18, Milestone 19
+
+**Source ref**: UX_REVAMP_PLAN.md section 14 (revised), DL12
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 20.1 | Header (status pill only when useful, one cycling icon theme button) and start screen with settings disclosure | 🔄 | commit `b2a45b7` made, not yet verified by the lead |
+| 20.2 | Recording screen per the A mockup | 🔄 | commit `55c8efb` made, not yet verified by the lead |
+| 20.3 | Recording review with the shared `sf-player` (duration taken from the decoded length, not from the element) | 🔄 | commit `7c15696` made, not yet verified by the lead; `app/static/js/player/player.js`, `css/player.css` |
+| 20.4 | Cleanup: delete replaced legacy CSS, update screens config and scripts, tests, HANDOFF and decision log | 🔄 | Uncommitted edits in the working tree (legacy.css, tests/test_input.py, tools/ux/*); agent stopped by rate limit |
+
+Note: this milestone delivers the settings scope of Milestone 4 (settings live in the start-screen disclosure) once verified.
+
+---
+
+## Milestone 21: UX revamp: progress in Direction A's form (T3-a)
+
+**Goal**: Show the user, at every moment, what is really happening during a run.
+
+**Priority**: P0: silent multi-minute waits are the core trust problem.
+
+**Status**: ⬜ Not started
+
+**Depends on**: Milestone 20
+
+**Source ref**: UX_REVAMP_PLAN.md section 14 (revised), section 6 (event contract)
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 21.1 | Real chunk strip and counts (listos, fallidos, en curso, reintentando, pendientes) driven by `sf.events` | ⬜ | Not started |
+| 21.2 | Measured elapsed time; engine ETA labelled estimado only after the first chunk; indeterminate state (no percentage) for a single-chunk run | ⬜ | Not started |
+| 21.3 | Failure banner and live status announcements (polite for progress, assertive for failures) | ⬜ | Not started |
+| 21.4 | Cancel: UI plus aborting in-flight fetches, copy that does not claim instant stop, outcome `cancelled` | ⬜ | Not started; the only permitted engine edit (abort signal), own commit with tests and hash check |
+| 21.5 | Streaming transcript below the strip ("Lo que llevamos") and header status pill during a run | ⬜ | Not started |
+| 21.6 | Every displayed value traced to its source; fault-injection screenshots (retry, failure, cancel) | ⬜ | Not started |
+
+---
+
+## Milestone 22: UX revamp: failed chunks and retry (T3-b)
+
+**Goal**: Never hide a failed chunk, and let the user retry it.
+
+**Priority**: P0: honesty rule.
+
+**Status**: ⬜ Not started
+
+**Depends on**: Milestone 21
+
+**Source ref**: UX_REVAMP_PLAN.md decisions DL1, Q9 resolved
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 22.1 | Per-chunk retry ("Reintentar fragmento N") reusing the existing resume path; if impossible the button says "Reintentar todo" | ⬜ | Not started; depends on `resumeRun` accepting a finished or partial run |
+| 22.2 | Error boundary after 10 consecutive failures with partial export | ⬜ | Not started |
+| 22.3 | Toast wiring to the shared toast system | ⬜ | Not started |
+
+---
+
+## Milestone 23: UX revamp: transcript view, search, copy and export (T2-a, T2-b)
+
+**Goal**: Make the transcript, the actual product, comfortable to read, search and export.
+
+**Priority**: P0: the transcript is the product.
+
+**Status**: ⬜ Not started
+
+**Depends on**: Milestone 22
+
+**Source ref**: UX_REVAMP_PLAN.md section 14 (revised)
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 23.1 | Reading view rendered from a data model (chunks and segments with absolute times), not only the live stream; title, counts, mono timestamps, honest "Prob. media de token" badge | ⬜ | Not started |
+| 23.2 | Incomplete banner and gap marker (text missing, audio available) | ⬜ | Not started |
+| 23.3 | In-page search: sticky toolbar, "3 de 27", previous and next, highlight | ⬜ | Not started |
+| 23.4 | Copy and export .txt with bytes identical to today's export; render model text safely (no innerHTML injection) | ⬜ | Not started; known issue: `appendSegmentToTranscript` interpolates text into `innerHTML` |
+| 23.5 | Summary tiles with real metrics only; empty state | ⬜ | Not started |
+
+---
+
+## Milestone 24: UX revamp: storage (P1)
+
+**Goal**: Keep finished classes (audio and transcript) in the browser and never lose data silently.
+
+**Priority**: P0: user decision Q10, write errors first.
+
+**Status**: ⬜ Not started
+
+**Depends on**: Milestone 23
+
+**Source ref**: UX_REVAMP_PLAN.md section 13, DL7, `docs/ux-revamp/p0-findings.md`
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 24.1 | RunStore write errors are no longer swallowed: every failed save shows a message and nothing already saved is lost (first) | ⬜ | Not started; today every write error is swallowed |
+| 24.2 | Keep completed runs with original-format audio, absolute-time segments and metadata (name, language, exact decoded duration) | ⬜ | Not started |
+| 24.3 | Saved classes exempt from the 5 run / 7 day pruning; only the user deletes them | ⬜ | Not started |
+| 24.4 | `navigator.storage.persist()` with a calm notice if refused and a retry after each save | ⬜ | Not started |
+| 24.5 | Storage-full handling: message before or during saving, offer to delete old classes | ⬜ | Not started |
+| 24.6 | "Descargar" backup per class (original audio format plus transcript .txt) | ⬜ | Not started |
+
+---
+
+## Milestone 25: UX revamp: synchronized player (P2)
+
+**Goal**: Let the user hear the exact moment behind a sentence.
+
+**Priority**: P1: builds on stored audio and the transcript view.
+
+**Status**: ⬜ Not started
+
+**Depends on**: Milestone 24
+
+**Source ref**: UX_REVAMP_PLAN.md section 13
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 25.1 | Docked player on the finished transcript at 1280 and 375 (reuses `sf-player`) | ⬜ | Not started |
+| 25.2 | Click a segment's timestamp or text to seek and play | ⬜ | Not started |
+| 25.3 | Highlight the playing segment; auto-scroll toggle that pauses on manual scroll | ⬜ | Not started |
+| 25.4 | Keyboard (space, arrows) only outside text fields; every control labelled | ⬜ | Not started |
+| 25.5 | Failed-chunk gap: audio plays, marker says the text is missing | ⬜ | Not started |
+| 25.6 | Acceptance: 5 segment seeks within 0.5 s verified by listening, for Chrome and Safari, recorded and uploaded audio | ⬜ | Not started; Safari part depends on 19.5 |
+
+---
+
+## Milestone 26: UX revamp: saved classes, Mis clases (P3)
+
+**Goal**: Let the user come back to any saved class after a reload.
+
+**Priority**: P1: makes persistence visible.
+
+**Status**: ⬜ Not started
+
+**Depends on**: Milestone 25
+
+**Source ref**: UX_REVAMP_PLAN.md section 13 and 14
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 26.1 | List newest first (name, date, duration, size, Incompleta badge) | ⬜ | Not started |
+| 26.2 | Open a class: transcript view plus player from stored data | ⬜ | Not started |
+| 26.3 | Inline rename | ⬜ | Not started |
+| 26.4 | Delete with confirmation (removes audio and transcript) | ⬜ | Not started |
+| 26.5 | Total space used, persist notice, storage-full banner | ⬜ | Not started |
+| 26.6 | Header link Mis clases (appears only once this milestone exists) | ⬜ | Not started |
+
+---
+
+## Milestone 27: UX revamp: final verification (F)
+
+**Goal**: Prove the revamp is complete, honest and unchanged in behavior, then hand it to an independent audit.
+
+**Priority**: P0: the quality gate.
+
+**Status**: ⬜ Not started
+
+**Depends on**: Milestone 26
+
+**Source ref**: UX_REVAMP_PLAN.md quality gate
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 27.1 | Quality gate: 10 questions answered with evidence | ⬜ | Not started |
+| 27.2 | Screenshots and axe on every screen and state, 1280 and 375, light and dark | ⬜ | Not started |
+| 27.3 | Keyboard-only pass through record, upload, transcript and player | ⬜ | Not started |
+| 27.4 | Before and after transcript evidence (6 hashes) and unchanged backend/engine diff | ⬜ | Not started |
+| 27.5 | `legacy.css` deleted and `_UNTOKENIZED_LEGACY` empty | ⬜ | Not started |
+| 27.6 | Progress-event interface documented; deferred and open items listed; ready for independent audit | ⬜ | Not started |
+
+Note: the user's brief says do not declare the revamp complete before an independent audit.
+
+---
+
+### Deferred / Not in Scope (UX revamp, Milestones 17-27)
+
+- Surface `scripts/analyze_run.py` loop detection in the UI.
+- Server-side cancellation of an in-progress chunk.
+- Segment streaming via the reserved `segment` event.
+- Export formats SRT, VTT, Markdown (Milestone 8 scope).
+- Metric threshold cue, pending data from real runs.
+- Transcript editing or correction.
+- Minute navigator from Direction C for very long transcripts.
+
+### Open Issues (UX revamp)
+
+- The brand guide promises 4 h and MP4; the app enforces 500 MB and audio only.
+- Repository is public and commit `d3f4902` contains lecture text (two screenshots and a quoted phrase); history not rewritten, awaiting the user's decision.
+- `origin/master` (GitHub default branch) is behind `origin/main`; nothing on master is missing from main.
+- Safari behavior is unverified until 19.5.
+- Runs that hit the old `getSummary` bug may remain "in progress" in IndexedDB and will be offered by the resume banner.
+
+---
+
 ## Dependency Graph
 
 ```
@@ -461,6 +727,29 @@ Milestone 14 (M3: decoding thresholds) ✅ DONE ◄── M11, M12
 Milestone 15 (M4: observability, run artifacts, real confidence) ✅ DONE ◄── M13, M14
     ↓
 Milestone 16 (M5: analyze_run.py) ✅ DONE ◄── M15
+
+--- UX Revamp (Milestones 17-27, relay) ---
+Milestone 17 (Foundation and guards) ✅ DONE
+    ↓
+Milestone 18 (Input: record, upload, resume, safe copy) ✅ DONE ◄── 17
+    ↓
+Milestone 19 (Design direction and P0 investigation) 🔄 IN PROGRESS ◄── 18 (19.5, 19.6 Safari pending)
+    ↓
+Milestone 20 (A0 adaptation to Direction A) 🔄 IN PROGRESS ◄── 18, 19
+    ↓
+Milestone 21 (Progress, T3-a) ⬜ ◄── 20
+    ↓
+Milestone 22 (Failed chunks and retry, T3-b) ⬜ ◄── 21
+    ↓
+Milestone 23 (Transcript view, search, export, T2-a and T2-b) ⬜ ◄── 22
+    ↓
+Milestone 24 (Storage, P1) ⬜ ◄── 23
+    ↓
+Milestone 25 (Synchronized player, P2) ⬜ ◄── 24
+    ↓
+Milestone 26 (Saved classes, P3) ⬜ ◄── 25
+    ↓
+Milestone 27 (Final verification, F) ⬜ ◄── 26
 ```
 
 ---
@@ -497,6 +786,11 @@ Phase 4 — Whisper Pipeline Accuracy & Observability (M11-M16, backend, paralle
   M15 (observability + real confidence) → depends on M13, M14
   M16 (analyze_run.py) → depends on M15
   Status: M11, M13-M16 complete (including post-audit fixes); M12 in progress — large-v3-turbo benchmark outstanding (2026-09-28)
+
+Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
+  M17 → M18 → M19 → M20 (A0) → M21 (T3-a) → M22 (T3-b) → M23 (T2-a, T2-b) → M24 (P1) → M25 (P2) → M26 (P3) → M27 (F)
+  Status: M17, M18 complete; M19 and M20 in progress; M21-M27 not started (2026-09-29)
+  Note: Milestones 4, 8 and 9 overlap with this phase: M4 settings scope is delivered by M20, M8 (export) partly by M23 (only .txt), M9 (mobile and accessibility) by M27
 ```
 
 ---
@@ -522,12 +816,24 @@ Phase 4 — Whisper Pipeline Accuracy & Observability (M11-M16, backend, paralle
 | 14 | Whisper: decoding parameters | 5 | P0 | ✅ |
 | 15 | Whisper: observability and real confidence | 4 | P0 | ✅ (two post-audit fix rounds applied) |
 | 16 | Whisper: offline analysis script | 1 | P1 | ✅ |
-| **Total** | | **91 tasks** | | |
-| **Completed (✅)** | | **63 (69%)** | | **✅** |
-| **In progress (🔄)** | | **1 (1%)** | | **🔄** |
-| **Open (⬜)** | | **27 (30%)** | | **⬜** |
+| 17 | UX revamp: foundation, guards, fixes | 6 | P0 | ✅ |
+| 18 | UX revamp: input (record, upload, resume, safe copy) | 5 | P0 | ✅ |
+| 19 | UX revamp: design direction and audio investigation | 6 | P0 | 🔄 (4/6; 19.5 ⚠️, 19.6 ⬜) |
+| 20 | UX revamp: adaptation to Direction A (A0) | 4 | P0 | 🔄 (3 commits pending lead verification) |
+| 21 | UX revamp: progress (T3-a) | 6 | P0 | ⬜ |
+| 22 | UX revamp: failed chunks and retry (T3-b) | 3 | P0 | ⬜ |
+| 23 | UX revamp: transcript view, search, export | 5 | P0 | ⬜ |
+| 24 | UX revamp: storage (P1) | 6 | P0 | ⬜ |
+| 25 | UX revamp: synchronized player (P2) | 6 | P1 | ⬜ |
+| 26 | UX revamp: saved classes (P3) | 6 | P1 | ⬜ |
+| 27 | UX revamp: final verification (F) | 6 | P0 | ⬜ |
+| **Total** | | **150 tasks** | | |
+| **Completed (✅)** | | **78 (52%)** | | **✅** |
+| **In progress (🔄)** | | **5 (3%)** | | **🔄** |
+| **Blocked (⚠️)** | | **1 (1%)** | | **⚠️** |
+| **Open (⬜)** | | **66 (44%)** | | **⬜** |
 
-Note: counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). As of this update, no track-11-16 task rows are ⚠️; the only 🔄 row is 12.4 (large-v3-turbo speed measurement).
+Note: counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5 and the 🔄 rows are 20.1 to 20.4 (committed by an agent, awaiting the lead's verification, so not counted as done).
 
 ---
 
@@ -588,6 +894,8 @@ Impact: Complete visual brand launch; ready for production deployment
 - Phase 1 (M1-M3) is blocking; don't start Phase 2 until Phase 1 is done
 - Use subagents to parallelize planning for independent milestones (M4-M7 can be planned in parallel)
 - Whisper pipeline track (M11-M16): run `venv/bin/python3 -m pytest tests/ -q` after any change — use `venv/bin/python3 -m pytest`/`-m pip`, not the `venv/bin/pytest`/`venv/bin/pip` shims, which have a broken shebang from a relocated venv. `runs/` is gitignored (may hold private audio/text) — never commit its contents. The vendored `faster_whisper/` package at repo root, not the pip-installed copy in `venv/`, is what `app/server.py` actually imports.
+- UX revamp track (M17-M27): plan and decision log in `UX_REVAMP_PLAN.md`, handoff between agents in `HANDOFF.md`. Guard on every change: `venv/bin/python -m pytest tests -q`, `node tools/ux/contrast.mjs`, `tools/ux/screens.mjs` (axe), and the 6 transcript hashes (`docs/ux-revamp/baseline/SHA256SUMS`, produced with `tools/ux/transcribe_check.mjs`).
+- UX revamp: one small milestone per agent (about 10 minutes and 80k tokens), commit with explicit paths only (never `git add -A`), and update this file in the same commit as the code.
 
 ---
 
@@ -656,7 +964,7 @@ caught immediately (via `git diff --stat` before committing) and reverted from g
 anything was committed; no prior content was lost. Flagging it here per this file's own
 "why" convention, since it's exactly the kind of mistake this document format exists to catch.
 
-*Last updated: 2026-09-28*
+*Last updated: 2026-09-29*
 
 ---
 

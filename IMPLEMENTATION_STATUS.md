@@ -851,17 +851,17 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 20 | UX revamp: adaptation to Direction A (A0) | 4 | P0 | ✅ |
 | 21 | UX revamp: progress (T3-a) | 6 | P0 | ✅ |
 | 22 | UX revamp: failed chunks and retry (T3-b) | 4 | P0 | ✅ |
-| 23 | UX revamp: transcript view, search, export | 5 | P0 | 🔄 |
+| 23 | UX revamp: transcript view, search, export | 5 | P0 | 🔄 (3/5; 23.3, 23.5 in T2-c) |
 | 24 | UX revamp: storage (P1) | 6 | P0 | ⬜ |
 | 25 | UX revamp: synchronized player (P2) | 6 | P1 | ⬜ |
 | 26 | UX revamp: saved classes (P3) | 6 | P1 | ⬜ |
 | 27 | UX revamp: final verification (F) | 7 | P0 | ⬜ |
 | 28 | Repo housekeeping and a single branch | 5 | P1 | 🔄 (4/5; 28.5 runs last) |
 | **Total** | | **157 tasks** | | |
-| **Completed (✅)** | | **96 (61%)** | | **✅** |
+| **Completed (✅)** | | **99 (63%)** | | **✅** |
 | **In progress (🔄)** | | **1 (1%)** | | **🔄** |
 | **Blocked (⚠️)** | | **1 (1%)** | | **⚠️** |
-| **Open (⬜)** | | **59 (38%)** | | **⬜** |
+| **Open (⬜)** | | **56 (36%)** | | **⬜** |
 
 Note: counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
 

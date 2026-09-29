@@ -27,7 +27,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Frontend (HTML/CSS/JavaScript)
 - **`app/templates/index.html`**: Page shell. CSS lives in `app/static/css/`, JavaScript modules in `app/static/js/` (`engine`, `input`, `status`, `transcript`, `player`, `library`, `persist`, `core`)
-  - Progress and text arrive per 5-minute chunk (segment streaming is not shipped, see `docs/ux-revamp/PROGRESS_EVENTS.md`)
+  - Progress and text arrive per 5-minute chunk (segment streaming is not shipped, see `docs/reference/progress-events.md`)
   - Chunked transcription: 5-minute chunks, up to 3 requests in flight, texts assembled in order (no bridges, no consensus merge)
   - Drag-and-drop upload support
   - Error handling with retry logic and partial transcript export
@@ -61,8 +61,8 @@ sitinfront/
 │   ├── feature_extractor.py   # Audio feature extraction
 │   └── tokenizer.py           # Transcription post-processing
 ├── tests/                     # Unit tests (minimal coverage)
-├── benchmark/                 # Performance benchmarking scripts
-├── IMPLEMENTATION_STATUS.md   # Detailed work tracking (counts live in that file)
+├── tools/benchmark/           # Upstream benchmarking scripts
+├── private/                   # Local, gitignored research (trackers, plans, handoffs, audits): see "Private research rule"
 └── run.sh                     # Development startup script
 ```
 
@@ -137,7 +137,7 @@ The web UI transcribes per 5-minute chunk (segment streaming is not shipped):
 - `True`: Whisper uses previous segment as context → risks hallucination (DEPRECATED)
 
 ### Frontend State Management
-- Engine state lives in classic-script globals (`app/static/js/engine/state.js`); the engine reports progress through `sf.events` (`app/static/js/core/events.js`, contract in `docs/ux-revamp/PROGRESS_EVENTS.md`)
+- Engine state lives in classic-script globals (`app/static/js/engine/state.js`); the engine reports progress through `sf.events` (`app/static/js/core/events.js`, contract in `docs/reference/progress-events.md`)
 - Persistent data is in the browser's IndexedDB: `sitinfront-runs` (runs, original audio, saved classes) and `sitinfront-recordings` (safe copy of a recording in progress); localStorage only holds the theme choice
 - Concurrent fetch limits via `ConcurrencyLimiter` class
 - Error tracking via `FailedSegmentTracker` class with auto-abort on 10+ consecutive failures
@@ -161,9 +161,9 @@ The web UI transcribes per 5-minute chunk (segment streaming is not shipped):
 
 ## Current Implementation Status
 
-Task counts and milestone status change often: read `IMPLEMENTATION_STATUS.md` instead of relying on numbers here.
+Task counts and milestone status change often: read `private/IMPLEMENTATION_STATUS.md` (local file, not committed) instead of relying on numbers here.
 
-See `IMPLEMENTATION_STATUS.md` for full breakdown with task-level detail and git commit references.
+See `private/IMPLEMENTATION_STATUS.md` for the full breakdown with task-level detail. The paths and commit hashes inside private files refer to the layout before the research was moved.
 
 ## Common Development Tasks
 
@@ -253,7 +253,17 @@ Increase cautiously — each concurrent request needs VRAM.
 ## References
 
 - **README.md**: Project overview, features, quick-start, configuration
-- **IMPLEMENTATION_STATUS.md**: Detailed work tracking (task counts live in that file)
+- **private/IMPLEMENTATION_STATUS.md**: Detailed work tracking (local only, task counts live in that file)
 - **Upstream Faster-Whisper**: https://github.com/SYSTRAN/faster-whisper
 - **CTranslate2**: https://github.com/OpenNMT/CTranslate2
 - **Whisper Documentation**: https://platform.openai.com/docs/guides/speech-to-text
+
+## Private research rule
+
+Research and planning material is private: it lives in the local, gitignored `private/` folder and is never committed to this public repository (decided by the owner on 2026-09-29).
+
+- Private: implementation trackers (`IMPLEMENTATION_STATUS.md`), plans (`*_PLAN.md`, UX, UI, backend), handoffs, briefs, audit reports, design explorations and mockups, research findings, evidence packs and screenshot sets made for research.
+- Public: the app, its tests, the verification tooling under `tools/`, the baseline hashes (`docs/ux-revamp/baseline/`), and user-facing or technical reference docs under `docs/` (logging, MCP, progress events, README evidence, brand guide, README screenshots).
+- Enforcement: `.gitignore` lists `private/`, and `tests/test_repo_hygiene.py` fails if a tracked file matches a research pattern or if a tracked image sits outside the allowed places.
+- Consequence for trackers: `private/IMPLEMENTATION_STATUS.md` is not in git, so it cannot ship in the same commit as the code; update it in the same session anyway. This exception to the "same commit" habit was chosen by the owner.
+- Anything already committed before this rule stays in the git history (it was not rewritten).

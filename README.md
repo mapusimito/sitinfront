@@ -1,23 +1,15 @@
-<div align="center">
-  <img src="app/static/brand/sitinfront-mark.svg" width="72" height="72" alt="sitinfront mark" />
+# sitinfront
 
-  # sitinfront
-
-  ### Tú atiende. Nosotros escribimos.
-  *You pay attention. We write it down.*
-
-  [![License](https://img.shields.io/badge/license-MIT-F2FF00.svg?labelColor=000000)](LICENSE)
-  [![Engine](https://img.shields.io/badge/engine-CTranslate2-F2FF00?labelColor=000000)](https://github.com/OpenNMT/CTranslate2)
-  [![Model](https://img.shields.io/badge/model-Whisper-F2FF00?labelColor=000000)](https://github.com/openai/whisper)
-  [![API](https://img.shields.io/badge/API-OpenAI--compatible-F2FF00?labelColor=000000)](#api-reference)
-
-</div>
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Engine](https://img.shields.io/badge/engine-CTranslate2-blue)](https://github.com/OpenNMT/CTranslate2)
+[![Model](https://img.shields.io/badge/model-Whisper-blue)](https://github.com/openai/whisper)
+[![API](https://img.shields.io/badge/API-OpenAI--compatible-blue)](#api-reference)
 
 ---
 
 sitinfront turns a recording of a class into a transcript you can read, search, copy and listen along to. You record in the browser or upload an audio file, and the text comes back with a timestamp on every Whisper segment. The transcription runs on your own server, with [faster-whisper](https://github.com/SYSTRAN/faster-whisper).
 
-The interface is in Spanish (Spain, tuteo). This README is in English and quotes the interface text exactly as it appears in the app.
+The interface is in Spanish. This README is in English and quotes the interface text exactly as it appears in the app.
 
 <p align="center">
   <img src="docs/screenshots/start.jpg" alt="sitinfront start screen: 'Graba o sube tu clase' with the buttons 'Grabar clase' and 'Subir grabación'" width="720" />
@@ -31,8 +23,6 @@ The screenshots below use invented placeholder text, not a real class. They were
 | Transcript with the docked player (a run where one chunk failed) | Saved classes ("Mis clases") |
 |---|---|
 | ![Reading view with timestamps, a highlighted segment, a failed-chunk row and the player](docs/screenshots/transcript-player.jpg) | ![List of saved classes with size, date and actions](docs/screenshots/my-classes.jpg) |
-
-More states (progress, search, errors, dialogs, mobile, light and dark) are in [`docs/ux-revamp/final-screens/INDEX.md`](docs/ux-revamp/final-screens/INDEX.md).
 
 </details>
 
@@ -58,7 +48,7 @@ More states (progress, search, errors, dialogs, mobile, light and dark) are in [
 
 ## How it works
 
-sitinfront is a web app on top of faster-whisper (a CTranslate2 reimplementation of OpenAI's Whisper), forked from [neosun100/faster-whisper-web](https://github.com/neosun100/faster-whisper-web). It keeps that transcription pipeline and REST API and rebuilds the interface: its own visual identity, Spanish copy, recording and recovery, saved classes and the player.
+sitinfront is a web app on top of faster-whisper (a CTranslate2 reimplementation of OpenAI's Whisper), forked from [neosun100/faster-whisper-web](https://github.com/neosun100/faster-whisper-web). It keeps that transcription pipeline and REST API and rebuilds the interface: Spanish copy, recording and recovery, saved classes and the player.
 
 The browser cuts the audio into 5 minute chunks (`MAIN_CHUNK_DURATION` in `app/static/js/engine/state.js`), sends up to 3 requests at a time, retries chunks that fail with a retryable error, and puts the chunk texts together in order. There are no overlapping chunks and no merge step between chunks. Everything is also reachable through an OpenAI-compatible REST API at `/v1/audio/transcriptions`, with Swagger docs at `/docs`.
 
@@ -97,7 +87,7 @@ Verified on Apple silicon (Docker 28.5, linux/arm64): the build succeeded; the c
 
 The `docker run` command above is the recommended form. The run that was verified used another port and mounted the host Hugging Face cache read-only, so the exact command shown was not executed word for word.
 
-Known limit: the transcript from the container is not byte-identical to the one recorded on the macOS host before the revamp (same model, settings and ctranslate2 version, but a different platform). The difference already exists before the model runs: decoding the same 4 minute file gives different sample values in the container and on the host (checked with `faster_whisper.audio.decode_audio`; both decode to 240.0 s), because the audio libraries are separate builds per platform. Within one platform the output is deterministic (two container runs were identical). Do not expect identical text across platforms. See `docs/ux-revamp/README_EVIDENCE.md`.
+Known limit: the transcript from the container is not byte-identical to the one recorded on the macOS host before the revamp (same model, settings and ctranslate2 version, but a different platform). The difference already exists before the model runs: decoding the same 4 minute file gives different sample values in the container and on the host (checked with `faster_whisper.audio.decode_audio`; both decode to 240.0 s), because the audio libraries are separate builds per platform. Within one platform the output is deterministic (two container runs were identical). Do not expect identical text across platforms. See `docs/reference/readme-evidence.md`.
 
 ## Configuration
 
@@ -160,25 +150,47 @@ Full interactive docs at `/docs` once the server is running.
 
 ```
 sitinfront/
-├── app/
-│   ├── server.py            # FastAPI app: routes, model lifecycle, transcription
-│   ├── gpu_manager.py       # GPU memory and idle management
-│   ├── templates/
-│   │   └── index.html       # Page shell
-│   └── static/
-│       ├── css/             # Tokens, components, screens
-│       ├── js/              # engine, input, status, transcript, player, library, persist, core
-│       ├── fonts/           # Self-hosted fonts
-│       ├── icons.svg        # Icon sprite
-│       └── brand/           # Logo assets
-├── faster_whisper/          # CTranslate2-based Whisper engine (upstream, unmodified)
-├── tests/                   # Unit tests
-├── tools/ux/                # Browser checks (Playwright) and build scripts
-├── docs/brand-guide.html    # Brand guide (palette, type, voice, logo rules)
-├── docs/ux-revamp/          # Evidence, screens and handoffs of the UX revamp
-├── IMPLEMENTATION_STATUS.md # Milestone tracker
-└── run.sh                   # Dev server launcher
+├── README.md, LICENSE, CONTRIBUTING.md, CLAUDE.md   Project documents
+├── Dockerfile, docker-compose.yml, .env.example     Deployment and configuration
+├── requirements*.txt, setup.py, setup.cfg, MANIFEST.in   Dependencies and packaging
+├── run.sh, start.sh                                 Launchers (development, container)
+│
+├── app/                     The web application
+│   ├── server.py            FastAPI app: routes, model lifecycle, transcription
+│   ├── gpu_manager.py       GPU memory and idle management
+│   ├── mcp_server.py        MCP server (see docs/guides/mcp.md)
+│   ├── templates/           Page shell (index.html)
+│   └── static/              Served as is
+│       ├── css/             Design tokens, components, screens
+│       ├── js/              One folder per concern: engine, input, status,
+│       │                    transcript, player, library, persist, core
+│       ├── fonts/           Self-hosted fonts
+│       └── icons.svg        Icon sprite
+│
+├── faster_whisper/          Transcription engine (upstream, unmodified)
+├── tests/                   Python unit tests, one file per area
+├── tools/                   Development tooling, not part of the app
+│   ├── ux/                  Browser checks (Playwright, axe) and build scripts
+│   └── benchmark/           Upstream benchmark scripts
+├── scripts/                 Small utilities (analyze_run.py reads a run artifact)
+│
+├── docs/                    Public documentation
+│   ├── guides/              How to use and operate (logging, MCP)
+│   ├── reference/           Interfaces and evidence (progress events, README claims)
+│   ├── design/              Visual reference for contributors
+│   ├── screenshots/         Images used in this README
+│   └── ux-revamp/baseline/  SHA-256 hashes the transcripts are checked against
+│
+├── runs/                    Local only, git-ignored: one JSON artifact per run
+└── private/                 Local only, git-ignored: working notes, see below
 ```
+
+Where things go:
+
+- **Code that runs in the product** goes in `app/`. Nothing under `tools/`, `scripts/` or `tests/` is imported by the server.
+- **Anything a user or contributor needs to read** goes in `docs/`, in `guides/` (how to do something), `reference/` (how something works, or evidence) or `design/`.
+- **Working material** (implementation trackers, plans, handoffs, audit notes, mockups, research screenshots) goes in `private/`. It is git-ignored on purpose, and `tests/test_repo_hygiene.py` fails if such files become tracked. The only images allowed in git are under `docs/screenshots/` and `app/static/`.
+- **The root** holds only project documents, deployment files and launchers.
 
 ## Tech stack
 
@@ -192,16 +204,13 @@ sitinfront/
 
 Run one file at a time, for example `pytest tests/test_server.py -v`. Do not run `tests/test_utils.py` without a stable network: it downloads models.
 
-## Brand
-
-Focus yellow (`#F2FF00`) on room black, Silkscreen for the logotype, Schibsted Grotesk for text, IBM Plex Mono for timestamps. The guide with palette, type, logo usage and voice lives at [`docs/brand-guide.html`](docs/brand-guide.html).
-
 ## More documentation
 
-- [Transcription log and run artifacts](docs/logging.md)
-- [MCP server (inherited from upstream, lightly verified)](docs/mcp.md)
-- [Brand guide](docs/brand-guide.html)
-- [Progress events (the interface for future segment streaming)](docs/ux-revamp/PROGRESS_EVENTS.md)
+- [Transcription log and run artifacts](docs/guides/logging.md)
+- [MCP server (inherited from upstream, lightly verified)](docs/guides/mcp.md)
+- [Design reference](docs/design/style-guide.html)
+- [Progress events (the interface for future segment streaming)](docs/reference/progress-events.md)
+- [Evidence for the claims in this README](docs/reference/readme-evidence.md)
 
 ## License
 

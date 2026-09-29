@@ -14,9 +14,8 @@ build
 htmlcov
 .env
 *.log
-benchmark/
+tools/benchmark/
 tests/
-docker/
 .gitignore
 *.md
 !MCP_GUIDE.md

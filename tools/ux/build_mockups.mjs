@@ -1,4 +1,4 @@
-// Generates the static D0 mockup HTML into docs/ux-revamp/directions/{A,B,C}.
+// Generates the static D0 mockup HTML into private/ux-revamp/directions/{A,B,C}.
 //   node build_mockups.mjs [A|B|C ...]
 import { buildA } from './mockups/a.mjs';
 const want = new Set(process.argv.slice(2).map((s) => s.toUpperCase()));

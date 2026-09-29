@@ -1,11 +1,19 @@
-"""Privacy gate for the committed screenshot index (docs/ux-revamp/final-screens)."""
+"""Privacy gate for the local screenshot index (private/ux-revamp/final-screens).
+
+The folder is private research (gitignored), so this test only runs on a machine that has it.
+"""
 import re
 import subprocess
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
-FOLDER = ROOT / "docs" / "ux-revamp" / "final-screens"
+FOLDER = ROOT / "private" / "ux-revamp" / "final-screens"
 INDEX = FOLDER / "INDEX.md"
+
+if not FOLDER.exists():
+    pytest.skip("private/ux-revamp/final-screens is not on this machine", allow_module_level=True)
 
 
 def _rows():

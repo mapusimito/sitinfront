@@ -1,5 +1,5 @@
 // Screenshot index generator with a privacy gate.
-//   node final_screens.mjs [--url http://localhost:8645] [--out ../../docs/ux-revamp/final-screens] [--only a,b]
+//   node final_screens.mjs [--url http://localhost:8645] [--out ../../private/ux-revamp/final-screens] [--only a,b]
 // Every state x {desktop, mobile} x {light, dark}: load, run setup, scan the visible text for lecture words,
 // and only when all four variants are clean write the JPEGs. Writes INDEX.md (never the vocabulary).
 import { chromium } from 'playwright';
@@ -12,7 +12,7 @@ const args = Object.fromEntries(
   process.argv.slice(2).reduce((acc, a, i, all) => { if (a.startsWith('--')) acc.push([a.slice(2), all[i + 1]]); return acc; }, []),
 );
 const base = args.url || 'http://localhost:8645';
-const out = path.resolve(args.out || '../../docs/ux-revamp/final-screens');
+const out = path.resolve(args.out || '../../private/ux-revamp/final-screens');
 const only = args.only ? new Set(args.only.split(',')) : null;
 const VIEWPORTS = [['desktop', 1280, 800], ['mobile', 375, 812]];
 const SCHEMES = ['light', 'dark'];

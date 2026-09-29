@@ -1,3 +1,13 @@
+        // Cancel support (T3-a): one AbortController per run. An aborted fetch is
+        // not a failure and not a retry; it ends the run with outcome 'cancelled'.
+        let runAbortController = null;
+        let runCancelled = false;
+        function cancelTranscriptionRun() {
+            if (runCancelled) return;
+            runCancelled = true;
+            if (runAbortController) runAbortController.abort();
+        }
+
         class FailedSegmentTracker {
             constructor() {
                 this.failures = [];
@@ -75,6 +85,7 @@
             let lastError = null;
 
             for (let attempt = 0; attempt <= MAX_RETRIES_PER_CHUNK; attempt++) {
+                if (runCancelled) return { ...chunk, text: '', error: true, cancelled: true };
                 if (isAbortingTranscription) {
                     throw new Error('Transcription aborted');
                 }
@@ -83,7 +94,8 @@
                     const formData = formDataFactory();
                     const response = await fetch('/v1/audio/transcriptions', {
                         method: 'POST',
-                        body: formData
+                        body: formData,
+                        signal: runAbortController ? runAbortController.signal : undefined
                     });
 
                     if (!response.ok) {
@@ -110,6 +122,7 @@
                                 []
                             );
                             await new Promise(resolve => setTimeout(resolve, delay));
+                            if (runCancelled) return { ...chunk, text: '', error: true, cancelled: true };
                             continue;
                         } else {
                             failedSegmentTracker.recordFailure(chunkId, lastError, attempt, true);
@@ -134,6 +147,7 @@
                     };
 
                 } catch (err) {
+                    if (runCancelled || (err && err.name === 'AbortError')) return { ...chunk, text: '', error: true, cancelled: true };
                     lastError = err;
 
                     if (!isRetryableError(err)) {
@@ -157,6 +171,7 @@
                             []
                         );
                         await new Promise(resolve => setTimeout(resolve, delay));
+                        if (runCancelled) return { ...chunk, text: '', error: true, cancelled: true };
                         continue;
                     } else {
                         failedSegmentTracker.recordFailure(chunkId, err, attempt, true);
@@ -218,6 +233,8 @@
             segmentDurationsSec = [];
             segmentTexts = [];
             isAbortingTranscription = false;
+            runCancelled = false;
+            runAbortController = new AbortController();
             failedSegmentTracker = new FailedSegmentTracker();
             etaChunkSamples = [];
             etaCompletedRawSec = 0;
@@ -292,6 +309,7 @@
                 return !doneMap[chunkId];
             }).map(chunk => limiter.run(async () => {
                 const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+                if (runCancelled) return { ...chunk, text: '', error: true, cancelled: true };
                 updateChunkStatus(chunkId, 'processing');
                 sf.events.emit('chunk:start', { runId, index: chunk.mainIndex, total: totalSegments, startMs: chunk.startMs, endMs: chunk.endMs });
                 chunkStartTimes.set(chunkId, Date.now());
@@ -376,6 +394,17 @@
             document.getElementById('simpleProgress').classList.remove('active');
             stopEtaTicker();
 
+            if (runCancelled) {
+                showStatus('Transcripción cancelada. Se conserva lo ya transcrito.', 'warning');
+                displaySummaryCard(Date.now() - transcriptionStart);
+                document.getElementById('copyBtn').style.display = 'flex';
+                document.getElementById('exportBtn').style.display = 'flex';
+                sf.events.emit('run:end', { runId, outcome: 'cancelled', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
+                RunStore.markRunStatus(runId, 'aborted').catch(() => {});
+                RunStore.pruneOldRuns().catch(() => {});
+                return;
+            }
+
             if (isAbortingTranscription) {
                 showStatus('Transcripción interrumpida por errores repetidos', 'error');
                 sf.events.emit('run:end', { runId, outcome: 'aborted', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
@@ -428,6 +457,8 @@
             segmentDurationsSec = [];
             segmentTexts = [];
             isAbortingTranscription = false;
+            runCancelled = false;
+            runAbortController = new AbortController();
             failedSegmentTracker = new FailedSegmentTracker();
             etaChunkSamples = [];
             etaCompletedRawSec = 0;
@@ -501,6 +532,7 @@
                 return !doneMap[chunkId];
             }).map(chunk => limiter.run(async () => {
                 const chunkId = `${chunk.type}-${chunk.mainIndex}${chunk.type === 'bridge' ? '-bridge' : ''}`;
+                if (runCancelled) return { ...chunk, text: '', error: true, cancelled: true };
                 updateChunkStatus(chunkId, 'processing');
                 sf.events.emit('chunk:start', { runId, index: chunk.mainIndex, total: totalSegments, startMs: chunk.startMs, endMs: chunk.endMs });
                 updateProgressBar(chunkId, 0);
@@ -587,6 +619,17 @@
 
             document.getElementById('simpleProgress').classList.remove('active');
             stopEtaTicker();
+
+            if (runCancelled) {
+                showStatus('Transcripción cancelada. Se conserva lo ya transcrito.', 'warning');
+                displaySummaryCard(Date.now() - transcriptionStart);
+                document.getElementById('copyBtn').style.display = 'flex';
+                document.getElementById('exportBtn').style.display = 'flex';
+                sf.events.emit('run:end', { runId, outcome: 'cancelled', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
+                RunStore.markRunStatus(runId, 'aborted').catch(() => {});
+                RunStore.pruneOldRuns().catch(() => {});
+                return;
+            }
 
             if (isAbortingTranscription) {
                 showStatus('Transcripción interrumpida por errores repetidos', 'error');

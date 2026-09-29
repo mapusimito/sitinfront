@@ -1,7 +1,7 @@
 // Runs the REAL frontend engine scripts (same order as index.html) inside a Node vm with a
 // fake DOM, a stub RunStore and a mocked fetch, to exercise failure paths that need no browser.
 //
-//   node engine_harness.cjs <record|upload> <failChunkIndex|none> [status]
+//   node engine_harness.cjs <record|upload> <failChunkIndex|none> [status] [cancelAtChunk]
 // Prints one JSON line describing what the UI would have shown / stored.
 const fs = require('fs');
 const path = require('path');
@@ -16,7 +16,9 @@ const SKIP = new Set(['js/engine/run-store.js', 'js/engine/audio.js', 'js/main.j
   // Input region scripts wire the real page (DOM, mic, IndexedDB) and are not engine code.
   'js/input/stage.js', 'js/input/safe-copy.js', 'js/input/recorder.js', 'js/input/upload.js', 'js/input/resume.js']);
 
-const [variant, failArg, failStatusArg] = process.argv.slice(2);
+const [variant, failArg, failStatusArg, cancelArg] = process.argv.slice(2);
+const cancelAt = cancelArg === undefined ? -1 : Number(cancelArg);
+let fetchCalls = 0, aborted = 0, cancelled = false;
 const failIndex = failArg === 'none' ? -1 : Number(failArg);
 const failStatus = Number(failStatusArg || 400); // 400 = non-retryable, so no backoff delays
 
@@ -53,11 +55,21 @@ const stubs = `
 
 const ctx = vm.createContext({
   document, window: {}, console, setTimeout, clearTimeout, setInterval, clearInterval, Date, Math, JSON, Promise,
-  crypto: globalThis.crypto, FormData, Blob, URL,
+  crypto: globalThis.crypto, AbortController, FormData, Blob, URL,
   navigator: { clipboard: { writeText: () => Promise.resolve() } },
   __marks: marks,
-  fetch: async (url, { body }) => {
+  fetch: async (url, { body, signal }) => {
     const idx = Number(body.get('chunk_index'));
+    fetchCalls++;
+    if (cancelAt >= 0 && idx >= cancelAt) {
+      // In-flight request that only ends when the run is cancelled (signal aborted).
+      return new Promise((_, reject) => {
+        const onAbort = () => { aborted++; const e = new Error('The operation was aborted'); e.name = 'AbortError'; reject(e); };
+        if (signal && signal.aborted) return onAbort();
+        if (signal) signal.addEventListener('abort', onAbort);
+        if (idx === cancelAt && !cancelled) { cancelled = true; setTimeout(() => vm.runInContext('cancelTranscriptionRun()', ctx), 20); }
+      });
+    }
     if (idx === failIndex) return { ok: false, status: failStatus, json: async () => ({}) };
     return { ok: true, status: 200, json: async () => ({ text: `texto ${idx}`, segments: [{ text: `texto ${idx}`, start: 0, end: 1, avg_logprob: -0.2 }] }) };
   },
@@ -90,6 +102,8 @@ vm.runInContext(`
     runEnd: events.filter((e) => e[0] === 'run:end').map((e) => ({ outcome: e[1].outcome, failedChunks: e[1].failedChunks })),
     chunkFail: events.filter((e) => e[0] === 'chunk:fail').length,
     chunkDone: events.filter((e) => e[0] === 'chunk:done').length,
+    fetchCalls, aborted,
+    chunkRetry: events.filter((e) => e[0] === 'chunk:retry').length,
     statusText: g('statusBox')?.textContent || null,
   }));
   process.exit(0);

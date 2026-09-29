@@ -746,14 +746,15 @@ def test_reloaded_server_never_targets_the_real_runs_dir():
 # Partial failure: a run with a permanently failed chunk must still finish visibly
 # ---------------------------------------------------------------------------
 
-def _run_engine_harness(variant, fail_index):
+def _run_engine_harness(variant, fail_index, cancel_at=None):
     import json
     import shutil
     import subprocess
     if shutil.which("node") is None:
         pytest.skip("node not available in this environment")
     proc = subprocess.run(
-        ["node", str(REPO_ROOT / "tests" / "harness" / "engine_harness.cjs"), variant, str(fail_index)],
+        ["node", str(REPO_ROOT / "tests" / "harness" / "engine_harness.cjs"), variant, str(fail_index)]
+        + (["200", str(cancel_at)] if cancel_at is not None else []),
         capture_output=True, text=True, timeout=30,
     )
     assert proc.returncode == 0, proc.stderr
@@ -781,3 +782,17 @@ def test_clean_run_still_reports_complete(variant):
     assert r["error"] is None
     assert r["marks"] == ["done"]
     assert r["runEnd"] == [{"outcome": "complete", "failedChunks": []}]
+
+
+@pytest.mark.parametrize("variant", ["record", "upload"])
+def test_cancel_aborts_in_flight_fetches_without_failure_or_retry(variant):
+    """T3-a: cancelling aborts in-flight requests via AbortController. An aborted fetch is not
+    a failure and not a retry, finished chunks stay, and run:end reports 'cancelled'."""
+    r = _run_engine_harness(variant, fail_index="none", cancel_at=1)
+    assert r["error"] is None, r["error"]
+    assert r["chunkDone"] == 1
+    assert r["aborted"] == 2 and r["fetchCalls"] == 3
+    assert r["chunkFail"] == 0 and r["chunkRetry"] == 0
+    assert r["runEnd"] == [{"outcome": "cancelled", "failedChunks": []}]
+    assert r["summaryCardActive"] is True and r["copyDisplay"] == "flex"
+    assert r["marks"] == ["aborted"]

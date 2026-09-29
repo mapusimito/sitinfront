@@ -45,6 +45,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
   outline-offset: 3px;
 }
 :focus:not(:focus-visible) { outline: none; }
+/* Headings that the app focuses programmatically (view changes, end of a run) are not controls: no ring. */
+h1[tabindex="-1"]:focus, h1[tabindex="-1"]:focus-visible,
+h2[tabindex="-1"]:focus, h2[tabindex="-1"]:focus-visible,
+h3[tabindex="-1"]:focus, h3[tabindex="-1"]:focus-visible { outline: none; }
 
 ::selection { background: var(--foco); color: var(--sala); }
 
@@ -101,9 +105,8 @@ button, input, select, textarea { font: inherit; color: inherit; }
   :focus-visible { outline-color: Highlight; }
 }
 
-/* Buttons keep the sizing they had under the retired legacy stylesheet (F1a: no visual change).
-   Rows of buttons share the free space; a later design pass may drop this. */
-button { flex: 1; min-width: 100px; cursor: pointer; }
+/* P4: the global flex/min-width rule of the retired legacy stylesheet is gone. Sizing is local (.sf-btn). */
+button { cursor: pointer; }
 button:disabled { cursor: not-allowed; }
 
 /* Scrollbars (moved from the retired legacy stylesheet). */

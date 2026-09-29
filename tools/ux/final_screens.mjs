@@ -115,7 +115,17 @@ for (const s of screens) {
         maxCount = Math.max(maxCount, r.count);
         if (r.lecture) { status = 'excluded: contains lecture text'; }
         else {
-          const buf = await page.screenshot({ type: 'jpeg', quality: QUALITY, fullPage: !VIEWPORT_ONLY.has(s.name) });
+          const full = !VIEWPORT_ONLY.has(s.name);
+          // Full-page captures stitch the viewport: docked (sticky) and fixed elements (player dock, toasts)
+          // would be drawn in the middle of the page. Draw them in flow instead. Modal dialogs stay.
+          if (full) await page.evaluate(() => {
+            for (const el of document.body.querySelectorAll('*')) {
+              if (el.closest('dialog')) continue;
+              const pos = getComputedStyle(el).position;
+              if (pos === 'fixed' || pos === 'sticky') el.style.position = 'static';
+            }
+          });
+          const buf = await page.screenshot({ type: 'jpeg', quality: QUALITY, fullPage: full });
           shots.push([`${s.name}__${vpName}__${scheme}.jpg`, buf]);
         }
       } catch (e) {

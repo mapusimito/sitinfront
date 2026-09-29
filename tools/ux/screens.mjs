@@ -6,6 +6,7 @@ import AxeBuilder from '@axe-core/playwright';
 import fs from 'node:fs';
 import path from 'node:path';
 import { screens } from './screens.config.mjs';
+import { spillScan } from './text_spill_lib.mjs';
 
 const args = Object.fromEntries(
   process.argv.slice(2).reduce((acc, a, i, all) => { if (a.startsWith('--')) acc.push([a.slice(2), all[i + 1]]); return acc; }, []),
@@ -39,8 +40,10 @@ for (const s of screens) {
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
       const axe = await new AxeBuilder({ page }).withTags(TAGS).analyze();
       const bad = axe.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
-      blocking += bad.length + (overflow > 0 ? 1 : 0);
-      rows.push({ screen: s.name, vp: vpName, scheme, serious: bad.length, minor: axe.violations.length - bad.length, overflowPx: overflow, pageErrors: errors.length });
+      const spill = [...new Set(await page.evaluate(spillScan))];
+      blocking += bad.length + (overflow > 0 ? 1 : 0) + spill.length;
+      for (const x of spill) console.error(`  ${s.name} ${vpName} ${scheme}: text spill: ${x}`);
+      rows.push({ screen: s.name, vp: vpName, scheme, serious: bad.length, minor: axe.violations.length - bad.length, overflowPx: overflow, spill: spill.length, pageErrors: errors.length });
       for (const v of bad) console.error(`  ${s.name} ${vpName} ${scheme}: ${v.id} (${v.impact}) ${v.nodes.length} node(s): ${v.nodes[0].target.join(' ')}`);
       await ctx.close();
     }

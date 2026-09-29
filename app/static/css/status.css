@@ -25,4 +25,3 @@
 .rv__fails:empty { display: none; }
 .rv__actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
 .rv__actions .sf-btn[hidden] { display: none; }
-.rv__sub { font-size: var(--fs-lg); padding-top: var(--sp-3); border-top: 1px solid var(--line); }

@@ -1,7 +1,7 @@
 # sitinfront - Implementation Status
 
 > **Last Updated**: 2026-09-29
-> **Current Milestone**: 21 ⬜ UX revamp T3-a (progress) is next; Milestones 17, 18, 20 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 21, 22, 23, 24, 25, 26, 27, then 12.4, 4, 7, 8
+> **Current Milestone**: 21 ✅ UX revamp T3-a (progress) done, 22 (T3-b) is next; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 22, 23, 24, 25, 26, 27, then 12.4, 4, 7, 8
 > **Source**: UX Critique (20 issues identified) + Brand Redesign QA (72→100 compliance); Milestones 11-16 added from "Whisper Transcription Pipeline: Accuracy and Observability Fixes" task spec (2026-09-28); Milestones 17-27 added from the UX/UI revamp brief and plan (UX_REVAMP_PLAN.md, 2026-09-29)
 > **Supersedes**: None
 
@@ -520,7 +520,7 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 
 **Priority**: P0: silent multi-minute waits are the core trust problem.
 
-**Status**: ⬜ Not started
+**Status**: ✅ Complete (2026-09-29)
 
 **Depends on**: Milestone 20
 
@@ -528,12 +528,12 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 
 | Task | Description | Status | Notes |
 |------|-------------|--------|-------|
-| 21.1 | Real chunk strip and counts (listos, fallidos, en curso, reintentando, pendientes) driven by `sf.events` | ⬜ | Not started |
-| 21.2 | Measured elapsed time; engine ETA labelled estimado only after the first chunk; indeterminate state (no percentage) for a single-chunk run | ⬜ | Not started |
-| 21.3 | Failure banner and live status announcements (polite for progress, assertive for failures) | ⬜ | Not started |
-| 21.4 | Cancel: UI plus aborting in-flight fetches, copy that does not claim instant stop, outcome `cancelled` | ⬜ | Not started; the only permitted engine edit (abort signal), own commit with tests and hash check |
-| 21.5 | Streaming transcript below the strip ("Lo que llevamos") and header status pill during a run | ⬜ | Not started |
-| 21.6 | Every displayed value traced to its source; fault-injection screenshots (retry, failure, cancel) | ⬜ | Not started |
+| 21.1 | Real chunk strip and counts (listos, fallidos, en curso, reintentando, pendientes) driven by `sf.events` | ✅ | `app/static/js/status/run-view.js` (strip and counts from chunk events), markup `app/templates/index.html` #runView. `tools/ux/run_view_check.mjs --scenario normal` sampled the DOM: `active,active,active` then `active,active,done`, `active,done,done`, `done,done,done` (12 min file is 3 real chunks of 5 min) |
+| 21.2 | Measured elapsed time; engine ETA labelled estimado only after the first chunk; indeterminate state (no percentage) for a single-chunk run | ✅ | Elapsed from `run:start` (`run-view.js`). ETA box appears only after `eta.remainingSec` is not null (seen in the fault run: `menos de 1 min`); 4 min file: indeterminate bar, elapsed, no percentage, no ETA box (`--scenario single`, `anyPercent false`) |
+| 21.3 | Failure banner and live status announcements (polite for progress, assertive for failures) | ✅ | Failure banner (role=alert) `El fragmento 2 no se ha podido transcribir / Faltan los minutos 05:00 a 10:00.` and retry note `reintentando (n/3)` in a role=status region (`--scenario fault`: retries 1/3, 2/3, 3/3, then failed cell, partial end, Copiar/Exportar `flex`). Header pill is inside the existing role=status region. Retry button deferred to milestone 22 |
+| 21.4 | Cancel: UI plus aborting in-flight fetches, copy that does not claim instant stop, outcome `cancelled` | ✅ | Own commit `T3-a engine: abort signal for cancel` (`engine/transcribe.js` AbortController, outcome `cancelled`; `tests/test_server.py::test_cancel_aborts_in_flight_fetches_without_failure_or_retry` x2, harness `cancelAtChunk`). UI cancel + `sf.confirm` in `run-view.js`; live check: 3 requests at click, still 3 eight seconds later, finished chunk kept; 6 transcript hashes OK |
+| 21.5 | Streaming transcript below the strip ("Lo que llevamos") and header status pill during a run | ✅ | Header pill `Transcribiendo · fragmento N de M` (`run-view.js`, `core/shell.js`). The legacy transcript box below keeps filling (3 segments in the 12 min run); its redesign is milestone 23 (T2-a) |
+| 21.6 | Every displayed value traced to its source; fault-injection screenshots (retry, failure, cancel) | ✅ | Trace table in HANDOFF.md; DOM samples for normal, single, fault and cancel runs (`tools/ux/run_view_check.mjs`); axe and overflow for 4 new states in `tools/ux/screens.config.mjs`; keyboard path `tools/ux/keyboard_status.mjs` 9/9 PASS. Evidence is DOM assertions, not screenshots |
 
 ---
 
@@ -674,7 +674,31 @@ Note: the user's brief says do not declare the revamp complete before an indepen
 
 ---
 
-### Deferred / Not in Scope (UX revamp, Milestones 17-27)
+## Milestone 28: Repo housekeeping and a single branch
+
+**Goal**: Leave the public repository clean, with no lecture data in tracked files and exactly one branch (`main`).
+
+**Priority**: P1: the remote is public and currently has two branches.
+
+**Status**: 🔄 In progress: 4 of 5 done; the last step (single branch) runs at the end of the implementation, after Milestone 27
+
+**Depends on**: Milestone 27
+
+**Source ref**: user housekeeping request, 2026-09-29 (UX_REVAMP_PLAN.md section 16)
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 28.1 | Confirm lecture audio and transcripts were never committed at any point in history (history is not rewritten) | ✅ | `git log --all --oneline -- tests/fixtures runs docs/ux-revamp/baseline` returns only `cb0c8fb` and `a91620f`, which touch only `docs/ux-revamp/baseline/README.md` and `SHA256SUMS` (hashes). No audio other than upstream test assets; no `runs/` or transcript files. Caveat reported to the user: lecture TEXT appears in commit `d3f4902` (two audit screenshots and one quoted phrase in the plan), decision pending |
+| 28.2 | Untrack `.env` (keep the local file) | ✅ | `07868aa`; `git ls-files .env` is empty; it was gitignored but tracked since `a970e59`, and Docker Compose read it for `${VAR}` substitution |
+| 28.3 | `.env.example` lists every variable the app reads, with safe placeholder values and comments on their own lines | ✅ | `07868aa`; `tests/test_repo_hygiene.py` (3 tests: `.env` untracked, every `os.environ` name documented, no inline comments) |
+| 28.4 | Report what `origin/master` contains that `origin/main` does not | ✅ | 0 commits and 0 files: master is an ancestor of main, so main can replace it by fast-forward (main is 31 or more commits ahead, merge base `71aae64`); reported 2026-09-29 |
+| 28.5 | Single branch: make `main` the GitHub default branch, delete `origin/master`, prune, and verify a fresh clone shows only `main` | ⬜ | Deferred to the end of the implementation (after 27) by the user's request. Ask before deleting the remote branch. Commands: `gh repo edit mapusimito/sitinfront --default-branch main`, then `git push origin --delete master`, then `git remote prune origin`. No commits are lost (master is an ancestor of main); old tags stay reachable |
+
+Note: the README rewrite requested in the same housekeeping message is tracked as task 27.7 (Milestone F), not repeated here.
+
+---
+
+### Deferred / Not in Scope (UX revamp, Milestones 17-28)
 
 - Surface `scripts/analyze_run.py` loop detection in the UI.
 - Server-side cancellation of an in-progress chunk.
@@ -739,7 +763,7 @@ Milestone 19 (Design direction and P0 investigation) 🔄 IN PROGRESS ◄── 
     ↓
 Milestone 20 (A0 adaptation to Direction A) ✅ DONE ◄── 18, 19
     ↓
-Milestone 21 (Progress, T3-a) ⬜ ◄── 20
+Milestone 21 (Progress, T3-a) ✅ DONE ◄── 20
     ↓
 Milestone 22 (Failed chunks and retry, T3-b) ⬜ ◄── 21
     ↓
@@ -752,6 +776,8 @@ Milestone 25 (Synchronized player, P2) ⬜ ◄── 24
 Milestone 26 (Saved classes, P3) ⬜ ◄── 25
     ↓
 Milestone 27 (Final verification, F) ⬜ ◄── 26
+    ↓
+Milestone 28 (Repo housekeeping and a single branch) 🔄 ◄── 27 (28.1 to 28.4 done, 28.5 last)
 ```
 
 ---
@@ -790,7 +816,7 @@ Phase 4 — Whisper Pipeline Accuracy & Observability (M11-M16, backend, paralle
   Status: M11, M13-M16 complete (including post-audit fixes); M12 in progress — large-v3-turbo benchmark outstanding (2026-09-28)
 
 Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
-  M17 → M18 → M19 → M20 (A0) → M21 (T3-a) → M22 (T3-b) → M23 (T2-a, T2-b) → M24 (P1) → M25 (P2) → M26 (P3) → M27 (F)
+  M17 → M18 → M19 → M20 (A0) → M21 (T3-a) → M22 (T3-b) → M23 (T2-a, T2-b) → M24 (P1) → M25 (P2) → M26 (P3) → M27 (F) → M28 (repo housekeeping, single branch)
   Status: M17, M18, M20 complete; M19 partial (Safari tasks wait on the user); M21-M27 not started (2026-09-29)
   Note: Milestones 4, 8 and 9 overlap with this phase: M4 settings scope is delivered by M20, M8 (export) partly by M23 (only .txt), M9 (mobile and accessibility) by M27
 ```
@@ -822,18 +848,19 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 18 | UX revamp: input (record, upload, resume, safe copy) | 5 | P0 | ✅ |
 | 19 | UX revamp: design direction and audio investigation | 6 | P0 | 🔄 (4/6; 19.5 ⚠️, 19.6 ⬜) |
 | 20 | UX revamp: adaptation to Direction A (A0) | 4 | P0 | ✅ |
-| 21 | UX revamp: progress (T3-a) | 6 | P0 | ⬜ |
+| 21 | UX revamp: progress (T3-a) | 6 | P0 | ✅ |
 | 22 | UX revamp: failed chunks and retry (T3-b) | 3 | P0 | ⬜ |
 | 23 | UX revamp: transcript view, search, export | 5 | P0 | ⬜ |
 | 24 | UX revamp: storage (P1) | 6 | P0 | ⬜ |
 | 25 | UX revamp: synchronized player (P2) | 6 | P1 | ⬜ |
 | 26 | UX revamp: saved classes (P3) | 6 | P1 | ⬜ |
 | 27 | UX revamp: final verification (F) | 7 | P0 | ⬜ |
-| **Total** | | **151 tasks** | | |
-| **Completed (✅)** | | **82 (54%)** | | **✅** |
+| 28 | Repo housekeeping and a single branch | 5 | P1 | 🔄 (4/5; 28.5 runs last) |
+| **Total** | | **156 tasks** | | |
+| **Completed (✅)** | | **88 (58%)** | | **✅** |
 | **In progress (🔄)** | | **1 (1%)** | | **🔄** |
 | **Blocked (⚠️)** | | **1 (1%)** | | **⚠️** |
-| **Open (⬜)** | | **67 (44%)** | | **⬜** |
+| **Open (⬜)** | | **61 (40%)** | | **⬜** |
 
 Note: counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
 

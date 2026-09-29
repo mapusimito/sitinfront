@@ -219,6 +219,62 @@ export const screens = [
     },
   },
   {
+    // Scaffolds for the run view (T3-a): the same events a real run emits, in the same
+    // shapes, to photograph moments that are too short or too rare to catch live.
+    name: 'run-progress-multi',
+    path: '/',
+    setup: async (p) => {
+      await p.evaluate(() => {
+        const e = (t, d) => sf.events.emit(t, { runId: 'x', ...d });
+        e('run:start', { source: 'upload', totalSeconds: 3600, chunkCount: 12, model: 'tiny', language: 'es' });
+        for (let i = 0; i < 6; i++) e('chunk:start', { index: i, total: 12, startMs: i * 300000, endMs: (i + 1) * 300000 });
+        e('chunk:done', { index: 0, total: 12, text: 'a', segments: [], wallSec: 40, rawSec: 300 });
+        e('chunk:done', { index: 2, total: 12, text: 'a', segments: [], wallSec: 40, rawSec: 300 });
+        e('chunk:retry', { index: 3, attempt: 2, max: 3, status: 500, reason: 'HTTP 500' });
+        e('chunk:fail', { index: 1, status: null, reason: 'HTTP 500', willAbort: false });
+        e('eta', { remainingSec: 1800, basedOnChunks: 2 });
+      });
+      await p.waitForSelector('#rvFails .sf-banner');
+    },
+  },
+  {
+    name: 'run-progress-single',
+    path: '/',
+    setup: async (p) => {
+      await p.evaluate(() => {
+        sf.events.emit('run:start', { runId: 'x', source: 'record', totalSeconds: 240, chunkCount: 1, model: 'tiny', language: 'es' });
+        sf.events.emit('chunk:start', { runId: 'x', index: 0, total: 1, startMs: 0, endMs: 240000 });
+      });
+      await p.waitForSelector('#rvBar:not([hidden])');
+    },
+  },
+  {
+    name: 'run-cancel-dialog',
+    path: '/',
+    setup: async (p) => {
+      await p.evaluate(() => {
+        sf.events.emit('run:start', { runId: 'x', source: 'record', totalSeconds: 900, chunkCount: 3, model: 'tiny', language: 'es' });
+        sf.events.emit('chunk:start', { runId: 'x', index: 0, total: 3, startMs: 0, endMs: 300000 });
+      });
+      await p.click('#rvCancel');
+      await p.waitForSelector('dialog[open]');
+    },
+  },
+  {
+    name: 'run-ended-cancelled',
+    path: '/',
+    setup: async (p) => {
+      await p.evaluate(() => {
+        const e = (t, d) => sf.events.emit(t, { runId: 'x', ...d });
+        e('run:start', { source: 'upload', totalSeconds: 900, chunkCount: 3, model: 'tiny', language: 'es' });
+        for (let i = 0; i < 3; i++) e('chunk:start', { index: i, total: 3, startMs: i * 300000, endMs: (i + 1) * 300000 });
+        e('chunk:done', { index: 2, total: 3, text: 'a', segments: [], wallSec: 40, rawSec: 300 });
+        e('run:end', { outcome: 'cancelled', failedChunks: [] });
+      });
+      await p.waitForSelector('#rvAgain:not([hidden])');
+    },
+  },
+  {
     name: 'input-resume-banner',
     path: '/',
     setup: async (p) => {

@@ -1,0 +1,28 @@
+/*
+ * Run view (milestone T3-a): progress in the centered column. Prefix rv-.
+ * Composes sf-chunks, sf-progress, sf-stat and sf-banner. Tokens only.
+ */
+.rv { display: grid; gap: var(--sp-4); }
+.rv[hidden] { display: none; }
+.rv__title { font-size: var(--fs-h2); }
+.rv__title:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
+.rv__meta { color: var(--muted); display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); overflow-wrap: anywhere; }
+.rv__meta:empty { display: none; }
+.rv__meta span:empty { display: none; }
+.rv__now { font-size: var(--fs-lg); font-weight: var(--fw-bold); }
+.rv__now:empty { display: none; }
+.rv__legend { color: var(--muted); font-size: var(--fs-sm); }
+.rv__legend b { color: var(--fg); font-weight: var(--fw-bold); }
+.rv__stats { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.rv__stats .sf-stat[hidden] { display: none; }
+#rvEta { font-size: var(--fs-ui); font-weight: var(--fw-medium); }
+#rvEtaBox[data-state="ready"] #rvEta { font-size: var(--fs-lg); font-weight: var(--fw-black); }
+@media (max-width: 30rem) { .rv__stats { grid-template-columns: 1fr; } }
+.rv__notes { display: grid; gap: var(--sp-2); }
+.rv__notes:empty { display: none; }
+.rv__note, .rv__hint { display: flex; gap: var(--sp-2); align-items: flex-start; color: var(--muted); font-size: var(--fs-sm); }
+.rv__fails { display: grid; gap: var(--sp-3); }
+.rv__fails:empty { display: none; }
+.rv__actions { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+.rv__actions .sf-btn[hidden] { display: none; }
+.rv__sub { font-size: var(--fs-lg); padding-top: var(--sp-3); border-top: 1px solid var(--line); }

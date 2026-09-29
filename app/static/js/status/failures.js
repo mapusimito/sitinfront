@@ -1,40 +1,5 @@
-        function showErrorToast(message, chunkId, actions = []) {
-            const toast = document.createElement('div');
-            toast.className = 'toast error';
-
-            const content = document.createElement('div');
-            content.className = 'toast-content';
-
-            const messageEl = document.createElement('div');
-            messageEl.className = 'toast-message';
-            messageEl.textContent = message;
-            content.appendChild(messageEl);
-
-            if (actions.length > 0) {
-                const actionsEl = document.createElement('div');
-                actionsEl.className = 'toast-actions';
-
-                actions.forEach(action => {
-                    const btn = document.createElement('button');
-                    btn.className = 'toast-button';
-                    btn.textContent = action.label;
-                    btn.onclick = (e) => {
-                        e.stopPropagation();
-                        action.onClick();
-                        toast.remove();
-                    };
-                    actionsEl.appendChild(btn);
-                });
-                content.appendChild(actionsEl);
-            }
-
-            toast.appendChild(content);
-            document.body.appendChild(toast);
-
-            setTimeout(() => {
-                if (toast.parentNode) toast.remove();
-            }, 8000);
-        }
+        // Retries and failures are shown by the run view (banner and notes), not by toasts.
+        function showErrorToast(message, chunkId, actions = []) {}
 
         function triggerErrorBoundary() {
             isAbortingTranscription = true;

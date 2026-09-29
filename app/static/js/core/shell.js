@@ -31,7 +31,7 @@
     dot.hidden = !recording;
     pill.hidden = !(recording || busy);
     if (recording && msg !== 'Grabando') text.textContent = 'Grabando';
-    if (busy && msg !== 'Transcribiendo') text.textContent = 'Transcribiendo';
+    if (/^Procesando/.test(msg)) text.textContent = 'Transcribiendo';
   }
   // Legacy callers set free text through updateHeaderStatus(); the observer filters it.
   new MutationObserver(paintPill).observe(text, { childList: true, characterData: true, subtree: true });

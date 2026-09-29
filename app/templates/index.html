@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="/static/css/legacy.css">
     <link rel="stylesheet" href="/static/css/shell.css">
     <link rel="stylesheet" href="/static/css/input.css">
+    <link rel="stylesheet" href="/static/css/status.css">
 </head>
 <body data-stage="idle">
     <a class="sf-skip" href="#main">Saltar al contenido</a>
@@ -34,21 +35,10 @@
 
     <main id="main" class="shell-main">
         <!-- region: status (owner: system status team). Progress, failures, notifications. -->
-        <section id="region-status" class="shell-region" aria-label="Estado de la transcripción">
-        <div id="progressSection" class="card progress-section">
-            <div class="section-title">Progreso</div>
-            <div id="simpleProgress" class="simple-progress">
-                <div class="progress-text">
-                    <span id="progressLabel">Procesando...</span>
-                    <span id="progressEta" style="color: var(--accent-text);"></span>
-                </div>
-                <div class="progress-bar-simple">
-                    <div id="progressFill" class="progress-fill-simple"></div>
-                </div>
-            </div>
-            <div id="chunkProgress" class="chunk-progress"></div>
+        <!-- The engine still writes to these ids (frozen). They are inert and hidden; the run view is in #panelRunning. -->
+        <div hidden aria-hidden="true">
+            <div id="progressSection"><div id="simpleProgress"></div><div id="chunkProgress"></div></div>
         </div>
-        </section>
 
         <!-- region: input (owner: input team). One centered column that changes per stage. -->
         <section id="region-input" class="shell-region a-col" aria-label="Grabar o subir una clase">
@@ -153,8 +143,34 @@
 
             <!-- A run owns the audio: input is locked until it ends. -->
             <div id="panelRunning" class="in-running" hidden>
-                <p id="runningTitle" class="in-running__title" role="status"></p>
-                <p class="in-hint" id="runningHint"></p>
+                <div id="runPrelude">
+                    <p id="runningTitle" class="in-running__title" role="status"></p>
+                    <p class="in-hint" id="runningHint"></p>
+                </div>
+                <div id="runView" class="rv" hidden>
+                    <div>
+                        <h1 class="rv__title" id="rvTitle" tabindex="-1">Transcribiendo tu clase</h1>
+                        <p class="rv__meta"><span id="rvClass"></span><span class="sf-mono" id="rvLength"></span></p>
+                    </div>
+                    <p class="rv__now" id="rvNow"></p>
+                    <div class="sf-progress sf-progress--indeterminate" id="rvBar" hidden>
+                        <div class="sf-progress__track"><div class="sf-progress__fill"></div></div>
+                    </div>
+                    <div class="sf-chunks" id="rvStrip" role="img"></div>
+                    <p class="rv__legend" id="rvLegend"></p>
+                    <div class="rv__stats">
+                        <div class="sf-stat"><span class="sf-stat__label">Tiempo transcurrido</span><span class="sf-stat__value sf-mono" id="rvElapsed">00:00</span></div>
+                        <div class="sf-stat" id="rvEtaBox"><span class="sf-stat__label">Tiempo restante, estimado</span><span class="sf-stat__value" id="rvEta"></span></div>
+                    </div>
+                    <div class="rv__notes" id="rvNotes" role="status"></div>
+                    <div class="rv__fails" id="rvFails"></div>
+                    <div class="rv__actions">
+                        <button class="sf-btn" type="button" id="rvCancel"><svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-x"></use></svg>Cancelar</button>
+                        <button class="sf-btn sf-btn--primary" type="button" id="rvAgain" hidden>Empezar otra clase</button>
+                    </div>
+                    <p class="rv__hint" id="rvHint"><svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-info"></use></svg><span>Cancelar deja de esperar los fragmentos pendientes. El servidor termina el fragmento en curso antes de parar.</span></p>
+                    <h2 class="rv__sub">Lo que llevamos</h2>
+                </div>
             </div>
 
             <!-- Options. One copy of each; stage.js moves them into the active panel's slot. -->
@@ -287,6 +303,7 @@
     <script src="/static/js/input/recorder.js"></script>
     <script src="/static/js/input/upload.js"></script>
     <script src="/static/js/input/resume.js"></script>
+    <script src="/static/js/status/run-view.js"></script>
     <script src="/static/js/core/ui.js"></script>
     <script src="/static/js/main.js"></script>
     <script src="/static/js/core/shell.js"></script>

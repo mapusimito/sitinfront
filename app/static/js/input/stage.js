@@ -155,6 +155,8 @@ function setRunningPanel(title, hint) {
 
 /** Back to the empty state (after a run ends, or when a flow is abandoned). */
 function inputReset() {
+  // A run that ended early keeps its run view until the user leaves it (status/run-view.js).
+  if (document.getElementById('panelRunning').dataset.run === 'ended') return;
   pendingFile = null;
   isUploading = false;
   document.getElementById('fileInput').value = '';
@@ -167,8 +169,11 @@ sf.events.on('run:start', (d) => {
   inputStage.set('running');
 });
 
-sf.events.on('run:end', () => {
-  if (inputStage.get() === 'running') inputReset();
+// A finished run returns to the start. A run that ended early (partial, cancelled,
+// aborted) keeps the run view on screen, with what was and was not transcribed,
+// until the user chooses "Empezar otra clase" (status/run-view.js).
+sf.events.on('run:end', (d) => {
+  if (inputStage.get() === 'running' && d.outcome === 'complete') inputReset();
 });
 
 /** "hace un momento", "hace 5 min", "hace 3 h", "hace 2 d": from a real timestamp. */

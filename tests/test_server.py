@@ -408,7 +408,7 @@ def test_average_token_prob_is_duration_weighted_not_unweighted_mean():
     let segmentConfidences = [0.9, 0.5];
     let segmentDurationsSec = [290, 10];
     const result = calculateAverageTokenProb();
-    console.log(result);
+    console.log(String(result));  // a string: Node colors bare numbers when FORCE_COLOR is set
     """
     proc = subprocess.run(["node", "-e", script], capture_output=True, text=True, timeout=10)
     assert proc.returncode == 0, proc.stderr

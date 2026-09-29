@@ -17,18 +17,22 @@ if (argv.includes('--diff')) {
   const load = (f) => JSON.parse(fs.readFileSync(f, 'utf8').replace(/sf-dlg-[a-z0-9]+/g, 'sf-dlg'));
   const A = load(a);
   const B = load(b);
+  // --props-only ignores rect changes and anything in #logsList (server request history grows with every run).
+  const propsOnly = argv.includes('--props-only');
   let total = 0;
   const lines = [];
   const keys = [...new Set([...Object.keys(A), ...Object.keys(B)])].sort();
   for (const k of keys) {
     const x = A[k] || {}; const y = B[k] || {};
     const diffs = [];
+    const skip = (p) => propsOnly && p.includes('#logsList');
     for (const p of new Set([...Object.keys(x), ...Object.keys(y)])) {
+      if (skip(p)) continue;
       if (!(p in x)) diffs.push(`added ${p}`);
       else if (!(p in y)) diffs.push(`removed ${p}`);
       else if (JSON.stringify(x[p]) !== JSON.stringify(y[p])) {
-        const ch = Object.keys(x[p]).filter((f) => JSON.stringify(x[p][f]) !== JSON.stringify(y[p][f]));
-        diffs.push(`changed ${p}: ${ch.map((f) => `${f} ${JSON.stringify(x[p][f])} -> ${JSON.stringify(y[p][f])}`).join('; ')}`);
+        const ch = Object.keys(x[p]).filter((f) => JSON.stringify(x[p][f]) !== JSON.stringify(y[p][f]) && !(propsOnly && f === 'rect'));
+        if (ch.length) diffs.push(`changed ${p}: ${ch.map((f) => `${f} ${JSON.stringify(x[p][f])} -> ${JSON.stringify(y[p][f])}`).join('; ')}`);
       }
     }
     total += diffs.length;

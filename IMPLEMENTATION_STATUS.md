@@ -1,7 +1,7 @@
 # sitinfront - Implementation Status
 
 > **Last Updated**: 2026-09-29
-> **Current Milestone**: 26 ✅ P3 Mis clases done (26.1 to 26.6: list, open with player, rename, delete, storage summary and banners, header link); 25 🔄 P2 synchronized player built (25.1 to 25.5 ✅, 25.6 open); 24 ✅ P1a and P1b done (24.1 to 24.6: write errors surfaced, saved-class data, pruning policy, persistence notice, storage-full handling, Descargar backup); 23 ✅ UX revamp T2-a, T2-b, T2-c done; 22 ✅; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 27, 25.6, then 12.4, 4, 7, 8
+> **Current Milestone**: 27 🔄 F1a done (27.5: legacy.css and dead code deleted, style snapshot diff explained); 26 ✅ P3 Mis clases done (26.1 to 26.6: list, open with player, rename, delete, storage summary and banners, header link); 25 🔄 P2 synchronized player built (25.1 to 25.5 ✅, 25.6 open); 24 ✅ P1a and P1b done (24.1 to 24.6: write errors surfaced, saved-class data, pruning policy, persistence notice, storage-full handling, Descargar backup); 23 ✅ UX revamp T2-a, T2-b, T2-c done; 22 ✅; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 27 (27.1 to 27.4, 27.6, 27.7), 25.6, then 12.4, 4, 7, 8
 > **Source**: UX Critique (20 issues identified) + Brand Redesign QA (72→100 compliance); Milestones 11-16 added from "Whisper Transcription Pipeline: Accuracy and Observability Fixes" task spec (2026-09-28); Milestones 17-27 added from the UX/UI revamp brief and plan (UX_REVAMP_PLAN.md, 2026-09-29)
 > **Supersedes**: None
 
@@ -655,7 +655,7 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 
 **Priority**: P0: the quality gate.
 
-**Status**: ⬜ Not started
+**Status**: 🔄 In progress: 27.5 ✅ (F1a, 2026-09-29); 27.1 to 27.4, 27.6, 27.7 open
 
 **Depends on**: Milestone 26
 
@@ -667,7 +667,7 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 | 27.2 | Screenshots and axe on every screen and state, 1280 and 375, light and dark | ⬜ | Not started |
 | 27.3 | Keyboard-only pass through record, upload, transcript and player | ⬜ | Not started |
 | 27.4 | Before and after transcript evidence (6 hashes) and unchanged backend/engine diff | ⬜ | Not started |
-| 27.5 | `legacy.css` deleted and `_UNTOKENIZED_LEGACY` empty | ⬜ | Not started |
+| 27.5 | `legacy.css` deleted and `_UNTOKENIZED_LEGACY` empty | ✅ | F1a (2026-09-29): css/legacy.css and dead JS removed (ui.js showToast, view.js clearAll, failures.js retryAll, format.js formatRelativeTime and formatFileSize); tests/test_server.py::test_legacy_stylesheet_is_gone_and_exemption_list_is_empty; tools/ux/style_snapshot.mjs diff 136 states: only the status line banner and centered dialogs differ (HANDOFF.md); 6 of 6 hashes OK |
 | 27.6 | Progress-event interface documented; deferred and open items listed; ready for independent audit | ⬜ | Not started |
 | 27.7 | README rewrite: describe only what the app does at that point (correct streaming, search, bridges/consensus, Lucide, MODEL_SIZE/DEVICE/COMPUTE_TYPE defaults, upstream Docker image); brand voice | ⬜ | Not started; requirements in UX_REVAMP_PLAN.md section 15; every claim mapped to evidence in HANDOFF.md |
 
@@ -776,7 +776,7 @@ Milestone 25 (Synchronized player, P2) 🔄 25.1-25.5 done, 25.6 open ◄── 
     ↓
 Milestone 26 (Saved classes, P3) ✅ DONE ◄── 25
     ↓
-Milestone 27 (Final verification, F) ⬜ ◄── 26
+Milestone 27 (Final verification, F) 🔄 (27.5 done) ◄── 26
     ↓
 Milestone 28 (Repo housekeeping and a single branch) 🔄 ◄── 27 (28.1 to 28.4 done, 28.5 last)
 ```
@@ -855,15 +855,15 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 24 | UX revamp: storage (P1) | 6 | P0 | ✅ |
 | 25 | UX revamp: synchronized player (P2) | 6 | P1 | 🔄 (5/6; 25.6 ⬜) |
 | 26 | UX revamp: saved classes (P3) | 6 | P1 | ✅ |
-| 27 | UX revamp: final verification (F) | 7 | P0 | ⬜ |
+| 27 | UX revamp: final verification (F) | 7 | P0 | 🔄 (1/7; 27.5 ✅) |
 | 28 | Repo housekeeping and a single branch | 5 | P1 | 🔄 (4/5; 28.5 runs last) |
 | **Total** | | **157 tasks** | | |
-| **Completed (✅)** | | **118 (75%)** | | **✅** |
+| **Completed (✅)** | | **119 (76%)** | | **✅** |
 | **In progress (🔄)** | | **1 (1%)** | | **🔄** |
 | **Blocked (⚠️)** | | **1 (1%)** | | **⚠️** |
-| **Open (⬜)** | | **37 (24%)** | | **⬜** |
+| **Open (⬜)** | | **36 (23%)** | | **⬜** |
 
-Note: recounted from the task rows on 2026-09-29 (P3): 118 ✅, 1 🔄, 1 ⚠️, 37 ⬜ = 157 (26.1 to 26.6 ✅, 25.6 open). Counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
+Note: recounted from the task rows on 2026-09-29 (F1a): 119 ✅, 1 🔄, 1 ⚠️, 36 ⬜ = 157 (27.5 ✅; the count includes the 13 BR.x rows and row 3.2, whose description contains a pipe). Counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
 
 ---
 

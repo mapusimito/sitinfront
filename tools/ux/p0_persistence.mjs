@@ -44,7 +44,7 @@ const dump = (page) => page.evaluate(() => new Promise((resolve) => {
 }));
 const show = (label, o) => console.log(`\n=== ${label} ===\n` + JSON.stringify(o, null, 1));
 const wipe = (page) => page.evaluate(() => new Promise((r) => { const q = indexedDB.deleteDatabase('sitinfront-runs'); q.onsuccess = q.onerror = q.onblocked = () => r(); }));
-const ready = async (page) => { await page.goto(url); await page.waitForLoadState('networkidle').catch(() => {}); await page.selectOption('#modelSelect', 'tiny'); };
+const ready = async (page) => { await page.goto(url); await page.waitForLoadState('networkidle').catch(() => {}); await page.evaluate(() => { document.getElementById('optSettings').open = true; }); await page.selectOption('#modelSelect', 'tiny'); };
 
 // ---- A: upload 4 min
 {

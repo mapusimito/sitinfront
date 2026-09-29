@@ -13,6 +13,7 @@ const browser = await chromium.launch({
 });
 const page = await (await browser.newContext({ viewport: { width: 1280, height: 800 } })).newPage();
 await page.goto(a.url || 'http://localhost:8611/');
+await page.evaluate(() => { document.getElementById('optSettings').open = true; }); // A0: settings live in a disclosure
 await page.selectOption('#modelSelect', 'tiny');
 await page.evaluate(() => {           // observe the blob handed to the pipeline
   const orig = transcribeInChunks;

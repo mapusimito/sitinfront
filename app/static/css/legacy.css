@@ -81,25 +81,6 @@
             cursor: not-allowed;
         }
 
-        select {
-            padding: 10px 12px;
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            color: var(--fg);
-            font-size: 14px;
-            cursor: pointer;
-        }
-
-        select:hover {
-            border-color: var(--grafito);
-        }
-
-        select:focus-visible {
-            outline: 3px solid var(--accent-edge);
-            outline-offset: 3px;
-        }
-
         .status-box {
             padding: 16px;
             border-radius: 8px;

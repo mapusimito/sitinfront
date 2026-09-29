@@ -43,6 +43,7 @@ async function newPage(ctx, { init } = {}) {
 async function open(page) {
   await page.goto(url);
   await page.waitForLoadState('networkidle').catch(() => {});
+  await page.evaluate(() => { document.getElementById('optSettings').open = true; }); // A0: settings live in a disclosure
   await page.selectOption('#modelSelect', 'tiny');
   await page.evaluate(() => {
     window.__runEnd = new Promise((res) => sf.events.on('run:end', res));
@@ -137,6 +138,7 @@ console.log('\nB. Reload in the middle of a recording');
   check('B1 >= 2 pieces are on disk before the reload', mid.pieces >= 2, `${mid.pieces} pieces after ${before.toFixed(1)} s`);
   await page.reload();
   await page.waitForLoadState('networkidle').catch(() => {});
+  await page.evaluate(() => { document.getElementById('optSettings').open = true; }); // A0: settings live in a disclosure
   await page.selectOption('#modelSelect', 'tiny');
   await page.evaluate(() => {
     window.__runEnd = new Promise((res) => sf.events.on('run:end', res));
@@ -148,7 +150,7 @@ console.log('\nB. Reload in the middle of a recording');
   const expected = Math.floor(before / TIMESLICE_S) * TIMESLICE_S;
   await page.getByRole('button', { name: 'Recuperar' }).click();
   await page.waitForFunction(() => document.getElementById('region-input').dataset.stage === 'review');
-  check('B3 recovered recording goes to the review step', (await page.$eval('#reviewTitle', (e) => e.textContent)) === 'Grabación recuperada');
+  check('B3 recovered recording goes to the review step', (await page.$eval('#reviewTitle', (e) => e.textContent)).startsWith('Grabación recuperada del '));
 
   const dur = await decodeSeconds(page, 'reviewInfo.blob');
   check('B4 recovered blob decodes to ~ time saved before reload (within 1.5 s)', Math.abs(dur - expected) <= 1.5, `decoded ${dur.toFixed(2)} s, expected ~${expected} s (${before.toFixed(1)} s recorded, last partial piece lost)`);

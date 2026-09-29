@@ -40,6 +40,8 @@ const rejectMic = (name) => (page) => page.evaluate((n) => {
   navigator.mediaDevices.getUserMedia = async () => { throw new DOMException('simulated', n); };
 }, name).then(() => page.click('#recordBtn'));
 
+const playerReady = (page) => page.waitForSelector('#reviewPlayer .sf-player');
+
 const stageIs = (page, s) => page.waitForFunction((x) => document.getElementById('region-input').dataset.stage === x, s);
 
 async function recordFor(page, ms) {
@@ -95,12 +97,22 @@ const seedLeftover = (page, status) => page.evaluate(async (st) => {
 }, status);
 
 export const screens = [
+  // A0 start screen (Direction A). Every A0 state is captured: start, settings open,
+  // technical details open, recording, review (with player), file card, mic errors,
+  // rejections, running, resume banner, recovered-recording banner.
   { name: 'app-idle', path: '/' },
+  { name: 'app-settings-open', path: '/', setup: (p) => p.click('#optSettings > summary') },
+  { name: 'app-tech-details-open', path: '/', setup: async (p) => { await p.click('#logsSection > summary'); await p.waitForTimeout(400); } },
   { name: 'input-recording', path: '/', setup: (p) => recordFor(p, 1500) },
   {
     name: 'input-review',
     path: '/',
-    setup: async (p) => { await recordFor(p, 1500); await p.click('#stopBtn'); await stageIs(p, 'review'); },
+    setup: async (p) => { await recordFor(p, 1500); await p.click('#stopBtn'); await stageIs(p, 'review'); await playerReady(p); },
+  },
+  {
+    name: 'input-review-settings-open',
+    path: '/',
+    setup: async (p) => { await recordFor(p, 1500); await p.click('#stopBtn'); await stageIs(p, 'review'); await playerReady(p); await p.click('#optSettings > summary'); },
   },
   {
     name: 'input-discard-dialog',
@@ -240,6 +252,7 @@ export const screens = [
       await seedLeftover(p, 'stopped');
       await p.getByRole('button', { name: 'Recuperar' }).click();
       await stageIs(p, 'review');
+      await playerReady(p).catch(() => {});
     },
   },
   { name: 'gallery', path: '/static/gallery.html' },

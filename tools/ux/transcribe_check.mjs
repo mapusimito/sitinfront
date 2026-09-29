@@ -32,6 +32,7 @@ const browser = await chromium.launch({ executablePath: process.env.PW_CHROME ||
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
 page.on('pageerror', (e) => console.error('pageerror:', e.message));
 await page.goto(url);
+await page.evaluate(() => { document.getElementById('optSettings').open = true; }); // A0: settings live in a disclosure
 await page.selectOption('#modelSelect', model);
 const uiLanguage = await page.$eval('#languageSelect', (el) => el.value);
 if (language) await page.selectOption('#languageSelect', language);

@@ -81,3 +81,90 @@ def test_recorded_blob_is_labelled_with_the_recorders_real_mime_type():
     body = recorder[start:start + 1200]
     assert "type: 'audio/wav'" not in body
     assert "recordedChunks[0]" in body and "mediaRecorder.mimeType" in body
+
+
+# ---------- A0: Direction A shell, start screen, recording review, player ----------
+
+INDEX = HTML
+A0_JS = ROOT / "app" / "static" / "js"
+A0_CSS = ROOT / "app" / "static" / "css"
+
+
+def test_a0_header_has_one_icon_theme_button_and_no_dead_links():
+    header = INDEX[INDEX.index("<header"):INDEX.index("</header>")]
+    assert 'id="themeBtn"' in header and "data-theme-cycle" in header
+    assert 'name="theme"' not in INDEX
+    assert "Mis clases" not in INDEX
+    assert 'href="#"' not in INDEX
+
+
+def test_a0_start_screen_copy_and_actions():
+    for text in ("Grabar clase", "Subir grabación", "Audio de hasta", "Ajustes:", "Detalles técnicos",
+                 "Un modelo más grande tarda más en transcribir.", "Small · por defecto"):
+        assert text in INDEX, text
+    assert 'id="languageSelect"' in INDEX and 'id="modelSelect"' in INDEX
+    assert '<option value="es" selected>' in INDEX and '<option value="small" selected>' in INDEX
+
+
+def test_a0_model_labels_make_no_accuracy_claims():
+    models = INDEX[INDEX.index('id="modelSelect"'):INDEX.index("</select>", INDEX.index('id="modelSelect"'))]
+    for word in ("accurate", "precis", "mejor", "best", "strongest", "balanced"):
+        assert word not in models.lower(), word
+
+
+def test_a0_recording_screen_parts():
+    panel = INDEX[INDEX.index('id="panelRecording"'):INDEX.index('id="panelReview"')]
+    for needle in ('role="timer"', 'id="levelMeter"', 'id="stopBtn"', "Parar", 'id="safeNote"', "Nivel del micrófono"):
+        assert needle in panel, needle
+
+
+def test_a0_review_has_player_context_and_settings_slots():
+    panel = INDEX[INDEX.index('id="panelReview"'):INDEX.index('id="panelFile"')]
+    for needle in ("Escucha antes de transcribir", 'id="reviewPlayer"', 'id="slotReviewContext"',
+                   'id="slotReviewSettings"', 'id="reviewTranscribeBtn"', 'id="reviewDiscardBtn"'):
+        assert needle in panel, needle
+    assert "¿De qué es la clase?" in INDEX
+    assert "Ayuda a reconocer nombres y términos. También sirve de título." in INDEX
+    assert "Seguir" not in INDEX
+
+
+def test_a0_player_takes_total_from_the_passed_duration_and_revokes_urls():
+    src = (A0_JS / "player" / "player.js").read_text()
+    assert "sf.player" in src and "create(audioBlob, { durationSec }" in src
+    assert "max=\"${total}\"" in src
+    assert "audio.duration" not in src.replace("Infinity", "").replace("(element", "").split("*/", 1)[1]
+    assert "URL.revokeObjectURL" in src and "root.destroy" in src
+    assert '"' + '—' + '"' not in src and "—" not in src
+    rec = (A0_JS / "input" / "recorder.js").read_text()
+    assert "unmountReviewPlayer" in rec and "measureRecordingSeconds(blob)" in rec
+    stage = (A0_JS / "input" / "stage.js").read_text()
+    assert "unmountReviewPlayer" in stage
+
+
+def test_a0_player_script_is_loaded_before_the_input_scripts():
+    assert INDEX.index("player/player.js") < INDEX.index("input/stage.js")
+    assert INDEX.index("css/player.css") < INDEX.index("css/shell.css")
+
+
+def test_a0_legacy_css_has_nothing_for_replaced_regions():
+    legacy = (A0_CSS / "legacy.css").read_text()
+    for gone in ("select {", "shell-", "in-entry", "in-drop", "header-log-toggle", "shell-theme", "logsSection"):
+        assert gone not in legacy, gone
+    assert "shell-tagline" not in INDEX and "header-log-toggle" not in INDEX and "progressToggle" not in INDEX
+
+
+def test_a0_no_em_dash_in_a0_files():
+    for path in (A0_CSS / "shell.css", A0_CSS / "player.css", A0_JS / "core" / "shell.js", A0_JS / "player" / "player.js",
+                 A0_JS / "status" / "logs.js"):
+        assert "—" not in path.read_text(), path.name
+
+
+def test_a0_transcript_hidden_only_while_empty_and_not_running():
+    shell = (A0_CSS / "shell.css").read_text()
+    assert 'body:not([data-stage="running"]) #region-transcript:has(.transcript-box.empty)' in shell
+
+
+def test_a0_context_field_is_hidden_on_the_start_screen():
+    """The mockup only shows "¿De qué es la clase?" on the review step and the file card.
+    stage.js unhides it there; on first paint (idle) it must already be hidden."""
+    assert '<div id="optContext" class="sf-field" hidden>' in INDEX

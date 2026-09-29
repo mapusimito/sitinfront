@@ -1,7 +1,7 @@
 # sitinfront - Implementation Status
 
 > **Last Updated**: 2026-09-29
-> **Current Milestone**: 22 ✅ UX revamp T3-b (failed chunks, retry) done, 23 is next; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 22, 23, 24, 25, 26, 27, then 12.4, 4, 7, 8
+> **Current Milestone**: 23 🔄 UX revamp T2-a (transcript data model, clean export) done, T2-b next; 22 ✅; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 22, 23, 24, 25, 26, 27, then 12.4, 4, 7, 8
 > **Source**: UX Critique (20 issues identified) + Brand Redesign QA (72→100 compliance); Milestones 11-16 added from "Whisper Transcription Pipeline: Accuracy and Observability Fixes" task spec (2026-09-28); Milestones 17-27 added from the UX/UI revamp brief and plan (UX_REVAMP_PLAN.md, 2026-09-29)
 > **Supersedes**: None
 
@@ -564,7 +564,7 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 
 **Priority**: P0: the transcript is the product.
 
-**Status**: ⬜ Not started
+**Status**: 🔄 T2-a done (data model, clean-line copy/export, 2026-09-29); T2-b (view, search) next
 
 **Depends on**: Milestone 22
 
@@ -572,10 +572,10 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 
 | Task | Description | Status | Notes |
 |------|-------------|--------|-------|
-| 23.1 | Reading view rendered from a data model (chunks and segments with absolute times), not only the live stream; title, counts, mono timestamps, honest "Prob. media de token" badge | ⬜ | Not started |
+| 23.1 | Reading view rendered from a data model (chunks and segments with absolute times), not only the live stream; title, counts, mono timestamps, honest "Prob. media de token" badge | ⬜ | Data model done in T2-a (`transcript/model.js`, fed by events and seeded from the run record); the view itself is not rendered from it yet (T2-b) |
 | 23.2 | Incomplete banner and gap marker (text missing, audio available) | ⬜ | Not started |
 | 23.3 | In-page search: sticky toolbar, "3 de 27", previous and next, highlight | ⬜ | Not started |
-| 23.4 | Copy and export .txt with bytes identical to today's export; render model text safely (no innerHTML injection) | ⬜ | Not started; known issue: `appendSegmentToTranscript` interpolates text into `innerHTML` |
+| 23.4 | Copy and export .txt from clean lines (`[HH:MM:SS] text`, DL32), not the DOM; render model text safely (no innerHTML injection) | 🔄 | T2-a done: `app/static/js/transcript/model.js` `toText()`, used by `transcript/view.js` copy/export and `status/failures.js`; `tests/test_transcript_model.py` (1 test, 15 assertions), `tools/ux/transcript_model_check.mjs` (clipboard and download bytes equal `toText()`). Open: the safe rendering part (T2-b), `appendSegmentToTranscript` still uses `innerHTML` |
 | 23.5 | Summary tiles with real metrics only; empty state | ⬜ | Not started |
 
 ---
@@ -768,7 +768,7 @@ Milestone 21 (Progress, T3-a) ✅ DONE ◄── 20
     ↓
 Milestone 22 (Failed chunks and retry, T3-b) ✅ DONE ◄── 21
     ↓
-Milestone 23 (Transcript view, search, export, T2-a and T2-b) ⬜ ◄── 22
+Milestone 23 (Transcript view, search, export, T2-a and T2-b) 🔄 (T2-a done) ◄── 22
     ↓
 Milestone 24 (Storage, P1) ⬜ ◄── 23
     ↓
@@ -851,7 +851,7 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 20 | UX revamp: adaptation to Direction A (A0) | 4 | P0 | ✅ |
 | 21 | UX revamp: progress (T3-a) | 6 | P0 | ✅ |
 | 22 | UX revamp: failed chunks and retry (T3-b) | 4 | P0 | ✅ |
-| 23 | UX revamp: transcript view, search, export | 5 | P0 | ⬜ |
+| 23 | UX revamp: transcript view, search, export | 5 | P0 | 🔄 |
 | 24 | UX revamp: storage (P1) | 6 | P0 | ⬜ |
 | 25 | UX revamp: synchronized player (P2) | 6 | P1 | ⬜ |
 | 26 | UX revamp: saved classes (P3) | 6 | P1 | ⬜ |

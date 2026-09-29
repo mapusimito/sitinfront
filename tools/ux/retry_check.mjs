@@ -49,6 +49,7 @@ if (scenario === 'cancel') {
 }
 await page.waitForSelector('#panelRunning[data-run="ended"]', { timeout: 300000 });
 out.afterFail = await view();
+out.modelAfterFail = await page.evaluate(() => sf.transcript.toText().split('\n\n').map((x) => x.slice(0, 70)));
 if (scenario === 'boundary') {
   out.boundary = await page.evaluate(() => ({ banner: !!document.getElementById('rvBoundary'), role: document.getElementById('rvBoundary')?.getAttribute('role'), buttons: [...document.querySelectorAll('#rvBoundary button')].map((b) => b.textContent) }));
   const dl = async (fn) => { const [d] = await Promise.all([page.waitForEvent('download'), fn()]); const p = await d.path(); return crypto.createHash('sha256').update((await import('node:fs')).readFileSync(p)).digest('hex') + ' ' + d.suggestedFilename().split('-')[0]; };
@@ -79,6 +80,7 @@ if (scenario === 'boundary') {
   }
   await page.waitForFunction(() => document.getElementById('summaryCard').classList.contains('active') && !document.getElementById('panelRunning').dataset.run, null, { timeout: 600000 });
   const segs = await page.$$eval('.segment-text', (els) => els.map((e) => e.textContent));
+  out.exportSha = crypto.createHash('sha256').update(await page.evaluate(() => sf.transcript.toText())).digest('hex');
   out.sha = crypto.createHash('sha256').update(segs.join('\n') + '\n').digest('hex');
   out.segments = String(segs.length);
   out.live = await page.evaluate(() => document.getElementById('rvLive').textContent);

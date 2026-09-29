@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sitinfront, revisar (C)</title>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<script src="/static/js/core/theme.js"></script>
+<link rel="stylesheet" href="/static/css/tokens.css">
+<link rel="stylesheet" href="/static/css/base.css">
+<link rel="stylesheet" href="/static/css/components.css">
+<link rel="stylesheet" href="/static/css/input.css">
+<link rel="stylesheet" href="../mockup-shared.css">
+<link rel="stylesheet" href="layout.css">
+</head>
+<body class="c-body ">
+<a class="sf-skip" href="#main">Saltar al contenido</a>
+<header class="x-head sf-wrap "><a class="sf-logo" href="start.html" aria-label="sitinfront, inicio"><svg class="sf-logo__mark" viewBox="0 0 74 70" aria-hidden="true"><use href="/static/icons.svg#mark"></use></svg><span class="sf-logo__word">sitinfront</span></a><div class="x-head__end"><a class="sf-btn sf-btn--ghost x-classes" href="classes.html"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-file-audio"></use></svg><span class="x-classes__t">Mis clases</span></a><button class="sf-btn sf-btn--ghost sf-btn--icon" type="button" data-theme-cycle aria-label="Tema: automático. Cambiar tema"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-monitor"></use></svg></button></div></header><main id="main" class="c-main sf-wrap">
+<h1 class="c-h1">Escucha antes de transcribir</h1>
+<div class="c-split"><div class="c-col"><div class="in-file"><svg class="sf-icon in-file__icon" aria-hidden="true"><use href="/static/icons.svg#i-file-audio"></use></svg><div class="in-file__text"><span class="in-file__name">Grabación del 28 sep, 10:02</span><div class="in-file__meta"><span>Duración <span class="sf-mono">00:42:17</span></span><span>20,3 MB</span></div></div></div><div class="sf-card"><div class="x-player" role="group" aria-label="Reproductor de audio">
+<div class="x-player__seek"><span class="sf-mono x-player__t">00:00:00</span><input class="x-range" id="rv-seek" type="range" min="0" max="6720" value="2141" style="--x-pos:0%" aria-label="Posición en la grabación" aria-valuetext="0 segundos de 42 minutos 17 segundos"><span class="sf-mono x-player__t"><span class="x-sr">Duración total </span>00:42:17</span></div>
+<div class="x-player__tr"><button class="sf-btn x-skip" type="button" aria-label="Retroceder 10 segundos"><svg class="sf-icon x-flip" aria-hidden="true"><use href="/static/icons.svg#i-rotate-cw"></use></svg><span class="sf-mono" aria-hidden="true">10</span></button>
+<button class="sf-btn sf-btn--primary x-play" type="button" aria-label="Reproducir"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-play"></use></svg></button>
+<button class="sf-btn x-skip" type="button" aria-label="Avanzar 10 segundos"><span class="sf-mono" aria-hidden="true">10</span><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-rotate-cw"></use></svg></button></div>
+<div class="x-player__opt"><div class="sf-select-wrap x-speed"><label class="x-sr" for="rv-sp">Velocidad de reproducción</label><select class="sf-select" id="rv-sp"><option selected>1x</option><option>1,25x</option><option>1,5x</option><option>2x</option></select><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-chevron-down"></use></svg></div>
+<button class="sf-btn x-follow" type="button" aria-pressed="true" aria-label="Seguir el texto mientras suena"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-arrow-down"></use></svg><span class="x-follow__t">Seguir</span></button></div></div></div></div>
+<div class="c-col"><div class="sf-field"><label class="sf-field__label" for="ctx">¿De qué es la clase? <span class="sf-field__help">(opcional)</span></label>
+<input class="sf-input" id="ctx" type="text" value="Biología Celular, tema 5: mitosis" aria-describedby="ctx-h" autocomplete="off">
+<span class="sf-field__help" id="ctx-h">Ayuda a reconocer nombres y términos. También sirve de título.</span></div><section aria-labelledby="aj"><h2 class="sf-card__title" id="aj">Ajustes</h2><div class="x-fields">
+<div class="sf-field"><label class="sf-field__label" for="st-lang">Idioma de la clase</label>
+<div class="sf-select-wrap"><select class="sf-select" id="st-lang"><option selected>Español</option><option>Inglés</option><option>Catalán</option><option>Gallego</option></select><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-chevron-down"></use></svg></div></div>
+<div class="sf-field"><label class="sf-field__label" for="st-model">Modelo</label>
+<div class="sf-select-wrap"><select class="sf-select" id="st-model" aria-describedby="st-mh"><option selected>Pequeño (más rápido)</option><option>Mediano</option><option>Grande (el más lento)</option></select><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-chevron-down"></use></svg></div>
+<span class="sf-field__help" id="st-mh">Un modelo más grande tarda más en transcribir.</span></div>
+</div></section>
+<div class="in-actions"><a class="sf-btn sf-btn--primary in-bigbtn" href="progress.html">Transcribir</a><button class="sf-btn in-bigbtn" type="button"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-trash-2"></use></svg>Descartar</button></div></div></div></main>
+<script>(function(){var b=document.querySelector('[data-theme-cycle]');if(!b||!window.sf)return;var o=['auto','light','dark'],n={auto:'automático',light:'claro',dark:'oscuro'};function l(){b.setAttribute('aria-label','Tema: '+n[sf.theme.get()]+'. Cambiar tema');}l();b.addEventListener('click',function(){sf.theme.set(o[(o.indexOf(sf.theme.get())+1)%3]);l();});
+var m=window.matchMedia&&matchMedia('(max-width:63.99rem)').matches;if(m)document.querySelectorAll('.c-fold').forEach(function(d){d.open=false;});})();</script>
+</body>
+</html>

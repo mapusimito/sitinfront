@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sitinfront, inicio (C)</title>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<script src="/static/js/core/theme.js"></script>
+<link rel="stylesheet" href="/static/css/tokens.css">
+<link rel="stylesheet" href="/static/css/base.css">
+<link rel="stylesheet" href="/static/css/components.css">
+<link rel="stylesheet" href="/static/css/input.css">
+<link rel="stylesheet" href="../mockup-shared.css">
+<link rel="stylesheet" href="layout.css">
+</head>
+<body class="c-body ">
+<a class="sf-skip" href="#main">Saltar al contenido</a>
+<header class="x-head sf-wrap "><a class="sf-logo" href="start.html" aria-label="sitinfront, inicio"><svg class="sf-logo__mark" viewBox="0 0 74 70" aria-hidden="true"><use href="/static/icons.svg#mark"></use></svg><span class="sf-logo__word">sitinfront</span></a><div class="x-head__end"><a class="sf-btn sf-btn--ghost x-classes" href="classes.html"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-file-audio"></use></svg><span class="x-classes__t">Mis clases</span></a><button class="sf-btn sf-btn--ghost sf-btn--icon" type="button" data-theme-cycle aria-label="Tema: automático. Cambiar tema"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-monitor"></use></svg></button></div></header><main id="main" class="c-main sf-wrap">
+<h1 class="c-h1">Tú atiende. Nosotros escribimos.</h1>
+<div class="c-doors">
+<section class="c-door" aria-labelledby="d1"><svg class="sf-icon c-door__icon" aria-hidden="true"><use href="/static/icons.svg#i-mic"></use></svg><div><h2 id="d1">Con el micrófono</h2><p>Se guarda una copia en este navegador mientras grabas.</p></div><a class="sf-btn sf-btn--primary" href="recording.html">Grabar clase</a></section>
+<section class="c-door c-door--up" aria-labelledby="d2"><svg class="sf-icon c-door__icon" aria-hidden="true"><use href="/static/icons.svg#i-upload"></use></svg><div><h2 id="d2">Con un archivo</h2><p>Arrastra aquí un audio o elígelo. Hasta 500 MB.</p></div><a class="sf-btn" href="ready.html">Subir grabación</a></section></div>
+<details class="c-summary" id="set"><summary class="x-sum"><span class="x-sum__k">Ajustes:</span> <span class="x-sum__v">Español · modelo pequeño</span><svg class="sf-icon x-sum__chev" aria-hidden="true"><use href="/static/icons.svg#i-chevron-down"></use></svg></summary><div class="c-sumbody"><div class="x-fields">
+<div class="sf-field"><label class="sf-field__label" for="sf-lang">Idioma de la clase</label>
+<div class="sf-select-wrap"><select class="sf-select" id="sf-lang"><option selected>Español</option><option>Inglés</option><option>Catalán</option><option>Gallego</option></select><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-chevron-down"></use></svg></div></div>
+<div class="sf-field"><label class="sf-field__label" for="sf-model">Modelo</label>
+<div class="sf-select-wrap"><select class="sf-select" id="sf-model" aria-describedby="sf-mh"><option selected>Pequeño (más rápido)</option><option>Mediano</option><option>Grande (el más lento)</option></select><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-chevron-down"></use></svg></div>
+<span class="sf-field__help" id="sf-mh">Un modelo más grande tarda más en transcribir.</span></div>
+</div></div></details></main>
+<script>(function(){var b=document.querySelector('[data-theme-cycle]');if(!b||!window.sf)return;var o=['auto','light','dark'],n={auto:'automático',light:'claro',dark:'oscuro'};function l(){b.setAttribute('aria-label','Tema: '+n[sf.theme.get()]+'. Cambiar tema');}l();b.addEventListener('click',function(){sf.theme.set(o[(o.indexOf(sf.theme.get())+1)%3]);l();});
+var m=window.matchMedia&&matchMedia('(max-width:63.99rem)').matches;if(m)document.querySelectorAll('.c-fold').forEach(function(d){d.open=false;});})();</script>
+</body>
+</html>

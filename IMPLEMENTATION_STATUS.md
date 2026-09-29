@@ -609,7 +609,7 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 
 **Priority**: P1: builds on stored audio and the transcript view.
 
-**Status**: 🔄 25.1 to 25.5 done (2026-09-29); 25.6 open (Safari and human listening check)
+**Status**: ✅ Completed (2026-09-29); 25.6 accepted on the user's own Safari check (no measurements recorded)
 
 **Depends on**: Milestone 24
 
@@ -622,7 +622,7 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 | 25.3 | Highlight the playing segment; auto-scroll toggle that pauses on manual scroll | ✅ | transcript-player.js (sync, rAF, follow) and reader.js setCurrent; aria-current moves 7 to 8 across a boundary; manual wheel pauses Seguir, toggle resumes (p2_check.mjs); axe states player-segment-playing, player-follow-paused |
 | 25.4 | Keyboard (space, arrows) only outside text fields; every control labelled | ✅ | transcript-player.js (ArrowLeft/Right, aria-keyshortcuts) plus sf.player Space handler; p2_check.mjs: Space and arrows outside fields, not in search, Space on a focused button activates it; tests/test_transcript_player.py 3 |
 | 25.5 | Failed-chunk gap: audio plays, marker says the text is missing | ✅ | reader.js buildRow gap text with "El audio de este tramo sí se puede escuchar." only while a player is attached; tools/ux/p2_mobile_check.mjs 8 PASS (before/after attach); screen player-gap-audio |
-| 25.6 | Acceptance: 5 segment seeks within 0.5 s verified by listening, for Chrome and Safari, recorded and uploaded audio | ⬜ | Chrome seeks measured (25.2) and PCM correlation substitute done; deferred: listening check needs the user, Safari depends on 19.5 |
+| 25.6 | Acceptance: 5 segment seeks within 0.5 s verified by listening, for Chrome and Safari, recorded and uploaded audio | ✅ | Chrome seeks measured (25.2, `tools/ux/seek_immediate_check.mjs`: 0.00 s error on upload, at most 0.01 s on a Chrome recording) and PCM correlation substitute done. **Safari: reported by the user on 2026-09-29 ("the player works in Safari perfectly in the last commit") as a manual check; no measurements were recorded, and the details (recorded vs uploaded audio, Safari and OS version, whether the audio matched the text on every segment) were not given.** Accepted as user-verified; an auditor can repeat it with the steps in `HANDOFF.md` |
 
 ---
 
@@ -655,7 +655,7 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 
 **Priority**: P0: the quality gate.
 
-**Status**: 🔄 In progress: 27.1, 27.2, 27.3, 27.5, 27.6, 27.7 ✅ (F1a, F1b, F1c, F2, 2026-09-29); 27.4 ⚠️ (unlogged 12 min run_artifact re-baseline). The revamp is NOT declared complete: the independent audit comes first
+**Status**: ✅ All seven tasks done (F1a, F1b, F1c, F2, 2026-09-29; 27.4 accepted by the user). The revamp is still NOT declared complete: the independent audit comes first
 
 **Depends on**: Milestone 26
 
@@ -666,7 +666,7 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 | 27.1 | Quality gate: 10 questions answered with evidence | ✅ | F1b (2026-09-29): `docs/ux-revamp/FINAL_REPORT.md` section "Quality gate": 10 answers with evidence; verdicts are honest: partly for Q1, Q3, Q7, Q9 (and Q6 for the 12 min artifact), yes with stated limits for Q2, Q4, Q5, Q8, Q10, no verdict is a plain no; the answers are written, the verdicts are for the auditor |
 | 27.2 | Screenshots and axe on every screen and state, 1280 and 375, light and dark | ✅ | F1c (2026-09-29): screenshot index `docs/ux-revamp/final-screens/INDEX.md`, 68 states, 272 JPEGs (13.4 MB), privacy scan `tools/ux/privacy_scan.mjs` found 0 lecture words on every page, 0 excluded, 0 not captured, `tests/test_final_screens.py` 6 passed. axe half by F1b (2026-09-29): `tools/ux/screens.mjs` full sweep, 68 states x 4 = 272 rows, 0 serious or critical, 0 minor, 0 overflow, 0 page errors (`docs/ux-revamp/axe-results-f1b.json`, FINAL_REPORT item 4.1). FINAL_REPORT item 3 points at the index; `docs/ux-revamp/screens/` is gitignored |
 | 27.3 | Keyboard-only pass through record, upload, transcript and player | ✅ | F1b (2026-09-29): scripted passes, all green: `keyboard_input.mjs` 16, `keyboard_status.mjs` 12, `p3_check.mjs --scenario kbd` 8, `search_check.mjs` no FAIL, `p2_check.mjs --pairs 1` 25 of 25, `safe_copy_check.mjs` all scenarios (FINAL_REPORT item 4.2). Scripted only: no human keyboard or screen reader session, no Safari |
-| 27.4 | Before and after transcript evidence (6 hashes) and unchanged backend/engine diff | ⚠️ | F1b (2026-09-29): rerun 4 and 12 min, `shasum -c` current sums 6 of 6 OK; `git diff d287cec HEAD -- app/server.py faster_whisper` empty; `buildChunkPlan` identical (hash `25de6186...`), request parameters identical, 7 engine commits all matched to an approval (FINAL_REPORT items 5 and 6). ISSUE: against the ORIGINAL sums (`cb0c8fb`) `12min/run_artifact.json` also differs (re-baselined in `a91620f`, likely the chunk-order sort, no decision-log entry, not proven): needs an audit or user decision, see DL70 |
+| 27.4 | Before and after transcript evidence (6 hashes) and unchanged backend/engine diff | ✅ | F1b (2026-09-29): rerun 4 and 12 min, `shasum -c` current sums 6 of 6 OK; `git diff d287cec HEAD -- app/server.py faster_whisper` empty; `buildChunkPlan` identical (hash `25de6186...`), request parameters identical, 7 engine commits all matched to an approval (FINAL_REPORT items 5 and 6). ISSUE: against the ORIGINAL sums (`cb0c8fb`) `12min/run_artifact.json` also differs (re-baselined in `a91620f`, likely the chunk-order sort, no decision-log entry, not proven): needs an audit or user decision, see DL70. **Accepted by the user on 2026-09-29** (DL73: the 12 min run_artifact baseline line was re-normalized by sorting chunks by index; sorted content was equal when checked; the text hashes never changed) |
 | 27.5 | `legacy.css` deleted and `_UNTOKENIZED_LEGACY` empty | ✅ | F1a (2026-09-29): css/legacy.css and dead JS removed (ui.js showToast, view.js clearAll, failures.js retryAll, format.js formatRelativeTime and formatFileSize); tests/test_server.py::test_legacy_stylesheet_is_gone_and_exemption_list_is_empty; tools/ux/style_snapshot.mjs diff 136 states: only the status line banner and centered dialogs differ (HANDOFF.md); 6 of 6 hashes OK |
 | 27.6 | Progress-event interface documented; deferred and open items listed; ready for independent audit | ✅ | F1b (2026-09-29): `docs/ux-revamp/PROGRESS_EVENTS.md`; open and deferred items in FINAL_REPORT item 8; `docs/ux-revamp/AUDIT_HANDOFF.md` (reproduction commands). Whether the revamp is ready for the audit still depends on the 27.4 decision, 27.2 (F1c) and 27.7 |
 | 27.7 | README rewrite: describe only what the app does at that point (correct streaming, search, bridges/consensus, Lucide, MODEL_SIZE/DEVICE/COMPUTE_TYPE defaults, upstream Docker image); brand voice | ✅ | F2 (2026-09-29): `README.md` rewritten; evidence table `docs/ux-revamp/README_EVIDENCE.md`; guards `tests/test_readme_claims.py` (4 tests). Docker section is marked planned: `docker build` fails in pip (see HANDOFF.md). Translations got an out-of-date notice; `CLAUDE.md` corrected in its own commit |
@@ -795,11 +795,11 @@ Milestone 23 (Transcript view, search, export, T2-a to T2-c) ✅ DONE ◄── 
     ↓
 Milestone 24 (Storage, P1) ✅ DONE ◄── 23
     ↓
-Milestone 25 (Synchronized player, P2) 🔄 25.1-25.5 done, 25.6 open ◄── 24
+Milestone 25 (Synchronized player, P2) ✅ DONE ◄── 24
     ↓
 Milestone 26 (Saved classes, P3) ✅ DONE ◄── 25
     ↓
-Milestone 27 (Final verification, F) 🔄 (27.1, 27.2, 27.3, 27.5, 27.6, 27.7 done; 27.4 issue) ◄── 26
+Milestone 27 (Final verification, F) ✅ DONE (independent audit still owed) ◄── 26
     ↓
 Milestone 28 (Repo housekeeping and a single branch) ✅ DONE ◄── 27
     ↓
@@ -878,16 +878,16 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 22 | UX revamp: failed chunks and retry (T3-b) | 4 | P0 | ✅ |
 | 23 | UX revamp: transcript view, search, export | 5 | P0 | ✅ |
 | 24 | UX revamp: storage (P1) | 6 | P0 | ✅ |
-| 25 | UX revamp: synchronized player (P2) | 6 | P1 | 🔄 (5/6; 25.6 ⬜) |
+| 25 | UX revamp: synchronized player (P2) | 6 | P1 | ✅ |
 | 26 | UX revamp: saved classes (P3) | 6 | P1 | ✅ |
-| 27 | UX revamp: final verification (F) | 7 | P0 | 🔄 (6/7; 27.1, 27.2, 27.3, 27.5, 27.6, 27.7 ✅; 27.4 ⚠️) |
+| 27 | UX revamp: final verification (F) | 7 | P0 | ✅ (independent audit still owed) |
 | 28 | Repo housekeeping and a single branch | 5 | P1 | ✅ |
 | 29 | UX revamp: final visual polish | 5 | P0 | ✅ |
 | **Total** | | **162 tasks** | | |
-| **Completed (✅)** | | **130 (80%)** | | **✅** |
+| **Completed (✅)** | | **132 (81%)** | | **✅** |
 | **In progress (🔄)** | | **1 (1%)** | | **🔄** |
-| **Blocked (⚠️)** | | **2 (1%)** | | **⚠️** |
-| **Open (⬜)** | | **29 (18%)** | | **⬜** |
+| **Blocked (⚠️)** | | **1 (1%)** | | **⚠️** |
+| **Open (⬜)** | | **28 (17%)** | | **⬜** |
 
 Note: recounted from the task rows on 2026-09-29 (F2, after 27.7): 129 ✅, 1 🔄 (12.4), 2 ⚠️ (19.5 and 27.4), 30 ⬜ = 162 (a script counted the 149 numbered rows: 115 ✅ 1 🔄 2 ⚠️ 31 ⬜ before the 27.7 flip, plus the 13 BR.x rows, all ✅) (rows 14.4 and 14.5 carry '✅ (left as-is)' and count as ✅; previous notes said 157 and omitted those and other rows; the table total 162 was already right). Earlier text: 157 (27.1, 27.2, 27.3, 27.5, 27.6 ✅; 27.4 ⚠️; the count includes the 13 BR.x rows and row 3.2, whose description contains a pipe). Counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
 

@@ -1,7 +1,7 @@
 # sitinfront - Implementation Status
 
 > **Last Updated**: 2026-09-29
-> **Current Milestone**: 20 🔄 UX revamp A0 (start, recording and review committed, cleanup pending) and 19 🔄 (Safari checks pending); Milestones 11, 13-18 ✅ Done; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 21, 22, 23, 24, 25, 26, 27, then 12.4, 4, 7, 8
+> **Current Milestone**: 21 ⬜ UX revamp T3-a (progress) is next; Milestones 17, 18, 20 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 21, 22, 23, 24, 25, 26, 27, then 12.4, 4, 7, 8
 > **Source**: UX Critique (20 issues identified) + Brand Redesign QA (72→100 compliance); Milestones 11-16 added from "Whisper Transcription Pipeline: Accuracy and Observability Fixes" task spec (2026-09-28); Milestones 17-27 added from the UX/UI revamp brief and plan (UX_REVAMP_PLAN.md, 2026-09-29)
 > **Supersedes**: None
 
@@ -497,7 +497,7 @@
 
 **Priority**: P0: sets the frame every later screen lives in.
 
-**Status**: 🔄 In progress: 3 of 4 commits made, not yet verified by the lead; the agent was stopped by a session rate limit before the cleanup commit
+**Status**: ✅ Completed (2026-09-29); three agent commits verified by the lead, cleanup finished by the lead
 
 **Depends on**: Milestone 18, Milestone 19
 
@@ -505,10 +505,10 @@
 
 | Task | Description | Status | Notes |
 |------|-------------|--------|-------|
-| 20.1 | Header (status pill only when useful, one cycling icon theme button) and start screen with settings disclosure | 🔄 | commit `b2a45b7` made, not yet verified by the lead |
-| 20.2 | Recording screen per the A mockup | 🔄 | commit `55c8efb` made, not yet verified by the lead |
-| 20.3 | Recording review with the shared `sf-player` (duration taken from the decoded length, not from the element) | 🔄 | commit `7c15696` made, not yet verified by the lead; `app/static/js/player/player.js`, `css/player.css` |
-| 20.4 | Cleanup: delete replaced legacy CSS, update screens config and scripts, tests, HANDOFF and decision log | 🔄 | Uncommitted edits in the working tree (legacy.css, tests/test_input.py, tools/ux/*); agent stopped by rate limit |
+| 20.1 | Header (status pill only when useful, one cycling icon theme button) and start screen with settings disclosure | ✅ | `b2a45b7`, `6a9ab49` (context field hidden on start); `app/templates/index.html`, `css/shell.css`; verified: axe 0 serious on `app-idle` and 26 input states, hashes OK |
+| 20.2 | Recording screen per the A mockup | ✅ | `55c8efb`; `app/static/js/input/recorder.js`; screens `input-recording`, `input-unsaved-note`; safe-copy behavior unchanged (tests/test_input.py)|
+| 20.3 | Recording review with the shared `sf-player` (duration taken from the decoded length, not from the element) | ✅ | `7c15696`; `app/static/js/player/player.js`, `css/player.css`; screens `input-review`, `input-recovered-review`; visual check vs A/ready |
+| 20.4 | Cleanup: delete replaced legacy CSS, update screens config and scripts, tests, HANDOFF and decision log | ✅ | `6a9ab49` (finished by the lead after the agent hit a rate limit); tests/test_input.py 21 tests; HANDOFF.md; plan DL13 to DL15. legacy.css still holds rules for later regions (deleted at F)|
 
 Note: this milestone delivers the settings scope of Milestone 4 (settings live in the start-screen disclosure) once verified.
 
@@ -737,7 +737,7 @@ Milestone 18 (Input: record, upload, resume, safe copy) ✅ DONE ◄── 17
     ↓
 Milestone 19 (Design direction and P0 investigation) 🔄 IN PROGRESS ◄── 18 (19.5, 19.6 Safari pending)
     ↓
-Milestone 20 (A0 adaptation to Direction A) 🔄 IN PROGRESS ◄── 18, 19
+Milestone 20 (A0 adaptation to Direction A) ✅ DONE ◄── 18, 19
     ↓
 Milestone 21 (Progress, T3-a) ⬜ ◄── 20
     ↓
@@ -791,7 +791,7 @@ Phase 4 — Whisper Pipeline Accuracy & Observability (M11-M16, backend, paralle
 
 Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
   M17 → M18 → M19 → M20 (A0) → M21 (T3-a) → M22 (T3-b) → M23 (T2-a, T2-b) → M24 (P1) → M25 (P2) → M26 (P3) → M27 (F)
-  Status: M17, M18 complete; M19 and M20 in progress; M21-M27 not started (2026-09-29)
+  Status: M17, M18, M20 complete; M19 partial (Safari tasks wait on the user); M21-M27 not started (2026-09-29)
   Note: Milestones 4, 8 and 9 overlap with this phase: M4 settings scope is delivered by M20, M8 (export) partly by M23 (only .txt), M9 (mobile and accessibility) by M27
 ```
 
@@ -821,7 +821,7 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 17 | UX revamp: foundation, guards, fixes | 6 | P0 | ✅ |
 | 18 | UX revamp: input (record, upload, resume, safe copy) | 5 | P0 | ✅ |
 | 19 | UX revamp: design direction and audio investigation | 6 | P0 | 🔄 (4/6; 19.5 ⚠️, 19.6 ⬜) |
-| 20 | UX revamp: adaptation to Direction A (A0) | 4 | P0 | 🔄 (3 commits pending lead verification) |
+| 20 | UX revamp: adaptation to Direction A (A0) | 4 | P0 | ✅ |
 | 21 | UX revamp: progress (T3-a) | 6 | P0 | ⬜ |
 | 22 | UX revamp: failed chunks and retry (T3-b) | 3 | P0 | ⬜ |
 | 23 | UX revamp: transcript view, search, export | 5 | P0 | ⬜ |
@@ -830,12 +830,12 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 26 | UX revamp: saved classes (P3) | 6 | P1 | ⬜ |
 | 27 | UX revamp: final verification (F) | 7 | P0 | ⬜ |
 | **Total** | | **151 tasks** | | |
-| **Completed (✅)** | | **78 (52%)** | | **✅** |
-| **In progress (🔄)** | | **5 (3%)** | | **🔄** |
+| **Completed (✅)** | | **82 (54%)** | | **✅** |
+| **In progress (🔄)** | | **1 (1%)** | | **🔄** |
 | **Blocked (⚠️)** | | **1 (1%)** | | **⚠️** |
 | **Open (⬜)** | | **67 (44%)** | | **⬜** |
 
-Note: counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5 and the 🔄 rows are 20.1 to 20.4 (committed by an agent, awaiting the lead's verification, so not counted as done).
+Note: counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
 
 ---
 

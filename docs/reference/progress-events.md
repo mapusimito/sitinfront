@@ -1,6 +1,6 @@
 # Progress events: interface for future streaming work
 
-Source of truth: `app/static/js/core/events.js` (bus), emitters in `app/static/js/engine/transcribe.js`, `engine/eta.js`, `core/storage.js`, `persist/classes.js`. Plan section 6 (`UX_REVAMP_PLAN.md`) is the design record. Everything here was read from those files at the F1b commit.
+Source of truth: `app/static/js/core/events.js` (bus), emitters in `app/static/js/engine/transcribe.js`, `engine/eta.js`, `core/storage.js`, `persist/classes.js`. Everything here was read from those files at the F1b commit.
 
 ## The bus
 

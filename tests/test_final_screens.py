@@ -9,7 +9,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
-FOLDER = ROOT / "private" / "ux-revamp" / "final-screens"
+FOLDER = ROOT / ".work" / "ux-revamp" / "final-screens"
 INDEX = FOLDER / "INDEX.md"
 
 if not FOLDER.exists():

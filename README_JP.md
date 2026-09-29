@@ -1,3 +1,5 @@
+> 注意: この翻訳は上流プロジェクトの説明であり、内容が古くなっています。現在の sitinfront については [README.md](README.md)（英語）を参照してください。
+
 [English](README.md) | [简体中文](README_CN.md) | [繁體中文](README_TW.md) | [日本語](README_JP.md)
 
 <div align="center">

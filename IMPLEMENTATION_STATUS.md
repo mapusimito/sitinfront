@@ -1,7 +1,7 @@
 # sitinfront - Implementation Status
 
 > **Last Updated**: 2026-09-29
-> **Current Milestone**: 21 ✅ UX revamp T3-a (progress) done, 22 (T3-b) is next; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 22, 23, 24, 25, 26, 27, then 12.4, 4, 7, 8
+> **Current Milestone**: 22 ✅ UX revamp T3-b (failed chunks, retry) done, 23 is next; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 22, 23, 24, 25, 26, 27, then 12.4, 4, 7, 8
 > **Source**: UX Critique (20 issues identified) + Brand Redesign QA (72→100 compliance); Milestones 11-16 added from "Whisper Transcription Pipeline: Accuracy and Observability Fixes" task spec (2026-09-28); Milestones 17-27 added from the UX/UI revamp brief and plan (UX_REVAMP_PLAN.md, 2026-09-29)
 > **Supersedes**: None
 
@@ -543,7 +543,7 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 
 **Priority**: P0: honesty rule.
 
-**Status**: ⬜ Not started
+**Status**: ✅ Complete (2026-09-29)
 
 **Depends on**: Milestone 21
 
@@ -551,9 +551,9 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 
 | Task | Description | Status | Notes |
 |------|-------------|--------|-------|
-| 22.1 | Per-chunk retry ("Reintentar fragmento N") reusing the existing resume path; if impossible the button says "Reintentar todo" | ⬜ | Not started; depends on `resumeRun` accepting a finished or partial run |
-| 22.2 | Error boundary after 10 consecutive failures with partial export | ⬜ | Not started |
-| 22.3 | Toast wiring to the shared toast system | ⬜ | Not started |
+| 22.1 | Per-chunk retry ('Reintentar fragmento N') reusing the existing resume path; if impossible the button says 'Reintentar todo' | ✅ | `run-view.js` `retry()`, button `#rvRetry`; label by failed count (one: 'Reintentar fragmento N', several: 'Reintentar los N fragmentos fallidos', cancelled: 'Continuar la transcripción'); strip seeded from the stored record; 12 min upload with chunk 2 failing then retried: sha256 equals baseline (`tools/ux/retry_check.mjs` scenarios one, two, cancel, reload). Choosing one chunk among several needs the engine (DL26) |
+| 22.2 | Error boundary after 10 consecutive failures with partial export | ✅ | `run-view.js` `boundaryBanner()` (sf-banner--danger, role alert), legacy markup and CSS removed, `failures.js`; 57 min silence file with every request 400: banner with both export buttons, files byte-identical to `exportPartialTranscript()` and `exportErrorLog()` (`retry_check.mjs --scenario boundary`); screen `run-ended-boundary` axe clean |
+| 22.3 | Toast wiring to the shared toast system | ✅ | `run-view.js` `endToast()`: one `sf.toast` warning without auto-dismiss at partial or aborted with action 'Reintentar'; none per retry; `showErrorToast` stays a no-op; verified in `retry_check.mjs` (toast text) |
 
 ---
 
@@ -765,7 +765,7 @@ Milestone 20 (A0 adaptation to Direction A) ✅ DONE ◄── 18, 19
     ↓
 Milestone 21 (Progress, T3-a) ✅ DONE ◄── 20
     ↓
-Milestone 22 (Failed chunks and retry, T3-b) ⬜ ◄── 21
+Milestone 22 (Failed chunks and retry, T3-b) ✅ DONE ◄── 21
     ↓
 Milestone 23 (Transcript view, search, export, T2-a and T2-b) ⬜ ◄── 22
     ↓
@@ -849,7 +849,7 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 19 | UX revamp: design direction and audio investigation | 6 | P0 | 🔄 (4/6; 19.5 ⚠️, 19.6 ⬜) |
 | 20 | UX revamp: adaptation to Direction A (A0) | 4 | P0 | ✅ |
 | 21 | UX revamp: progress (T3-a) | 6 | P0 | ✅ |
-| 22 | UX revamp: failed chunks and retry (T3-b) | 3 | P0 | ⬜ |
+| 22 | UX revamp: failed chunks and retry (T3-b) | 3 | P0 | ✅ |
 | 23 | UX revamp: transcript view, search, export | 5 | P0 | ⬜ |
 | 24 | UX revamp: storage (P1) | 6 | P0 | ⬜ |
 | 25 | UX revamp: synchronized player (P2) | 6 | P1 | ⬜ |
@@ -857,10 +857,10 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 27 | UX revamp: final verification (F) | 7 | P0 | ⬜ |
 | 28 | Repo housekeeping and a single branch | 5 | P1 | 🔄 (4/5; 28.5 runs last) |
 | **Total** | | **156 tasks** | | |
-| **Completed (✅)** | | **92 (59%)** | | **✅** |
+| **Completed (✅)** | | **95 (61%)** | | **✅** |
 | **In progress (🔄)** | | **1 (1%)** | | **🔄** |
 | **Blocked (⚠️)** | | **1 (1%)** | | **⚠️** |
-| **Open (⬜)** | | **62 (40%)** | | **⬜** |
+| **Open (⬜)** | | **59 (38%)** | | **⬜** |
 
 Note: counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
 

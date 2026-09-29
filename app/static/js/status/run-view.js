@@ -11,6 +11,8 @@ const runView = (() => {
   const $ = (id) => document.getElementById(id);
   const MAX_RETRIES_LABEL = 3;
   let run = null; // per-run state, null when no run has started
+  let seed = null; // {runId, done:Set} stored chunks a resumed run re-loads without events
+  let retrying = false;
 
   const clock = (ms) => formatTimestamp(Math.max(0, ms));
   const list = (nums) => {
@@ -115,6 +117,87 @@ const runView = (() => {
     $('runPrelude').hidden = false;
   }
 
+  /* ---------- Retry (through the existing resume path, no engine change) ---------- */
+  const live = (t) => { $('rvLive').textContent = t; };
+
+  function missingIdx() {
+    return run.states.map((st, i) => (st === 'done' ? -1 : i)).filter((i) => i >= 0);
+  }
+
+  function retryLabel(outcome, c) {
+    if (outcome !== 'cancelled' && c.failed > 0 && c.pending === 0) {
+      return c.failed === 1
+        ? `Reintentar fragmento ${run.states.indexOf('failed') + 1}`
+        : `Reintentar los ${c.failed} fragmentos fallidos`;
+    }
+    return 'Continuar la transcripción';
+  }
+
+  function offerRetry(outcome, c) {
+    const btn = $('rvRetry');
+    if (c.done === run.total) { btn.hidden = true; return; }
+    btn.textContent = retryLabel(outcome, c);
+    btn.hidden = false;
+    btn.disabled = false;
+    $('rvAgain').classList.remove('sf-btn--primary');
+  }
+
+  async function retry() {
+    if (!run || !run.ended || retrying) return;
+    retrying = true;
+    const btn = $('rvRetry');
+    btn.disabled = true;
+    const label = btn.textContent;
+    try {
+      const record = await RunStore.getRun(run.id);
+      if (!record) throw new Error('El audio guardado ya no está en este navegador.');
+      const done = new Set();
+      for (const [id, r] of Object.entries(record.chunkResults || {})) {
+        const m = /^main-(\d+)$/.exec(id);
+        if (m && r.status === 'done') done.add(Number(m[1]));
+      }
+      seed = { runId: record.runId, done };
+      live(`${label}. Se vuelve a transcribir lo que falta.`);
+      await resumeRun(record);
+      live(run && run.ended && run.states.some((st) => st !== 'done')
+        ? 'La transcripción sigue incompleta.' : 'Transcripción completa.');
+    } catch (err) {
+      seed = null;
+      retrying = false;
+      btn.disabled = false;
+      showInputAlert({
+        kind: 'danger',
+        title: 'No se pudo reintentar',
+        message: 'Puedes empezar otra clase o descargar lo que ya se ha transcrito.',
+        detail: err.message,
+      });
+    }
+  }
+
+  function boundaryBanner(c) {
+    const el = buildInputBanner({
+      kind: 'danger', role: 'alert',
+      title: 'La transcripción se ha interrumpido',
+      message: `Ha habido demasiados errores seguidos. ${c.done} de ${run.total} ${run.total === 1 ? 'fragmento listo' : 'fragmentos listos'} y ${c.failed} ${c.failed === 1 ? 'fallido' : 'fallidos'}.`,
+      actions: [
+        { label: 'Exportar lo transcrito', onClick: () => exportPartialTranscript() },
+        { label: 'Descargar registro de errores', onClick: () => exportErrorLog() },
+      ],
+    });
+    el.id = 'rvBoundary';
+    $('rvFails').prepend(el);
+  }
+
+  function endToast(c) {
+    const n = run.total - c.done;
+    if (n <= 0) return;
+    sf.toast({
+      kind: 'warning',
+      message: `Transcripción incompleta: faltan ${n} ${n === 1 ? 'fragmento' : 'fragmentos'}.`,
+      actions: [{ label: 'Reintentar', onClick: () => retry() }],
+    });
+  }
+
   /* ---------- Events ---------- */
   sf.events.on('run:start', (d) => {
     if (run && run.timer) clearInterval(run.timer);
@@ -122,6 +205,15 @@ const runView = (() => {
       id: d.runId, total: d.chunkCount, startedAt: Date.now(), endedAt: null, ended: false, timer: null,
       states: new Array(d.chunkCount).fill(null), attempt: [], max: [], span: [], failed: new Set(), cancelling: false,
     };
+    // A resumed run does not emit chunk:done for chunks it re-loads from storage: seed them from the stored record.
+    if (seed && seed.runId === d.runId) {
+      for (const i of seed.done) if (i < d.chunkCount) run.states[i] = 'done';
+    }
+    seed = null;
+    retrying = false;
+    $('rvRetry').hidden = true;
+    $('rvRetry').disabled = false;
+    $('rvAgain').hidden = true;
     $('panelRunning').dataset.run = 'live';
     $('runPrelude').hidden = true;
     $('runView').hidden = false;
@@ -219,12 +311,19 @@ const runView = (() => {
     $('rvCancel').hidden = true;
     $('rvHint').hidden = true;
     $('rvAgain').hidden = false;
+    offerRetry(d.outcome, c);
     $('rvNotes').replaceChildren();
     $('rvNotes').dataset.text = '';
     run.endText = `${c.done} de ${run.total} ${run.total === 1 ? 'fragmento listo' : 'fragmentos listos'}. Lo transcrito se conserva y puedes copiarlo o exportarlo abajo.`;
     paint();
     headerStatus_('');
     $('rvTitle').focus();
+    // The engine files every non-complete run as 'aborted'. Put it back as unfinished (UI side, after the
+    // engine's own async write) so that a reload offers it through the resume banner instead of losing it.
+    const rid = run.id;
+    setTimeout(() => RunStore.markRunStatus(rid, 'in-progress').catch(() => {}), 400);
+    if (d.outcome === 'aborted') boundaryBanner(c);
+    if (d.outcome !== 'cancelled') endToast(c);
   });
 
   /* ---------- Controls ---------- */
@@ -244,6 +343,8 @@ const runView = (() => {
     btn.lastChild.textContent = 'Cancelando';
     cancelTranscriptionRun();
   });
+
+  $('rvRetry').addEventListener('click', retry);
 
   $('rvAgain').addEventListener('click', () => {
     reset();

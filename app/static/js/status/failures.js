@@ -1,14 +1,9 @@
         // Retries and failures are shown by the run view (banner and notes), not by toasts.
         function showErrorToast(message, chunkId, actions = []) {}
 
+        // The danger banner is drawn by the run view on run:end (outcome aborted).
         function triggerErrorBoundary() {
             isAbortingTranscription = true;
-            const summary = failedSegmentTracker.getSummary();
-            const errorBoundary = document.getElementById('errorBoundary');
-            const errorSummary = document.getElementById('errorSummary');
-
-            errorSummary.textContent = `${summary.completed}/${summary.total} segments transcribed (${summary.percentage}%) — ${summary.failed} segments failed`;
-            errorBoundary.classList.add('show');
         }
 
         function exportPartialTranscript() {

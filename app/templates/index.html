@@ -153,6 +153,7 @@
                         <p class="rv__meta"><span id="rvClass"></span><span class="sf-mono" id="rvLength"></span></p>
                     </div>
                     <p class="rv__now" id="rvNow"></p>
+                    <p class="sf-sr-only" id="rvLive" role="status" aria-live="polite"></p>
                     <div class="sf-progress sf-progress--indeterminate" id="rvBar" hidden>
                         <div class="sf-progress__track"><div class="sf-progress__fill"></div></div>
                     </div>
@@ -166,7 +167,8 @@
                     <div class="rv__fails" id="rvFails"></div>
                     <div class="rv__actions">
                         <button class="sf-btn" type="button" id="rvCancel"><svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-x"></use></svg>Cancelar</button>
-                        <button class="sf-btn sf-btn--primary" type="button" id="rvAgain" hidden>Empezar otra clase</button>
+                        <button class="sf-btn sf-btn--primary" type="button" id="rvRetry" hidden></button>
+                        <button class="sf-btn" type="button" id="rvAgain" hidden>Empezar otra clase</button>
                     </div>
                     <p class="rv__hint" id="rvHint"><svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-info"></use></svg><span>Cancelar deja de esperar los fragmentos pendientes. El servidor termina el fragmento en curso antes de parar.</span></p>
                     <h2 class="rv__sub">Lo que llevamos</h2>
@@ -232,15 +234,7 @@
         <div class="card">
             <div class="section">
                 <div class="section-title">Transcripción</div>
-                <div id="errorBoundary" class="error-boundary">
-                    <div class="error-boundary-title">Transcripción interrumpida</div>
-                    <div class="error-boundary-text">Demasiados errores consecutivos. Puedes exportar lo transcrito hasta ahora.</div>
-                    <div id="errorSummary" class="error-summary"></div>
-                    <div class="export-buttons">
-                        <button class="btn-secondary" onclick="exportPartialTranscript()">Exportar parcial</button>
-                        <button class="btn-secondary" onclick="exportErrorLog()">Registro de errores</button>
-                    </div>
-                </div>
+                <div id="errorBoundary" hidden aria-hidden="true"></div>
                 <div class="transcript-container">
                     <div class="transcript-actions">
                         <button class="btn-secondary" id="copyBtn" onclick="copyToClipboard()" style="display: none;">Copiar</button>

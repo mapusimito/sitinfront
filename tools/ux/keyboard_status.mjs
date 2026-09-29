@@ -40,6 +40,23 @@ check('S8 Tab moves to the confirm action', (await active()).name === 'Sí, canc
 await page.keyboard.press('Enter');
 await page.waitForFunction(() => document.getElementById('rvCancel').disabled);
 check('S9 after confirming, Cancelar is disabled and says Cancelando', (await page.$eval('#rvCancel', (b) => b.textContent.trim())) === 'Cancelando');
+// T3-b: a partial run offers the retry button, reachable by keyboard.
+await page.evaluate(() => {
+  const e = (t, d) => sf.events.emit(t, { runId: 'x', ...d });
+  e('chunk:start', { index: 1, total: 3, startMs: 300000, endMs: 600000 });
+  e('chunk:fail', { index: 1, status: 400, reason: 'x' });
+  e('chunk:done', { index: 0, total: 3, text: 'a', segments: [], wallSec: 1, rawSec: 300 });
+  e('chunk:done', { index: 2, total: 3, text: 'a', segments: [], wallSec: 1, rawSec: 300 });
+  e('run:end', { outcome: 'partial', failedChunks: [] });
+});
+await page.waitForSelector('#rvRetry:not([hidden])');
+await page.evaluate(() => { document.getElementById('rvTitle').focus(); });
+let got = false;
+for (let i = 0; i < 12 && !got; i++) { await page.keyboard.press('Tab'); got = (await active()).id === 'rvRetry'; }
+check('S10 Tab reaches the retry button', got);
+check('S11 the retry button has a visible focus ring', (await active()).outline);
+const rb = await page.$eval('#rvRetry', (b) => { const r = b.getBoundingClientRect(); return { h: r.height, t: b.textContent.trim() }; });
+check('S12 the retry button is 44 px high and named by the failed chunk', rb.h >= 44 && rb.t === 'Reintentar fragmento 2', `${rb.h} ${rb.t}`);
 await browser.close();
 console.log(failures ? `\n${failures} check(s) FAILED` : '\nkeyboard pass OK');
 process.exit(failures ? 1 : 0);

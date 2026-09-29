@@ -344,43 +344,6 @@
             background: color-mix(in srgb, var(--fg) 30%, transparent);
         }
 
-        .error-boundary {
-            display: none;
-            margin-top: 24px;
-            padding: 20px;
-            background: color-mix(in srgb, var(--muted) 12%, transparent);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-        }
-
-        .error-boundary.show {
-            display: block;
-            animation: fadeInSegment 0.5s ease-in;
-        }
-
-        .error-boundary-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--fg);
-            margin-bottom: 12px;
-        }
-
-        .error-boundary-text {
-            font-size: 13px;
-            color: var(--fg);
-            margin-bottom: 16px;
-            line-height: 1.5;
-        }
-
-        .error-summary {
-            padding: 12px;
-            background: color-mix(in srgb, var(--muted) 12%, transparent);
-            border-radius: 6px;
-            margin-bottom: 16px;
-            font-size: 13px;
-            color: var(--fg);
-        }
-
         .export-buttons {
             display: flex;
             gap: 8px;

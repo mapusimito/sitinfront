@@ -261,6 +261,38 @@ export const screens = [
     },
   },
   {
+    name: 'run-ended-partial',
+    path: '/',
+    setup: async (p) => {
+      await p.evaluate(() => {
+        const e = (t, d) => sf.events.emit(t, { runId: 'x', ...d });
+        e('run:start', { source: 'upload', totalSeconds: 900, chunkCount: 3, model: 'tiny', language: 'es' });
+        for (let i = 0; i < 3; i++) e('chunk:start', { index: i, total: 3, startMs: i * 300000, endMs: (i + 1) * 300000 });
+        e('chunk:done', { index: 0, total: 3, text: 'a', segments: [], wallSec: 40, rawSec: 300 });
+        e('chunk:fail', { index: 1, status: 400, reason: 'x' });
+        e('chunk:done', { index: 2, total: 3, text: 'a', segments: [], wallSec: 40, rawSec: 300 });
+        e('run:end', { outcome: 'partial', failedChunks: [] });
+      });
+      await p.waitForSelector('#rvRetry:not([hidden])');
+    },
+  },
+  {
+    name: 'run-ended-boundary',
+    path: '/',
+    setup: async (p) => {
+      await p.evaluate(() => {
+        const e = (t, d) => sf.events.emit(t, { runId: 'x', ...d });
+        e('run:start', { source: 'upload', totalSeconds: 4200, chunkCount: 14, model: 'tiny', language: 'es' });
+        for (let i = 0; i < 12; i++) {
+          e('chunk:start', { index: i, total: 14, startMs: i * 300000, endMs: (i + 1) * 300000 });
+          e('chunk:fail', { index: i, status: 400, reason: 'x' });
+        }
+        e('run:end', { outcome: 'aborted', failedChunks: [] });
+      });
+      await p.waitForSelector('#rvBoundary');
+    },
+  },
+  {
     name: 'run-ended-cancelled',
     path: '/',
     setup: async (p) => {

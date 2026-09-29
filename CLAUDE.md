@@ -125,8 +125,8 @@ pytest tests/test_transcribe.py::test_base_model  # Single test
 
 ## Important Implementation Details
 
-### Real-Time Transcription Architecture
-The web UI implements real-time segment streaming:
+### Transcription Architecture
+The web UI transcribes per 5-minute chunk (segment streaming is not shipped):
 1. Frontend sends 5-minute audio chunks (no bridges, no consensus merge)
 2. Backend processes via WhisperModel in parallel (up to 3 concurrent)
 3. Each chunk's result arrives when the chunk finishes
@@ -137,13 +137,13 @@ The web UI implements real-time segment streaming:
 - `True`: Whisper uses previous segment as context → risks hallucination (DEPRECATED)
 
 ### Frontend State Management
-- All state in JavaScript globals (no external state management)
-- No localStorage persistence (transcript lost on page refresh)
+- Engine state lives in classic-script globals (`app/static/js/engine/state.js`); the engine reports progress through `sf.events` (`app/static/js/core/events.js`, contract in `docs/ux-revamp/PROGRESS_EVENTS.md`)
+- Persistent data is in the browser's IndexedDB: `sitinfront-runs` (runs, original audio, saved classes) and `sitinfront-recordings` (safe copy of a recording in progress); localStorage only holds the theme choice
 - Concurrent fetch limits via `ConcurrencyLimiter` class
 - Error tracking via `FailedSegmentTracker` class with auto-abort on 10+ consecutive failures
 
 ### Brand & Design System
-- **Colors** (CSS variables in index.html):
+- **Colors** (CSS variables in `app/static/css/tokens.css`, the only file allowed to hold color values or font names):
   - `--foco: #F2FF00` (primary yellow)
   - `--sala: #000000` (black background)
   - `--papel: #F4F4EE` (cream text)

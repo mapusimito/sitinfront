@@ -1,44 +1,37 @@
-FROM nvidia/cuda:12.3.2-cudnn9-runtime-ubuntu22.04
+# sitinfront, CPU image. Works on linux/arm64 (Apple silicon) and linux/amd64.
+# The base is a current Python image so pip is modern. The previous Ubuntu 22.04
+# base shipped pip 22.0.2, whose resolver crashed on requirements.server.txt.
+# There is no CUDA path in this file: the CTranslate2 wheels for linux/arm64 are CPU only.
+FROM python:3.11-slim
 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# Install Python and dependencies
-RUN apt-get update && apt-get install -y \
-    python3.11 python3.11-venv python3.11-dev python3-pip \
-    ffmpeg libsndfile1 curl \
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg libsndfile1 curl \
     && rm -rf /var/lib/apt/lists/*
-
-# Set Python 3.11 as default
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 \
-    && update-alternatives --install /usr/bin/python python /usr/bin/python3.11 1
 
 WORKDIR /app
 
-# Install Python packages
 COPY requirements.server.txt .
-RUN pip3 install --no-cache-dir -r requirements.server.txt
+RUN python -m pip install --upgrade pip \
+    && python -m pip install -r requirements.server.txt
 
-# Copy application
 COPY faster_whisper/ ./faster_whisper/
 COPY app/ ./app/
 
-# Pre-download turbo model for offline use
-RUN python3 -c "from faster_whisper import WhisperModel; WhisperModel('turbo', device='cpu')"
-
 WORKDIR /app/app
 
-# Environment variables
-ENV MODEL_SIZE=turbo
-ENV DEVICE=cuda
-ENV COMPUTE_TYPE=float16
-ENV PORT=8600
-ENV IDLE_TIMEOUT=300
+# Only PORT and IDLE_TIMEOUT are set here, both equal to the app/server.py defaults.
+# MODEL_SIZE, DEVICE and COMPUTE_TYPE are deliberately unset so the server's own
+# defaults and CPU auto-detection apply (large-v3-turbo, cpu, int8).
+ENV PORT=8600 \
+    IDLE_TIMEOUT=300
 
 EXPOSE 8600
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8600/health || exit 1
 
-CMD ["python3", "server.py"]
+CMD ["python", "server.py"]

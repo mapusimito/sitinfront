@@ -1,36 +1,26 @@
-version: '3.8'
-
 services:
-  whisper:
+  sitinfront:
     build: .
-    image: neosun/faster-whisper:latest
-    container_name: faster-whisper
+    image: sitinfront:local
+    container_name: sitinfront
     ports:
       - "${PORT:-8600}:8600"
+    # Unset variables fall through to the app/server.py defaults (MODEL_SIZE
+    # large-v3-turbo, DEVICE auto-detected, COMPUTE_TYPE int8 on cpu).
+    # Set them in .env or your shell to override.
     environment:
-      - MODEL_SIZE=${MODEL_SIZE:-base}
-      - DEVICE=${DEVICE:-cuda}
-      - COMPUTE_TYPE=${COMPUTE_TYPE:-float16}
-      - IDLE_TIMEOUT=${IDLE_TIMEOUT:-300}
       - PORT=8600
+      - MODEL_SIZE
+      - DEVICE
+      - COMPUTE_TYPE
+      - IDLE_TIMEOUT=${IDLE_TIMEOUT:-300}
+      - KEEP_AUDIO=${KEEP_AUDIO:-0}
     volumes:
+      # Downloaded Whisper models (Hugging Face cache).
       - whisper-cache:/root/.cache
-      - ./app:/app/app:ro
-      - ./faster_whisper:/app/faster_whisper:ro
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              device_ids: ['2']
-              capabilities: [gpu]
+      # Run artifacts written by the server.
+      - ./runs:/app/runs
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8600/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
 
 volumes:
   whisper-cache:

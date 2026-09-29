@@ -857,10 +857,10 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 27 | UX revamp: final verification (F) | 7 | P0 | ⬜ |
 | 28 | Repo housekeeping and a single branch | 5 | P1 | 🔄 (4/5; 28.5 runs last) |
 | **Total** | | **156 tasks** | | |
-| **Completed (✅)** | | **88 (58%)** | | **✅** |
+| **Completed (✅)** | | **92 (59%)** | | **✅** |
 | **In progress (🔄)** | | **1 (1%)** | | **🔄** |
 | **Blocked (⚠️)** | | **1 (1%)** | | **⚠️** |
-| **Open (⬜)** | | **61 (40%)** | | **⬜** |
+| **Open (⬜)** | | **62 (40%)** | | **⬜** |
 
 Note: counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
 

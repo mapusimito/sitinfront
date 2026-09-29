@@ -44,3 +44,8 @@
 
 ## Manual checks waiting for the user
 Unchanged: Safari via WebDriver, Safari storage eviction (tasks 19.5, 19.6), iOS manual check.
+
+---
+
+## Lead update after T2-a (2026-09-29)
+T2-a verified by the lead: engine/server/faster_whisper diff empty; SHA256SUMS changed only in the two `transcript_export.txt` lines; pytest per file (server 49, input 21, hygiene 3, duration 3, analyze 2, tokenizer 3, transcript model 1) passed; contrast OK; 6 hashes OK; 12 min model check (22 paragraphs, 22 segments, 3 chunks, strictly increasing, single trailing newline, joined text equal); keyboard pass; axe 144 rows, 0 serious/critical, 0 overflow, 0 page errors. Next: T2-b (reading view), brief at `docs/ux-revamp/briefs/T2-b.md`.

@@ -1,0 +1,65 @@
+/* Direction B: transcript-first workspace with a compact control bar. Tokens only. */
+
+.b-app { min-height: 100dvh; display: flex; flex-direction: column; }
+.b-main { flex: 1; display: flex; flex-direction: column; }
+.b-strip {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: var(--sp-1) var(--sp-3); padding-block: var(--sp-2); border-top: 1px solid var(--line);
+}
+.b-strip__txt { color: var(--muted); font-size: var(--fs-sm); display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); align-items: center; }
+.b-strip__txt strong { color: var(--fg); font-weight: var(--fw-bold); }
+
+.b-bar {
+  position: sticky; top: 0; z-index: 30; background: var(--panel);
+  border-block: 1px solid var(--line); padding-block: var(--sp-3);
+}
+.b-bar__in { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.b-bar--hero { padding-block: var(--sp-5); }
+.b-bar--hero .sf-btn { min-height: 3.5rem; font-size: var(--fs-lg); padding-inline: var(--sp-6); }
+.b-bar__grow { flex: 1 1 auto; min-width: 0; }
+.b-bar__end { margin-left: auto; display: flex; gap: var(--sp-2); align-items: center; }
+.b-timer { font-size: 2.25rem; }
+.b-meter { flex: 1 1 12rem; min-width: 0; }
+.b-prog { flex: 1 1 22rem; display: grid; gap: var(--sp-2); min-width: 0; }
+.b-prog__line { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); align-items: baseline; }
+.b-prog__now { font-weight: var(--fw-bold); }
+.b-prog__nums { color: var(--muted); font-size: var(--fs-sm); }
+
+.b-stage { flex: 1; padding-block: var(--sp-5) var(--sp-7); display: grid; gap: var(--sp-4); align-content: start; }
+.b-read { font-size: var(--fs-read); max-width: calc(5.5rem + var(--sp-3) + 60ch); margin-inline: auto; width: 100%; }
+.b-h1 { font-size: var(--fs-h2); }
+.b-stage > * { min-width: 0; }
+.b-empty { max-width: 40rem; margin-inline: auto; width: 100%; }
+.b-panel { max-width: 40rem; margin-inline: auto; width: 100%; display: grid; gap: var(--sp-4); }
+.b-narrow { max-width: 40rem; margin-inline: auto; width: 100%; display: grid; gap: var(--sp-4); }
+.b-head-meta { color: var(--muted); display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); }
+
+/* Table of saved classes (desktop), stacked cards (mobile). */
+.b-table { width: 100%; border-collapse: collapse; }
+.b-table caption { text-align: left; padding-bottom: var(--sp-2); color: var(--muted); font-size: var(--fs-sm); }
+.b-table th { text-align: left; font-size: var(--fs-sm); color: var(--muted); font-weight: var(--fw-medium); padding: var(--sp-2) var(--sp-3); border-bottom: 2px solid var(--fg); }
+.b-table td { padding: var(--sp-3); border-bottom: 1px solid var(--line); vertical-align: middle; }
+.b-table .b-name { font-weight: var(--fw-bold); }
+.b-table .b-act { display: flex; gap: var(--sp-2); flex-wrap: wrap; justify-content: flex-end; }
+@media (max-width: 47.99rem) {
+  .b-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .b-table, .b-table tbody, .b-table tr, .b-table td { display: block; }
+  .b-table tr { padding: var(--sp-3) 0; border-bottom: 1px solid var(--line); display: grid; gap: var(--sp-1); }
+  .b-table td { border: 0; padding: 0; }
+  .b-table .b-act { justify-content: flex-start; margin-top: var(--sp-2); }
+  .b-table td[data-l]::before { content: attr(data-l) " "; color: var(--muted); font-size: var(--fs-sm); }
+}
+.b-rename { grid-column: 1 / -1; }
+
+/* Mobile: the bar moves to the bottom, thumb reach. Transcript keeps its toolbar on top. */
+@media (max-width: 47.99rem) {
+  .b-bar--bottom { order: 3; top: auto; bottom: 0; margin-top: auto; border-bottom: 0; }
+  .b-bar--bottom .b-bar__in > .sf-btn { flex: 1 1 8rem; }
+  .b-bar--hero { padding-block: var(--sp-3); }
+  .b-bar--hero .sf-btn { min-height: 3.5rem; padding-inline: var(--sp-3); font-size: var(--fs-ui); }
+  .b-bar--hero .sf-btn--primary { flex: 3 1 0; }
+  .b-bar--hero .sf-btn:not(.sf-btn--primary) { flex: 2 1 0; }
+}
+.b-tools { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-3); align-items: center; }
+.b-tools .x-find { flex: 1 1 100%; }
+@media (min-width: 48rem) { .b-tools .x-find { flex: 1 1 20rem; } }

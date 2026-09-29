@@ -350,7 +350,10 @@ async function measureRecordingSeconds(audioBlob) {
 }
 
 async function handleRecordingComplete(blobOverride) {
-  const audioBlob = blobOverride || new Blob(recordedChunks, { type: 'audio/wav' });
+  // Label the blob with what the recorder actually produced (Chrome: audio/webm;codecs=opus,
+  // Safari: audio/mp4). It used to be hardcoded 'audio/wav', which was wrong for every browser.
+  const recordedType = (recordedChunks[0] && recordedChunks[0].type) || (mediaRecorder && mediaRecorder.mimeType) || '';
+  const audioBlob = blobOverride || new Blob(recordedChunks, { type: recordedType });
   const totalSeconds = await measureRecordingSeconds(audioBlob);
   const totalMinutes = Math.ceil(totalSeconds / 60);
   showStatus(`Grabación completada: ${totalMinutes} min`, 'success');

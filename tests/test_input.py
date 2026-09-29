@@ -31,7 +31,8 @@ def test_recorder_uses_timeslice_and_keeps_pipeline_call():
     code = _strip_comments((JS / "recorder.js").read_text())
     assert "mediaRecorder.start(SAFE_COPY_TIMESLICE_MS)" in code
     assert "transcribeInChunks(audioBlob, totalSeconds)" in code
-    assert "new Blob(recordedChunks, { type: 'audio/wav' })" in code  # same blob as before
+    # Q11: same pieces, now labelled with the recorder's real type instead of a hardcoded 'audio/wav'.
+    assert "new Blob(recordedChunks, { type: recordedType })" in code
 
 
 def test_safe_copy_reassembles_in_index_order():
@@ -70,3 +71,13 @@ def test_script_order_dependencies():
 def test_rec_color_only_in_recdot_component():
     css = (ROOT / "app" / "static" / "css" / "input.css").read_text()
     assert "var(--rec)" not in css
+
+
+def test_recorded_blob_is_labelled_with_the_recorders_real_mime_type():
+    """Q11: the recorder blob used to be labelled 'audio/wav' whatever the browser produced
+    (Chrome makes WebM/Opus, Safari MP4/AAC). It must carry the recorder's own type."""
+    recorder = (Path(__file__).parent.parent / "app" / "static" / "js" / "input" / "recorder.js").read_text()
+    start = recorder.index("async function handleRecordingComplete(")
+    body = recorder[start:start + 1200]
+    assert "type: 'audio/wav'" not in body
+    assert "recordedChunks[0]" in body and "mediaRecorder.mimeType" in body

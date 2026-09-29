@@ -1,0 +1,35 @@
+/* Comparison page. Tokens only. */
+.ix { padding-block: var(--sp-5) var(--sp-8); display: grid; gap: var(--sp-6); grid-template-columns: minmax(0, 1fr); }
+.ix > *, .dir > *, .cols > *, .fig { min-width: 0; }
+.ix h1 { max-width: 22ch; }
+.ix__lead { font-size: var(--fs-lg); max-width: 60ch; color: var(--muted); }
+.ix p, .ix li { max-width: 68ch; }
+.ix code { font-size: var(--fs-sm); }
+.ix__nav { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); }
+.ix__nav a { display: inline-flex; align-items: center; min-height: var(--hit); font-weight: var(--fw-bold); }
+.dir { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-4); border-top: 2px solid var(--fg); padding-top: var(--sp-5); }
+.dir h3 { font-size: var(--fs-ui); margin-top: var(--sp-3); }
+.dir__line { font-size: var(--fs-lg); font-weight: var(--fw-bold); max-width: 56ch; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--sp-5); }
+@media (min-width: 56rem) { .cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.figs { display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fill, minmax(min(100%, 22rem), 1fr)); }
+.fig { margin: 0; display: grid; gap: var(--sp-2); }
+.fig figcaption { font-size: var(--fs-sm); color: var(--muted); }
+.fig__pair { display: grid; grid-template-columns: 3fr 1fr; gap: var(--sp-2); align-items: start; }
+.fig a { display: block; border: 1px solid var(--line); }
+.fig a:hover { border-color: var(--fg); }
+.shot { display: block; width: 100%; height: auto; object-fit: cover; object-position: top; }
+.fig__d .shot { aspect-ratio: 16 / 10; }
+.fig__m .shot { aspect-ratio: 375 / 700; }
+.shot--dark { display: none; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .shot--light { display: none; }
+  :root:not([data-theme="light"]) .shot--dark { display: block; }
+}
+:root[data-theme="dark"] .shot--light { display: none; }
+:root[data-theme="dark"] .shot--dark { display: block; }
+.tablewrap { overflow-x: auto; }
+.cmp { border-collapse: collapse; width: 100%; min-width: 34rem; }
+.cmp caption { text-align: left; color: var(--muted); font-size: var(--fs-sm); padding-bottom: var(--sp-2); }
+.cmp th, .cmp td { text-align: left; padding: var(--sp-2) var(--sp-3); border-bottom: 1px solid var(--line); vertical-align: top; }
+.cmp thead th { border-bottom: 2px solid var(--fg); }

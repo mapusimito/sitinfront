@@ -20,10 +20,13 @@
 .in-note[data-kind="failed"] { color: var(--warning); font-weight: var(--fw-medium); }
 
 
-/* Recording. --rec appears only through .sf-recdot. */
-.in-rec { display: grid; gap: var(--sp-4); }
-.in-rec__head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap; }
-.in-timer { font-size: 2.5rem; font-weight: var(--fw-medium); line-height: 1; letter-spacing: 0.02em; }
+/* Recording: heading, big elapsed time, level meter, Parar. --rec appears only through .sf-recdot. */
+.a-rec { display: grid; gap: var(--sp-5); justify-items: center; text-align: center; }
+.a-rec > * { width: 100%; }
+.a-rec__title { display: inline-flex; align-items: center; justify-content: center; gap: var(--sp-3); }
+.a-timer { font-size: clamp(3rem, 16vw, 5.5rem); font-weight: var(--fw-medium); line-height: 1; letter-spacing: 0.02em; margin: 0; }
+.a-meterlabel { display: flex; justify-content: space-between; color: var(--muted); font-size: var(--fs-sm); margin-bottom: var(--sp-1); }
+.a-rec .in-note { justify-content: center; text-align: left; }
 .in-meter[hidden] { display: none; }
 .in-meter__track {
   height: 0.875rem;

@@ -165,7 +165,7 @@ function setSafeNote(kind) {
   const el = document.getElementById('safeNote');
   if (kind === 'ok') {
     el.innerHTML = '';
-    el.textContent = 'Se guarda una copia en este navegador mientras grabas.';
+    el.textContent = 'Se guarda una copia en este navegador mientras grabas. Cuando pares, podrás escucharla antes de transcribir.';
   } else if (kind === 'failed') {
     el.innerHTML = sf.icon('triangle-alert');
     el.append(' Esta grabación no se está guardando en el navegador. Si cierras o recargas la pestaña, se perderá.');

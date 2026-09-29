@@ -77,22 +77,21 @@
             <input type="file" id="fileInput" class="sf-sr-only" accept="audio/*" tabindex="-1" aria-hidden="true">
 
             <!-- Recording. -->
-            <div id="panelRecording" class="in-rec" hidden>
-                <div class="in-rec__head">
-                    <span><span class="sf-recdot" data-live="true" aria-hidden="true"></span><strong>Grabando</strong></span>
-                    <span id="timer" class="in-timer sf-mono" role="timer" aria-label="Tiempo grabado">00:00</span>
-                </div>
+            <div id="panelRecording" class="a-rec" hidden>
+                <h1 class="a-title a-rec__title"><span class="sf-recdot" data-live="true" aria-hidden="true"></span>Grabando</h1>
+                <p id="timer" class="a-timer sf-mono" role="timer" aria-label="Tiempo grabado">00:00</p>
                 <div class="in-meter">
-                    <div id="levelMeter" class="in-meter__track" role="meter" aria-label="Nivel del micrófono" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                    <div class="a-meterlabel"><span id="levelLabel">Nivel del micrófono</span></div>
+                    <div id="levelMeter" class="in-meter__track" role="meter" aria-labelledby="levelLabel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                         <div id="levelFill" class="in-meter__fill"></div>
                     </div>
                 </div>
                 <p id="levelHint" class="in-note" role="status"></p>
-                <p id="safeNote" class="in-note" role="status"></p>
                 <button type="button" id="stopBtn" class="sf-btn sf-btn--primary a-big">
                     <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-square"></use></svg>
                     Parar
                 </button>
+                <p id="safeNote" class="in-note" role="status"></p>
             </div>
 
             <!-- Recording finished, not yet transcribed. -->

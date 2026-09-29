@@ -94,7 +94,8 @@ def test_a0_header_has_one_icon_theme_button_and_no_dead_links():
     header = INDEX[INDEX.index("<header"):INDEX.index("</header>")]
     assert 'id="themeBtn"' in header and "data-theme-cycle" in header
     assert 'name="theme"' not in INDEX
-    assert "Mis clases" not in INDEX
+    # "Mis clases" appears only now that the view exists (P3): a real link, never a dead one.
+    assert 'id="classesLink" href="#/clases"' in header and 'id="viewClasses"' in INDEX
     assert 'href="#"' not in INDEX
 
 

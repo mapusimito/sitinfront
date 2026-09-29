@@ -77,8 +77,7 @@ if (scenario === 'main') {
     const before = await page.evaluate(() => window.__seek.length);
     await page.locator('#tvList .sf-segment__time').nth(k).click();
     await page.waitForFunction((n) => window.__seek.length > n, before);
-    const [h, m, s] = starts[k].match(/(\d+):(\d+):(\d+)/).slice(1).map(Number);
-    const target = h * 3600 + m * 60 + s;
+    const target = await page.evaluate((k) => sf.transcriptView.rows()[k].startMs / 1000, k);
     const got = await page.evaluate(() => window.__seek.at(-1));
     check(`seek row ${k} within 0.5 s at seeked`, Math.abs(got - target) <= 0.5, `${got.toFixed(2)} vs ${target}`);
   }
@@ -187,6 +186,33 @@ if (scenario === 'seeded') {
   check('no bar and no percentage without estimate', (await p2.locator('#libStore progress').count()) === 0 && !/%/.test(await p2.locator('#libStore').innerText()));
 }
 
+if (scenario === 'kbd') {
+  await clean();
+  await seed([{ id: 'k1', name: 'Clase uno', segments: [{ startMs: 0, endMs: 1000, text: ' Hola', chunkIndex: 0 }] }, { id: 'k2', name: 'Clase dos', segments: [{ startMs: 0, endMs: 1000, text: ' Adiós', chunkIndex: 0 }] }]);
+  await reload();
+  const tabTo = async (pred, max = 40) => { for (let i = 0; i < max; i++) { await page.keyboard.press('Tab'); if (await page.evaluate(pred)) return true; } return false; };
+  check('Tab reaches header link', await tabTo(() => document.activeElement.id === 'classesLink'));
+  await page.keyboard.press('Enter');
+  await page.waitForSelector('#libList .lib-class');
+  check('Enter opens list, focus on h1', await page.evaluate(() => document.activeElement.id === 'libTitle'));
+  check('Tab reaches Abrir Clase dos', await tabTo(() => document.activeElement.getAttribute('aria-label') === 'Abrir Clase dos'));
+  check('Tab reaches Renombrar', await tabTo(() => document.activeElement.getAttribute('aria-label') === 'Renombrar Clase dos'));
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('Clase tres');
+  await page.keyboard.press('Enter');
+  await page.waitForFunction(() => document.querySelector('.lib-class__name a') && [...document.querySelectorAll('.lib-class__name a')].some((a) => a.textContent === 'Clase tres'));
+  check('renamed by keyboard, focus back on the row button', await page.evaluate(() => document.activeElement.getAttribute('aria-label') === 'Renombrar Clase tres'));
+  await page.keyboard.press('Tab'); await page.keyboard.press('Tab'); await page.keyboard.press('Tab');
+  check('Tab reaches Borrar', await page.evaluate(() => document.activeElement.getAttribute('aria-label') === 'Borrar Clase tres'), await focusName());
+  await page.keyboard.press('Enter');
+  await page.waitForSelector('dialog[open], .sf-dialog[open]');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
+  check('Escape closes dialog, nothing deleted, focus on Borrar', (await ids()).length === 2 && await page.evaluate(() => document.activeElement.getAttribute('aria-label') === 'Borrar Clase tres'), await focusName());
+  const rects = await page.$$eval('#libList a.sf-btn, #libList button, #classesLink', (els) => els.map((e) => Math.round(e.getBoundingClientRect().height)));
+  check('targets at least 44 px high', Math.min(...rects) >= 44, String(Math.min(...rects)));
+  await page.goBack().catch(() => {});
+}
 console.log(JSON.stringify({ ...out, failures: String(failures) }));
 await browser.close();
 process.exit(failures ? 1 : 0);

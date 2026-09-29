@@ -1,7 +1,7 @@
 # sitinfront - Implementation Status
 
 > **Last Updated**: 2026-09-29
-> **Current Milestone**: 25 🔄 P2 synchronized player built (25.1 to 25.5 ✅, 25.6 open); 24 ✅ P1a and P1b done (24.1 to 24.6: write errors surfaced, saved-class data, pruning policy, persistence notice, storage-full handling, Descargar backup); 23 ✅ UX revamp T2-a, T2-b, T2-c done; 22 ✅; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 25, 26, 27, then 12.4, 4, 7, 8
+> **Current Milestone**: 26 ✅ P3 Mis clases done (26.1 to 26.6: list, open with player, rename, delete, storage summary and banners, header link); 25 🔄 P2 synchronized player built (25.1 to 25.5 ✅, 25.6 open); 24 ✅ P1a and P1b done (24.1 to 24.6: write errors surfaced, saved-class data, pruning policy, persistence notice, storage-full handling, Descargar backup); 23 ✅ UX revamp T2-a, T2-b, T2-c done; 22 ✅; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 27, 25.6, then 12.4, 4, 7, 8
 > **Source**: UX Critique (20 issues identified) + Brand Redesign QA (72→100 compliance); Milestones 11-16 added from "Whisper Transcription Pipeline: Accuracy and Observability Fixes" task spec (2026-09-28); Milestones 17-27 added from the UX/UI revamp brief and plan (UX_REVAMP_PLAN.md, 2026-09-29)
 > **Supersedes**: None
 
@@ -632,7 +632,7 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 
 **Priority**: P1: makes persistence visible.
 
-**Status**: ⬜ Not started
+**Status**: ✅ Done (2026-09-29). Safari/iOS not tested (waiting for the user)
 
 **Depends on**: Milestone 25
 
@@ -640,12 +640,12 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 
 | Task | Description | Status | Notes |
 |------|-------------|--------|-------|
-| 26.1 | List newest first (name, date, duration, size, Incompleta badge) | ⬜ | Not started |
-| 26.2 | Open a class: transcript view plus player from stored data | ⬜ | Not started |
-| 26.3 | Inline rename | ⬜ | Not started |
-| 26.4 | Delete with confirmation (removes audio and transcript) | ⬜ | Not started |
-| 26.5 | Total space used, persist notice, storage-full banner | ⬜ | Not started |
-| 26.6 | Header link Mis clases (appears only once this milestone exists) | ⬜ | Not started |
+| 26.1 | List newest first (name, date, duration, size, Incompleta badge) | ✅ | app/static/js/library/library.js (renderList, rows via DOM nodes); p3_check.mjs main and seeded: 12 min class listed after reload (name, date, 00:12:00, 5,6 MB = file size, no badge), newest first, Incompleta badge, empty state; audio download hash equals original |
+| 26.2 | Open a class: transcript view plus player from stored data | ✅ | library.js openClass, transcript/model.js loadClass (segments, chunkResults fallback), reader.setInfo, transcriptPlayer.attach; p3_check main: 22 rows, total 00:12:00, 2 seeks within 0.5 s at seeked, Exportar hash equals baseline 12min, partial gap row with audio sentence, fallback record opens same rows, hash routes and unknown id |
+| 26.3 | Inline rename | ✅ | library.js startRename (label Nuevo nombre, Enter and Escape, empty rejected inline, RunStore.saveClass merge); p3_check main: persists across reload, segments and audio untouched |
+| 26.4 | Delete with confirmation (removes audio and transcript) | ✅ | library.js askDelete (sf.confirm danger, sf.classes.remove, focus to next row); p3_check main: cancel and Escape delete nothing, confirm removes exactly that record, totals and empty state update |
+| 26.5 | Total space used, persist notice, storage-full banner | ✅ | library.js paintStore and paintBanners (estimate labelled estimado, no bar without estimate, persist-refused notice, storage:error full banner); screens lib-storage-full, lib-persist-notice; p3_check seeded: no bar or percentage without estimate |
+| 26.6 | Header link Mis clases (appears only once this milestone exists) | ✅ | templates/index.html #classesLink, js/library/router.js (aria-current, aria-disabled with reason while recording, in review or running, focus and polite announcement per view); p3_check seeded: disabled while recording, Back and direct URL work |
 
 ---
 
@@ -774,7 +774,7 @@ Milestone 24 (Storage, P1) ✅ DONE ◄── 23
     ↓
 Milestone 25 (Synchronized player, P2) 🔄 25.1-25.5 done, 25.6 open ◄── 24
     ↓
-Milestone 26 (Saved classes, P3) ⬜ ◄── 25
+Milestone 26 (Saved classes, P3) ✅ DONE ◄── 25
     ↓
 Milestone 27 (Final verification, F) ⬜ ◄── 26
     ↓
@@ -854,16 +854,16 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 23 | UX revamp: transcript view, search, export | 5 | P0 | ✅ |
 | 24 | UX revamp: storage (P1) | 6 | P0 | ✅ |
 | 25 | UX revamp: synchronized player (P2) | 6 | P1 | 🔄 (5/6; 25.6 ⬜) |
-| 26 | UX revamp: saved classes (P3) | 6 | P1 | ⬜ |
+| 26 | UX revamp: saved classes (P3) | 6 | P1 | ✅ |
 | 27 | UX revamp: final verification (F) | 7 | P0 | ⬜ |
 | 28 | Repo housekeeping and a single branch | 5 | P1 | 🔄 (4/5; 28.5 runs last) |
 | **Total** | | **157 tasks** | | |
-| **Completed (✅)** | | **112 (71%)** | | **✅** |
+| **Completed (✅)** | | **118 (75%)** | | **✅** |
 | **In progress (🔄)** | | **1 (1%)** | | **🔄** |
 | **Blocked (⚠️)** | | **1 (1%)** | | **⚠️** |
-| **Open (⬜)** | | **43 (27%)** | | **⬜** |
+| **Open (⬜)** | | **37 (24%)** | | **⬜** |
 
-Note: recounted from the task rows on 2026-09-29 (P2): 112 ✅, 1 🔄, 1 ⚠️, 43 ⬜ = 157 (25.1 to 25.5 ✅, 25.6 open). Counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
+Note: recounted from the task rows on 2026-09-29 (P3): 118 ✅, 1 🔄, 1 ⚠️, 37 ⬜ = 157 (26.1 to 26.6 ✅, 25.6 open). Counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
 
 ---
 

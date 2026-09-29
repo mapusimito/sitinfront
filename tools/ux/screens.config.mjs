@@ -547,3 +547,50 @@ export const screens = [
   { name: 'player-gap-audio', path: '/', setup: finishedWithPlayer() },
   { name: 'toolbar-mobile-icons', path: '/', setup: finishedWithPlayer() },
 ];
+
+// ---------------------------------------------------------------------------
+// P3: Mis clases. Records use the real shape; the audio is a playable WAV.
+// ---------------------------------------------------------------------------
+const seedLibrary = (opts = {}) => async (page) => {
+  const bytes = [...wav(20)];
+  await page.evaluate(async ({ bytes, opts }) => {
+    await RunStore.getRun('init');
+    const db = await new Promise((res, rej) => { const r = indexedDB.open('sitinfront-runs', 1); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+    const tx = db.transaction('runs', 'readwrite');
+    const mk = (i, name, o = {}) => ({
+      runId: `lib-${i}`, status: o.incomplete ? 'partial' : 'done', createdAt: 1e12 + i, updatedAt: 1e12 + i, chunkPlan: [], chunkResults: {},
+      name, fileName: name, sizeBytes: 12e6 * (i + 1), mimeType: 'audio/wav', durationSec: 20, durationExactSec: 20,
+      savedAt: 1.75e12 + i * 8.64e7, incomplete: !!o.incomplete, audioBlob: new Blob([new Uint8Array(bytes)], { type: 'audio/wav' }),
+      segments: [
+        { startMs: 0, endMs: 6000, text: ' Buenos días, hoy empezamos con la mitosis.', avgLogprob: -0.2, chunkIndex: 0 },
+        o.incomplete ? { startMs: 6000, endMs: 12000, text: '', gap: true, chunkIndex: 1 }
+          : { startMs: 6000, endMs: 12000, text: ' La célula duplica su material genético antes de dividirse.', avgLogprob: -0.3, chunkIndex: 0 },
+        { startMs: 12000, endMs: 19000, text: ' Después se separan las cromátidas hermanas.', avgLogprob: -0.25, chunkIndex: 2 },
+      ],
+    });
+    const names = opts.empty ? [] : ['Biología celular, tema 5: mitosis', 'Bioquímica, tema 3: enzimas'];
+    names.forEach((n, i) => tx.objectStore('runs').put(mk(i, n, { incomplete: opts.partial && i === 1 })));
+    await new Promise((res) => { tx.oncomplete = res; });
+  }, { bytes, opts });
+};
+const gotoLib = (hash) => async (page) => { await page.evaluate((h) => { location.hash = h; }, hash); };
+const libList = (opts, after) => async (page) => {
+  await seedLibrary(opts)(page);
+  await gotoLib('#/clases')(page);
+  await page.waitForSelector('#viewClasses:not([hidden])');
+  await page.waitForFunction(() => document.getElementById('libList').children.length > 0 || !document.getElementById('libEmpty').hidden);
+  if (after) await after(page);
+};
+screens.push(
+  { name: 'lib-list', path: '/', setup: libList({}) },
+  { name: 'lib-list-incomplete', path: '/', setup: libList({ partial: true }) },
+  { name: 'lib-rename', path: '/', setup: libList({}, async (p) => { await p.getByRole('button', { name: /^Renombrar/ }).first().click(); }) },
+  { name: 'lib-rename-error', path: '/', setup: libList({}, async (p) => { await p.getByRole('button', { name: /^Renombrar/ }).first().click(); await p.fill('.lib-class__rename input', ''); await p.keyboard.press('Enter'); }) },
+  { name: 'lib-delete-dialog', path: '/', setup: libList({}, async (p) => { await p.getByRole('button', { name: /^Borrar/ }).first().click(); await p.waitForSelector('dialog[open], .sf-dialog[open]'); }) },
+  { name: 'lib-empty', path: '/', setup: libList({ empty: true }) },
+  { name: 'lib-storage-full', path: '/', setup: libList({}, async (p) => { await p.evaluate(() => sf.events.emit('storage:error', { op: 'saveClass', runId: 'x', kind: 'full', message: 'q' })); await p.evaluate(() => { location.hash = '#/'; }); await p.evaluate(() => { location.hash = '#/clases'; }); await p.waitForSelector('#libBanners .sf-banner--danger'); }) },
+  { name: 'lib-persist-notice', path: '/', setup: libList({}, async (p) => { await p.evaluate(() => sf.events.emit('storage:saved', { persistence: 'refused' })); await p.evaluate(() => { location.hash = '#/'; }); await p.evaluate(() => { location.hash = '#/clases'; }); await p.waitForSelector('#libBanners .sf-banner'); }) },
+  { name: 'lib-class-open', path: '/', setup: async (p) => { await seedLibrary({})(p); await gotoLib('#/clases/lib-0')(p); await p.waitForSelector('#tvDock .sf-player'); await p.waitForSelector('#tvList .sf-segment'); } },
+  { name: 'lib-class-partial', path: '/', setup: async (p) => { await seedLibrary({ partial: true })(p); await gotoLib('#/clases/lib-1')(p); await p.waitForSelector('#tvDock .sf-player'); await p.waitForSelector('#tvList [data-state=failed]'); } },
+  { name: 'lib-missing', path: '/', setup: async (p) => { await gotoLib('#/clases/no-existe')(p); await p.waitForSelector('#viewMissing:not([hidden])'); } },
+);

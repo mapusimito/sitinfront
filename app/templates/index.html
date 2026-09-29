@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="/static/css/status.css">
     <link rel="stylesheet" href="/static/css/transcript.css">
     <link rel="stylesheet" href="/static/css/persist.css">
+    <link rel="stylesheet" href="/static/css/library.css">
 </head>
 <body data-stage="idle">
     <a class="sf-skip" href="#main">Saltar al contenido</a>
@@ -26,6 +27,11 @@
             <span class="sf-logo__word">sitinfront</span>
         </a>
         <div class="sf-head__end">
+            <a class="sf-btn sf-btn--ghost lib-link" id="classesLink" href="#/clases" aria-describedby="classesLinkWhy">
+                <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-file-audio"></use></svg>
+                <span class="lib-link__t">Mis clases</span>
+            </a>
+            <span class="sf-sr-only" id="classesLinkWhy"></span>
             <span class="sf-head__status" role="status">
                 <span class="sf-badge sf-head__pill" id="headerPill" hidden><span class="sf-recdot" id="headerDot" data-live="true" aria-hidden="true" hidden></span><span id="headerStatus"></span></span>
             </span>
@@ -36,6 +42,37 @@
     </header>
 
     <main id="main" class="shell-main">
+        <p class="sf-sr-only" id="viewLive" role="status" aria-live="polite"></p>
+
+        <!-- View: saved classes list (P3). Hash routing in js/library/router.js. -->
+        <section id="viewClasses" class="lib" hidden aria-labelledby="libTitle">
+            <div class="lib__titlerow">
+                <h1 class="a-title" id="libTitle" tabindex="-1">Mis clases</h1>
+                <a class="sf-btn sf-btn--primary" href="#/" id="libNew"><svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-mic"></use></svg>Nueva clase</a>
+            </div>
+            <div id="libBanners" class="lib__banners"></div>
+            <div id="libStore" class="lib__store"></div>
+            <ul class="lib__list" id="libList" aria-label="Clases guardadas, la más reciente primero"></ul>
+            <div class="lib__empty" id="libEmpty" hidden>
+                <h2 class="a-subtitle">Aún no tienes clases</h2>
+                <p class="a-hint">Cuando transcribas una grabación, se guardará aquí, en este navegador, para que puedas volver a leerla y escucharla.</p>
+                <a class="sf-btn sf-btn--primary" href="#/">Nueva clase</a>
+            </div>
+        </section>
+
+        <!-- View: one opened class. The reading view below (#region-transcript) is reused. -->
+        <section id="viewClass" class="lib" hidden aria-label="Clase guardada">
+            <div class="lib__back">
+                <a class="sf-btn sf-btn--ghost" href="#/clases" id="libBack">Volver a Mis clases</a>
+                <span class="lib__dl" id="libDl"></span>
+            </div>
+        </section>
+        <section id="viewMissing" class="lib" hidden aria-labelledby="libMissingTitle">
+            <h1 class="a-title" id="libMissingTitle" tabindex="-1">No encontramos esa clase</h1>
+            <p class="a-hint">Puede que la hayas borrado, o que se guardara en otro navegador. Las clases solo se guardan en el navegador donde las transcribes.</p>
+            <a class="sf-btn sf-btn--primary" href="#/clases">Ir a Mis clases</a>
+        </section>
+
         <!-- region: status (owner: system status team). Progress, failures, notifications. -->
         <!-- The engine still writes to these ids (frozen). They are inert and hidden; the run view is in #panelRunning. -->
         <div hidden aria-hidden="true">
@@ -316,6 +353,8 @@
     <script src="/static/js/persist/download.js"></script>
     <script src="/static/js/persist/panel.js"></script>
     <script src="/static/js/status/run-view.js"></script>
+    <script src="/static/js/library/library.js"></script>
+    <script src="/static/js/library/router.js"></script>
     <script src="/static/js/core/ui.js"></script>
     <script src="/static/js/main.js"></script>
     <script src="/static/js/core/shell.js"></script>

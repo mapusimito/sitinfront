@@ -188,5 +188,5 @@ sf.transcriptPlayer = (() => {
     if (e.target.closest && e.target.closest('#rvAgain')) detach();
   });
 
-  return { attach, detach, audio: () => (playerEl ? playerEl.audio : null) };
+  return { attach, detach, fromRun, audio: () => (playerEl ? playerEl.audio : null) };
 })();

@@ -1,0 +1,47 @@
+/* P3: Mis clases (list, rename, one class). Tokens and sf- components only. */
+.lib { display: grid; gap: var(--sp-5); align-content: start; min-width: 0; }
+.lib[hidden] { display: none; }
+.lib__titlerow { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.lib__banners { display: grid; gap: var(--sp-3); }
+.lib__banners:empty { display: none; }
+.lib__back { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-3); flex-wrap: wrap; }
+.lib__dl { display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+.lib__empty { display: grid; gap: var(--sp-3); justify-items: start; padding: var(--sp-5); border: 1px solid var(--line); border-radius: var(--radius); }
+.lib__empty[hidden] { display: none; }
+
+.lib-store__head { display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap; }
+.lib__store { display: grid; gap: var(--sp-2); }
+.lib-store__big { font-size: var(--fs-lg); font-weight: var(--fw-black); }
+.lib-legend { color: var(--muted); font-size: var(--fs-sm); }
+.lib-store__bar { width: 100%; height: 0.75rem; accent-color: var(--accent-text); }
+.lib-note { display: flex; gap: var(--sp-2); align-items: flex-start; color: var(--muted); font-size: var(--fs-sm); margin: 0; }
+.lib-note .sf-icon { margin-top: 0.1em; flex: none; }
+
+.lib__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-3); }
+.lib__list[hidden] { display: none; }
+.lib-class { display: grid; gap: var(--sp-2) var(--sp-4); padding: var(--sp-4); border: 1px solid var(--line); border-radius: var(--radius); background: var(--panel); min-width: 0; }
+.lib-class__name { font-size: var(--fs-lg); font-weight: var(--fw-bold); letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.lib-class__name a { text-decoration-thickness: 2px; }
+.lib-class__meta { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); align-items: center; color: var(--muted); font-size: var(--fs-sm); }
+.lib-class__act { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+.lib-class__rename { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: flex-end; }
+.lib-class__rename .sf-field { flex: 1 1 14rem; }
+.lib-err { margin: 0; color: var(--danger); font-size: var(--fs-sm); font-weight: var(--fw-bold); }
+.lib-err[hidden] { display: none; }
+
+/* Views: one at a time. Home = input + transcript + details, as before. */
+body[data-view="list"] #region-input,
+body[data-view="list"] #region-transcript,
+body[data-view="list"] #region-history,
+body[data-view="class"] #region-input,
+body[data-view="class"] #region-history,
+body[data-view="class"] #summaryCard,
+body[data-view="missing"] #region-input,
+body[data-view="missing"] #region-transcript,
+body[data-view="missing"] #region-history { display: none; }
+/* An opened class shows the reading view even though no run is active. */
+body[data-view="class"] #region-transcript:not([data-empty]) { display: block; }
+
+.lib-link[aria-disabled="true"] { opacity: 1; color: var(--muted); cursor: not-allowed; }
+.lib-link[aria-current="page"] { border-color: var(--fg); }
+@media (max-width: 30rem) { .lib-link__t { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } }

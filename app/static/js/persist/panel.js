@@ -151,5 +151,5 @@ sf.persist = (() => {
     render();
   });
 
-  return { render, openManager, downloadCopy };
+  return { render, openManager, downloadCopy, state: () => persistence };
 })();

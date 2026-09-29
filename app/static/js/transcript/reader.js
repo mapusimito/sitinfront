@@ -215,7 +215,7 @@
     // For tests and scripted checks: render now instead of on the next frame.
     sf.transcriptView = {
       flush: render, onRender: (f) => afterRender.push(f),
-      setPlayer, setCurrent, rows: () => rows, hasPlayer: () => !!player,
+      setPlayer, setCurrent, setInfo: (i) => { info = { fileName: '', title: '', active: false, ...i }; rows.forEach((r) => r.el.remove()); rows = []; render(); }, getInfo: () => ({ ...info }), rows: () => rows, hasPlayer: () => !!player,
     };
   }
 

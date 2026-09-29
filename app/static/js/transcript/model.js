@@ -75,6 +75,56 @@ sf.transcript = (() => {
     if (changed) notify();
   }
 
+  // P3: load a saved class. Prefers the stored flat absolute-time segments; records
+  // saved before P1a only have chunkResults, which go through seedFromRecord.
+  function loadClass(record) {
+    const rec = record || {};
+    const dur = rec.durationExactSec || rec.durationSec || rec.totalSeconds;
+    const m = { runId: rec.runId, source: 'class', totalSeconds: Number.isFinite(dur) ? dur : undefined, model: rec.model, language: rec.language };
+    const flat = Array.isArray(rec.segments) ? rec.segments : [];
+    if (!flat.length) {
+      meta = m; chunks.clear(); bounds.clear();
+      seedFromRecord(rec);
+      notify();
+      return { ok: true, fallback: true };
+    }
+    chunks.clear();
+    bounds.clear();
+    meta = m;
+    const by = new Map();
+    flat.forEach((s, i) => {
+      const idx = Number.isFinite(s.chunkIndex) ? s.chunkIndex : 0;
+      if (!by.has(idx)) by.set(idx, []);
+      by.get(idx).push(s);
+    });
+    for (const [index, list] of by) {
+      const gap = list.find((s) => s.gap);
+      if (gap) {
+        chunks.set(index, { index, startMs: gap.startMs, endMs: gap.endMs, status: 'failed', text: '', segments: [] });
+        continue;
+      }
+      const segs = list.map((s) => ({
+        startMs: s.startMs, endMs: s.endMs, text: String(s.text == null ? '' : s.text),
+        avgLogprob: typeof s.avgLogprob === 'number' ? s.avgLogprob : null,
+      }));
+      chunks.set(index, {
+        index, status: 'done', segments: segs, text: segs.map((s) => s.text).join(' '),
+        startMs: Math.min(...segs.map((s) => s.startMs)), endMs: Math.max(...segs.map((s) => s.endMs)),
+      });
+    }
+    notify();
+    return { ok: true, fallback: false };
+  }
+
+  // Snapshot and restore so leaving an opened class can bring back the run that was on screen.
+  function snapshot() { const g = get(); return { meta: g.meta, chunks: g.chunks.map((c) => ({ ...c })) }; }
+  function restore(snap) {
+    chunks.clear(); bounds.clear();
+    meta = snap ? snap.meta : null;
+    if (snap) for (const c of snap.chunks) chunks.set(c.index, c);
+    notify();
+  }
+
   function get() {
     const list = [...chunks.values()].sort((a, b) => a.index - b.index);
     const segments = [];
@@ -135,5 +185,5 @@ sf.transcript = (() => {
     sf.events.on('chunk:fail', (d) => { markFailed(d.index); });
   }
 
-  return { reset, addChunk, markFailed, seedFromRecord, get, toText, formatText, subscribe };
+  return { reset, addChunk, markFailed, seedFromRecord, loadClass, snapshot, restore, get, toText, formatText, subscribe };
 })();

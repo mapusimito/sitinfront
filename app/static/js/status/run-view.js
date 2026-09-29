@@ -318,10 +318,6 @@ const runView = (() => {
     paint();
     headerStatus_('');
     $('rvTitle').focus();
-    // The engine files every non-complete run as 'aborted'. Put it back as unfinished (UI side, after the
-    // engine's own async write) so that a reload offers it through the resume banner instead of losing it.
-    const rid = run.id;
-    setTimeout(() => RunStore.markRunStatus(rid, 'in-progress').catch(() => {}), 400);
     if (d.outcome === 'aborted') boundaryBanner(c);
     if (d.outcome !== 'cancelled') endToast(c);
   });

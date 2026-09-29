@@ -65,9 +65,11 @@ if (scenario === 'boundary') {
     await page.waitForSelector('#resumeBanner');
     out.banners = String(await page.locator('#resumeBanner').count());
     out.modelAfterReload = await page.$eval('#modelSelect', (e) => e.value);
-    await page.evaluate(() => { document.getElementById('optSettings').open = true; });
-    await page.selectOption('#modelSelect', 'tiny');
+    // DL31: no manual model reset any more. The page shows its default after a reload; resuming must
+    // restore the run's own model (tiny) by itself, or the transcript would mix two models.
     await page.click('#resumeBtn');
+    await page.waitForTimeout(500);
+    out.modelAfterResumeClick = await page.$eval('#modelSelect', (e) => e.value);
   } else {
     failIdx = [];
     await page.click('#rvRetry');

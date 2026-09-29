@@ -89,7 +89,11 @@
             async function getIncompleteRuns() {
                 return withStore('readonly', async store => {
                     const index = store.index('by-status');
-                    const all = await reqToPromise(index.getAll('in-progress'));
+                    // 'partial' = ended with failed or cancelled chunks: still unfinished, so it is offered too.
+                    const all = [
+                        ...(await reqToPromise(index.getAll('in-progress'))),
+                        ...(await reqToPromise(index.getAll('partial')))
+                    ];
                     return all.sort((a, b) => b.updatedAt - a.updatedAt);
                 });
             }
@@ -103,7 +107,7 @@
                     const all = await reqToPromise(store.getAll());
                     const now = Date.now();
                     const finished = all
-                        .filter(r => r.status !== 'in-progress')
+                        .filter(r => r.status !== 'in-progress' && r.status !== 'partial')
                         .sort((a, b) => b.updatedAt - a.updatedAt);
                     finished.forEach((r, i) => {
                         if (i >= maxRuns || (now - r.updatedAt) > maxAgeMs) {

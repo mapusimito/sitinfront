@@ -52,3 +52,11 @@
 
 ## Manual checks waiting for the user
 Unchanged: Safari via WebDriver, Safari storage eviction (tasks 19.5, 19.6), and the iOS manual check (see `git show 1d06efe:HANDOFF.md`). Decision on DL30.
+
+
+---
+
+## Lead update after T3-b (2026-09-29)
+- T3-b verified by the lead (pytest per file 79 passed, contrast OK, 6 hashes OK, retry check scenarios incl. transcript sha equal to baseline after retry, keyboard 12 of 12, axe 144 rows 0 serious/critical, 0 overflow, 0 page errors).
+- The two decisions T3-b raised were answered by the user and implemented by the lead (plan DL31): the run's own settings are restored on resume/retry, and partial/cancelled runs are stored as `partial` (engine edit) so the 400 ms UI rewrite (DL28) is gone. Any note above that lists DL28 or DL30 as open is superseded.
+- Next: T2-a (transcript view rendered from a data model, then search/copy/export in T2-b). A one-page brief will be at `docs/ux-revamp/briefs/T2-a.md`.

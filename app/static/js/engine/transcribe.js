@@ -400,7 +400,7 @@
                 document.getElementById('copyBtn').style.display = 'flex';
                 document.getElementById('exportBtn').style.display = 'flex';
                 sf.events.emit('run:end', { runId, outcome: 'cancelled', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
-                RunStore.markRunStatus(runId, 'aborted').catch(() => {});
+                RunStore.markRunStatus(runId, 'partial').catch(() => {});
                 RunStore.pruneOldRuns().catch(() => {});
                 return;
             }
@@ -408,7 +408,7 @@
             if (isAbortingTranscription) {
                 showStatus('Transcripción interrumpida por errores repetidos', 'error');
                 sf.events.emit('run:end', { runId, outcome: 'aborted', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
-                RunStore.markRunStatus(runId, 'aborted').catch(() => {});
+                RunStore.markRunStatus(runId, 'partial').catch(() => {});
                 RunStore.pruneOldRuns().catch(() => {});
                 return;
             }
@@ -426,7 +426,7 @@
                 document.getElementById('copyBtn').style.display = 'flex';
                 document.getElementById('exportBtn').style.display = 'flex';
                 sf.events.emit('run:end', { runId, outcome: 'partial', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
-                RunStore.markRunStatus(runId, 'aborted').catch(() => {});
+                RunStore.markRunStatus(runId, 'partial').catch(() => {});
                 RunStore.pruneOldRuns().catch(() => {});
                 return;
             }
@@ -626,7 +626,7 @@
                 document.getElementById('copyBtn').style.display = 'flex';
                 document.getElementById('exportBtn').style.display = 'flex';
                 sf.events.emit('run:end', { runId, outcome: 'cancelled', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
-                RunStore.markRunStatus(runId, 'aborted').catch(() => {});
+                RunStore.markRunStatus(runId, 'partial').catch(() => {});
                 RunStore.pruneOldRuns().catch(() => {});
                 return;
             }
@@ -634,7 +634,7 @@
             if (isAbortingTranscription) {
                 showStatus('Transcripción interrumpida por errores repetidos', 'error');
                 sf.events.emit('run:end', { runId, outcome: 'aborted', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
-                RunStore.markRunStatus(runId, 'aborted').catch(() => {});
+                RunStore.markRunStatus(runId, 'partial').catch(() => {});
                 RunStore.pruneOldRuns().catch(() => {});
                 return;
             }
@@ -652,7 +652,7 @@
                 document.getElementById('copyBtn').style.display = 'flex';
                 document.getElementById('exportBtn').style.display = 'flex';
                 sf.events.emit('run:end', { runId, outcome: 'partial', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
-                RunStore.markRunStatus(runId, 'aborted').catch(() => {});
+                RunStore.markRunStatus(runId, 'partial').catch(() => {});
                 RunStore.pruneOldRuns().catch(() => {});
                 return;
             }

@@ -88,7 +88,26 @@ async function handleDiscardClick() {
   document.getElementById('recordBtn').focus();
 }
 
+/**
+ * A resumed or retried run must use the settings it started with (they are stored in the run
+ * record), not whatever the page has selected now: otherwise one transcript mixes two models.
+ * The controls are updated too, so the screen shows what is actually being used.
+ */
+function applyRunSettings(record) {
+  const set = (id, value) => {
+    const el = document.getElementById(id);
+    if (!el || value === undefined || value === null) return;
+    if (el.tagName === 'SELECT' && ![...el.options].some((o) => o.value === value)) return;
+    el.value = value;
+    el.dispatchEvent(new Event('change'));
+  };
+  set('modelSelect', record.model);
+  set('languageSelect', record.language);
+  set('contextInput', record.context || '');
+}
+
 async function resumeRun(record) {
+  applyRunSettings(record);
   const doneMap = {};
   for (const [chunkId, result] of Object.entries(record.chunkResults)) {
     if (result.status === 'done') doneMap[chunkId] = result;

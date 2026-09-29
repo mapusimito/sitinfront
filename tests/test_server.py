@@ -771,7 +771,7 @@ def test_partial_failure_still_shows_summary_and_export_and_marks_run(variant):
     assert r["chunkDone"] == 2 and r["chunkFail"] == 1
     assert r["summaryCardActive"] is True
     assert r["copyDisplay"] == "flex" and r["exportDisplay"] == "flex"
-    assert r["marks"] == ["aborted"]          # the existing "not fully done" run status
+    assert r["marks"] == ["partial"]          # unfinished run: offered for resume after a reload (DL31)
     assert r["runEnd"] == [{"outcome": "partial", "failedChunks": ["main-1"]}]
     assert "2/3" in r["statusText"] and "1 fallados" in r["statusText"]
 
@@ -795,4 +795,49 @@ def test_cancel_aborts_in_flight_fetches_without_failure_or_retry(variant):
     assert r["chunkFail"] == 0 and r["chunkRetry"] == 0
     assert r["runEnd"] == [{"outcome": "cancelled", "failedChunks": []}]
     assert r["summaryCardActive"] is True and r["copyDisplay"] == "flex"
-    assert r["marks"] == ["aborted"]
+    assert r["marks"] == ["partial"]
+
+
+def test_partial_runs_are_offered_for_resume_and_not_pruned():
+    """DL31: runs that end partial, cancelled or interrupted are stored as 'partial'. The resume
+    list must include them and the pruning of finished runs must not delete them."""
+    src = (REPO_ROOT / "app" / "static" / "js" / "engine" / "run-store.js").read_text()
+    incomplete = src[src.index("async function getIncompleteRuns"):src.index("async function deleteRun")]
+    assert "getAll('in-progress')" in incomplete and "getAll('partial')" in incomplete
+    prune = src[src.index("async function pruneOldRuns"):]
+    assert "r.status !== 'in-progress' && r.status !== 'partial'" in prune
+    transcribe = (REPO_ROOT / "app" / "static" / "js" / "engine" / "transcribe.js").read_text()
+    assert "markRunStatus(runId, 'aborted')" not in transcribe
+
+
+def test_resume_restores_the_original_runs_model_language_and_context():
+    """DL31: resumeRun applies the settings stored in the run record before re-running chunks, so a
+    retry after a reload cannot silently use the page's default model."""
+    import json
+    resume = (REPO_ROOT / "app" / "static" / "js" / "input" / "resume.js").read_text()
+    start = resume.index("function applyRunSettings(")
+    end = resume.index("/* ---------- Recording left in the local safe copy")
+    src = resume[start:end]
+    script = f"""
+    const els = {{}};
+    const mk = (tag, values) => ({{ tagName: tag, value: '', options: (values || []).map((v) => ({{ value: v }})), dispatchEvent(e) {{ this.changed = (this.changed || 0) + 1; }} }});
+    els.modelSelect = mk('SELECT', ['tiny', 'small']); els.modelSelect.value = 'small';
+    els.languageSelect = mk('SELECT', ['es', 'en']); els.languageSelect.value = 'es';
+    els.contextInput = mk('INPUT');
+    global.document = {{ getElementById: (id) => els[id] }};
+    global.Event = class {{ constructor(t) {{ this.type = t; }} }};
+    let seen = null;
+    global.transcribeInChunks = async () => {{ seen = {{ model: els.modelSelect.value, language: els.languageSelect.value, context: els.contextInput.value }}; }};
+    global.transcribeUploadedChunks = global.transcribeInChunks;
+    {src}
+    resumeRun({{ runId: 'r', source: 'mic', totalSeconds: 60, audioBlob: {{}}, chunkResults: {{}},
+                model: 'tiny', language: 'en', context: 'Biología' }}).then(() => {{
+      // an unknown model value must not blank the select
+      applyRunSettings({{ model: 'nope' }});
+      console.log(JSON.stringify({{ seen, afterUnknown: els.modelSelect.value }}));
+    }});
+    """
+    out = _run_node(script)
+    r = json.loads(out)
+    assert r["seen"] == {"model": "tiny", "language": "en", "context": "Biología"}
+    assert r["afterUnknown"] == "tiny"

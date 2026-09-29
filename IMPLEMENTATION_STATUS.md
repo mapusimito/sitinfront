@@ -554,6 +554,7 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 | 22.1 | Per-chunk retry ('Reintentar fragmento N') reusing the existing resume path; if impossible the button says 'Reintentar todo' | ✅ | `run-view.js` `retry()`, button `#rvRetry`; label by failed count (one: 'Reintentar fragmento N', several: 'Reintentar los N fragmentos fallidos', cancelled: 'Continuar la transcripción'); strip seeded from the stored record; 12 min upload with chunk 2 failing then retried: sha256 equals baseline (`tools/ux/retry_check.mjs` scenarios one, two, cancel, reload). Choosing one chunk among several needs the engine (DL26) |
 | 22.2 | Error boundary after 10 consecutive failures with partial export | ✅ | `run-view.js` `boundaryBanner()` (sf-banner--danger, role alert), legacy markup and CSS removed, `failures.js`; 57 min silence file with every request 400: banner with both export buttons, files byte-identical to `exportPartialTranscript()` and `exportErrorLog()` (`retry_check.mjs --scenario boundary`); screen `run-ended-boundary` axe clean |
 | 22.3 | Toast wiring to the shared toast system | ✅ | `run-view.js` `endToast()`: one `sf.toast` warning without auto-dismiss at partial or aborted with action 'Reintentar'; none per retry; `showErrorToast` stays a no-op; verified in `retry_check.mjs` (toast text) |
+| 22.4 | Retry and resume use the run's own model, language and context; partial and cancelled runs are stored as `partial` so a reload offers them (user-approved engine edit) | ✅ | DL31; `app/static/js/input/resume.js` (`applyRunSettings`), `engine/transcribe.js`, `engine/run-store.js`; `tests/test_server.py` (2 new tests); `tools/ux/retry_check.mjs --scenario reload` (sha256 equals the baseline) |
 
 ---
 
@@ -849,15 +850,15 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 19 | UX revamp: design direction and audio investigation | 6 | P0 | 🔄 (4/6; 19.5 ⚠️, 19.6 ⬜) |
 | 20 | UX revamp: adaptation to Direction A (A0) | 4 | P0 | ✅ |
 | 21 | UX revamp: progress (T3-a) | 6 | P0 | ✅ |
-| 22 | UX revamp: failed chunks and retry (T3-b) | 3 | P0 | ✅ |
+| 22 | UX revamp: failed chunks and retry (T3-b) | 4 | P0 | ✅ |
 | 23 | UX revamp: transcript view, search, export | 5 | P0 | ⬜ |
 | 24 | UX revamp: storage (P1) | 6 | P0 | ⬜ |
 | 25 | UX revamp: synchronized player (P2) | 6 | P1 | ⬜ |
 | 26 | UX revamp: saved classes (P3) | 6 | P1 | ⬜ |
 | 27 | UX revamp: final verification (F) | 7 | P0 | ⬜ |
 | 28 | Repo housekeeping and a single branch | 5 | P1 | 🔄 (4/5; 28.5 runs last) |
-| **Total** | | **156 tasks** | | |
-| **Completed (✅)** | | **95 (61%)** | | **✅** |
+| **Total** | | **157 tasks** | | |
+| **Completed (✅)** | | **96 (61%)** | | **✅** |
 | **In progress (🔄)** | | **1 (1%)** | | **🔄** |
 | **Blocked (⚠️)** | | **1 (1%)** | | **⚠️** |
 | **Open (⬜)** | | **59 (38%)** | | **⬜** |

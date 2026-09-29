@@ -10,7 +10,7 @@
 ## Verified (real command output, 2026-09-29, server `MODEL_SIZE=tiny DEVICE=cpu COMPUTE_TYPE=int8 PORT=8645`)
 - `node tools/ux/final_screens.mjs --quality 55`: 68 states, 68 captured (272 images), 0 excluded, 0 not captured; max distinct lecture words on any page 0. Folder 13.4 MB (quality 78 gave 17.7 MB, over the 15 MB limit, DL76).
 - `node tools/ux/privacy_scan.mjs --self-test`: placeholder page 0 lecture words (not flagged); same page with an injected paragraph from the local transcript 41 words (flagged); PASS. The paragraph is read at run time, never printed or saved.
-- `node tools/ux/privacy_scan.mjs --files` over every markdown and json file added by F1c: no lecture text (result in the final report of this step).
+- `node tools/ux/privacy_scan.mjs --files` over every markdown and json file added by F1c: no file reaches the threshold (all 0 except the pre-existing plan, 2 words, below 3).
 - `venv/bin/python -m pytest tests/test_final_screens.py`: 6 passed (every JPG listed in INDEX.md as `synthetic`, excluded states have no files, four images per synthetic state, size under 15 MB, no PNG tracked under `docs/ux-revamp/screens/`). `git ls-files docs/ux-revamp/screens` is empty.
 - Three screenshots looked at by eye: one (transcript-finished desktop light), invented text only.
 

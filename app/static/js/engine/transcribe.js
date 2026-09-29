@@ -220,6 +220,25 @@
             }
         }
 
+        // Saved-class record (P1a). Never throws, never changes the outcome shown to the user.
+        function saveClassRecord(runId, blob, totalSeconds, exactSec, incomplete) {
+            try {
+                const segments = sf.transcript.get().segments;
+                if (!segments.some(sg => !sg.gap && sg.text)) return;
+                const fileName = (blob && blob.name) || '';
+                const now = new Date();
+                const name = (currentContext || '').trim() || fileName ||
+                    `Grabación del ${now.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}`;
+                const meta = {
+                    name, fileName, sizeBytes: blob ? blob.size : null, mimeType: blob ? blob.type : '',
+                    durationSec: totalSeconds, savedAt: now.getTime(), incomplete, segments
+                };
+                if (exactSec) meta.durationExactSec = exactSec;
+                if (!blob) { delete meta.sizeBytes; delete meta.mimeType; delete meta.fileName; }
+                RunStore.saveClass(runId, meta).catch((err) => sf.storage.report(err, { op: 'saveClass', runId }));
+            } catch (err) { sf.storage.report(err, { op: 'saveClass', runId }); }
+        }
+
         async function transcribeInChunks(audioBlob, totalSeconds, resumeOpts) {
             const { resumeRunId = null, doneMap = {} } = resumeOpts || {};
             const chunks = buildChunkPlan(totalSeconds);
@@ -281,7 +300,7 @@
                 RunStore.createRun({
                     runId, source: 'mic', model: currentModel, language: currentLanguage,
                     context: currentContext, totalSeconds, audioBlob, chunkPlan: chunks
-                }).catch(err => console.error('RunStore.createRun failed', err));
+                }).catch((err) => sf.storage.report(err, {op: 'createRun', runId}));
             }
 
             const chunkResults = [];
@@ -353,12 +372,12 @@
                             RunStore.updateChunk(runId, chunkId, {
                                 status: 'done', text: data.text, segments: data.segments,
                                 startMs: chunk.startMs, endMs: chunk.endMs
-                            }).catch(() => {});
+                            }).catch((err) => sf.storage.report(err, {op: 'updateChunk', runId}));
                         },
                         (error, retried) => {
                             sf.events.emit('chunk:fail', { runId, index: chunk.mainIndex, status: null, reason: error.message || String(error), willAbort: failedSegmentTracker.getConsecutiveFailures() >= MAX_CONSECUTIVE_FAILURES });
                             updateChunkStatus(chunkId, 'error');
-                            RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch(() => {});
+                            RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch((err) => sf.storage.report(err, {op: 'updateChunk', runId}));
                             if (failedSegmentTracker.getConsecutiveFailures() >= MAX_CONSECUTIVE_FAILURES) {
                                 triggerErrorBoundary();
                             }
@@ -376,7 +395,7 @@
                     updateChunkStatus(chunkId, 'error');
                     showStatus(`Error en ${chunk.type} ${chunk.mainIndex}: ${err.message}`, 'error');
                     sf.events.emit('chunk:fail', { runId, index: chunk.mainIndex, status: null, reason: err.message, willAbort: false });
-                    RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch(() => {});
+                    RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch((err) => sf.storage.report(err, {op: 'updateChunk', runId}));
                     return {
                         ...chunk,
                         text: '',
@@ -400,16 +419,18 @@
                 document.getElementById('copyBtn').style.display = 'flex';
                 document.getElementById('exportBtn').style.display = 'flex';
                 sf.events.emit('run:end', { runId, outcome: 'cancelled', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
-                RunStore.markRunStatus(runId, 'partial').catch(() => {});
-                RunStore.pruneOldRuns().catch(() => {});
+                saveClassRecord(runId, audioBlob, totalSeconds, null, true);
+                RunStore.markRunStatus(runId, 'partial').catch((err) => sf.storage.report(err, {op: 'markRunStatus', runId}));
+                RunStore.pruneOldRuns().catch((err) => sf.storage.report(err, {op: 'pruneOldRuns', runId}));
                 return;
             }
 
             if (isAbortingTranscription) {
                 showStatus('Transcripción interrumpida por errores repetidos', 'error');
                 sf.events.emit('run:end', { runId, outcome: 'aborted', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
-                RunStore.markRunStatus(runId, 'partial').catch(() => {});
-                RunStore.pruneOldRuns().catch(() => {});
+                saveClassRecord(runId, audioBlob, totalSeconds, null, true);
+                RunStore.markRunStatus(runId, 'partial').catch((err) => sf.storage.report(err, {op: 'markRunStatus', runId}));
+                RunStore.pruneOldRuns().catch((err) => sf.storage.report(err, {op: 'pruneOldRuns', runId}));
                 return;
             }
 
@@ -426,8 +447,9 @@
                 document.getElementById('copyBtn').style.display = 'flex';
                 document.getElementById('exportBtn').style.display = 'flex';
                 sf.events.emit('run:end', { runId, outcome: 'partial', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
-                RunStore.markRunStatus(runId, 'partial').catch(() => {});
-                RunStore.pruneOldRuns().catch(() => {});
+                saveClassRecord(runId, audioBlob, totalSeconds, null, true);
+                RunStore.markRunStatus(runId, 'partial').catch((err) => sf.storage.report(err, {op: 'markRunStatus', runId}));
+                RunStore.pruneOldRuns().catch((err) => sf.storage.report(err, {op: 'pruneOldRuns', runId}));
                 return;
             }
 
@@ -440,8 +462,9 @@
 
             showStatus('Todos los segmentos transcriptos', 'success');
             sf.events.emit('run:end', { runId, outcome: 'complete', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
-            RunStore.markRunStatus(runId, 'done').catch(() => {});
-            RunStore.pruneOldRuns().catch(() => {});
+            saveClassRecord(runId, audioBlob, totalSeconds, null, false);
+            RunStore.markRunStatus(runId, 'done').catch((err) => sf.storage.report(err, {op: 'markRunStatus', runId}));
+            RunStore.pruneOldRuns().catch((err) => sf.storage.report(err, {op: 'pruneOldRuns', runId}));
         }
 
         async function transcribeUploadedChunks(audioBuffer, totalSeconds, _numChunks, originalFile, resumeOpts) {
@@ -505,7 +528,7 @@
                 RunStore.createRun({
                     runId, source: 'upload', model: currentModel, language: currentLanguage,
                     context: currentContext, totalSeconds, audioBlob: originalFile, chunkPlan: chunks
-                }).catch(err => console.error('RunStore.createRun failed', err));
+                }).catch((err) => sf.storage.report(err, {op: 'createRun', runId}));
             }
 
             const limiter = new ConcurrencyLimiter(MAX_CONCURRENT_REQUESTS);
@@ -579,12 +602,12 @@
                             RunStore.updateChunk(runId, chunkId, {
                                 status: 'done', text: data.text, segments: data.segments,
                                 startMs: chunk.startMs, endMs: chunk.endMs
-                            }).catch(() => {});
+                            }).catch((err) => sf.storage.report(err, {op: 'updateChunk', runId}));
                         },
                         (error, retried) => {
                             sf.events.emit('chunk:fail', { runId, index: chunk.mainIndex, status: null, reason: error.message || String(error), willAbort: failedSegmentTracker.getConsecutiveFailures() >= MAX_CONSECUTIVE_FAILURES });
                             updateChunkStatus(chunkId, 'error');
-                            RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch(() => {});
+                            RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch((err) => sf.storage.report(err, {op: 'updateChunk', runId}));
                             if (failedSegmentTracker.getConsecutiveFailures() >= MAX_CONSECUTIVE_FAILURES) {
                                 triggerErrorBoundary();
                             }
@@ -602,7 +625,7 @@
                     updateChunkStatus(chunkId, 'error');
                     showStatus(`Error en ${chunk.type} ${chunk.mainIndex}: ${err.message}`, 'error');
                     sf.events.emit('chunk:fail', { runId, index: chunk.mainIndex, status: null, reason: err.message, willAbort: false });
-                    RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch(() => {});
+                    RunStore.updateChunk(runId, chunkId, { status: 'error' }).catch((err) => sf.storage.report(err, {op: 'updateChunk', runId}));
                     return {
                         ...chunk,
                         text: '',
@@ -626,16 +649,18 @@
                 document.getElementById('copyBtn').style.display = 'flex';
                 document.getElementById('exportBtn').style.display = 'flex';
                 sf.events.emit('run:end', { runId, outcome: 'cancelled', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
-                RunStore.markRunStatus(runId, 'partial').catch(() => {});
-                RunStore.pruneOldRuns().catch(() => {});
+                saveClassRecord(runId, originalFile, totalSeconds, (audioBuffer && audioBuffer.duration) || null, true);
+                RunStore.markRunStatus(runId, 'partial').catch((err) => sf.storage.report(err, {op: 'markRunStatus', runId}));
+                RunStore.pruneOldRuns().catch((err) => sf.storage.report(err, {op: 'pruneOldRuns', runId}));
                 return;
             }
 
             if (isAbortingTranscription) {
                 showStatus('Transcripción interrumpida por errores repetidos', 'error');
                 sf.events.emit('run:end', { runId, outcome: 'aborted', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
-                RunStore.markRunStatus(runId, 'partial').catch(() => {});
-                RunStore.pruneOldRuns().catch(() => {});
+                saveClassRecord(runId, originalFile, totalSeconds, (audioBuffer && audioBuffer.duration) || null, true);
+                RunStore.markRunStatus(runId, 'partial').catch((err) => sf.storage.report(err, {op: 'markRunStatus', runId}));
+                RunStore.pruneOldRuns().catch((err) => sf.storage.report(err, {op: 'pruneOldRuns', runId}));
                 return;
             }
 
@@ -652,8 +677,9 @@
                 document.getElementById('copyBtn').style.display = 'flex';
                 document.getElementById('exportBtn').style.display = 'flex';
                 sf.events.emit('run:end', { runId, outcome: 'partial', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
-                RunStore.markRunStatus(runId, 'partial').catch(() => {});
-                RunStore.pruneOldRuns().catch(() => {});
+                saveClassRecord(runId, originalFile, totalSeconds, (audioBuffer && audioBuffer.duration) || null, true);
+                RunStore.markRunStatus(runId, 'partial').catch((err) => sf.storage.report(err, {op: 'markRunStatus', runId}));
+                RunStore.pruneOldRuns().catch((err) => sf.storage.report(err, {op: 'pruneOldRuns', runId}));
                 return;
             }
 
@@ -666,6 +692,7 @@
 
             showStatus('Todos los segmentos transcriptos', 'success');
             sf.events.emit('run:end', { runId, outcome: 'complete', failedChunks: (failedSegmentTracker.failures || []).map(f => f.chunkId) });
-            RunStore.markRunStatus(runId, 'done').catch(() => {});
-            RunStore.pruneOldRuns().catch(() => {});
+            saveClassRecord(runId, originalFile, totalSeconds, (audioBuffer && audioBuffer.duration) || null, false);
+            RunStore.markRunStatus(runId, 'done').catch((err) => sf.storage.report(err, {op: 'markRunStatus', runId}));
+            RunStore.pruneOldRuns().catch((err) => sf.storage.report(err, {op: 'pruneOldRuns', runId}));
         }

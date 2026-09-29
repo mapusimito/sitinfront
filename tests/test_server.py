@@ -805,7 +805,10 @@ def test_partial_runs_are_offered_for_resume_and_not_pruned():
     incomplete = src[src.index("async function getIncompleteRuns"):src.index("async function deleteRun")]
     assert "getAll('in-progress')" in incomplete and "getAll('partial')" in incomplete
     prune = src[src.index("async function pruneOldRuns"):]
-    assert "r.status !== 'in-progress' && r.status !== 'partial'" in prune
+    # P1a: saved classes (done, partial) are never pruned; only recovery data (in-progress, aborted).
+    assert "r.status === 'in-progress' || r.status === 'aborted'" in prune
+    assert "'done'" not in prune and "'partial'" not in prune
+    assert "async function saveClass" in src
     transcribe = (REPO_ROOT / "app" / "static" / "js" / "engine" / "transcribe.js").read_text()
     assert "markRunStatus(runId, 'aborted')" not in transcribe
 

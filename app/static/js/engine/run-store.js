@@ -102,14 +102,27 @@
                 await withStore('readwrite', store => store.delete(runId));
             }
 
+            // Saved classes (P1a): merge the data the library and the player need into the record.
+            async function saveClass(runId, meta) {
+                await withStore('readwrite', async store => {
+                    const record = await reqToPromise(store.get(runId));
+                    if (!record) return;
+                    Object.assign(record, meta || {});
+                    record.updatedAt = Date.now();
+                    store.put(record);
+                });
+            }
+
+            // Only unfinished recovery data is pruned. `done` and `partial` runs are saved
+            // classes: only the user deletes them.
             async function pruneOldRuns({ maxRuns = 5, maxAgeMs = 7 * 24 * 3600 * 1000 } = {}) {
                 await withStore('readwrite', async store => {
                     const all = await reqToPromise(store.getAll());
                     const now = Date.now();
-                    const finished = all
-                        .filter(r => r.status !== 'in-progress' && r.status !== 'partial')
+                    const recovery = all
+                        .filter(r => r.status === 'in-progress' || r.status === 'aborted')
                         .sort((a, b) => b.updatedAt - a.updatedAt);
-                    finished.forEach((r, i) => {
+                    recovery.forEach((r, i) => {
                         if (i >= maxRuns || (now - r.updatedAt) > maxAgeMs) {
                             store.delete(r.runId);
                         }
@@ -117,5 +130,5 @@
                 });
             }
 
-            return { chunkIdOf, createRun, updateChunk, markRunStatus, getRun, getIncompleteRuns, deleteRun, pruneOldRuns };
+            return { chunkIdOf, createRun, updateChunk, markRunStatus, getRun, getIncompleteRuns, deleteRun, pruneOldRuns, saveClass };
         })();

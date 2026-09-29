@@ -1,7 +1,7 @@
 # sitinfront - Implementation Status
 
 > **Last Updated**: 2026-09-29
-> **Current Milestone**: 23 ✅ UX revamp T2-a, T2-b, T2-c done (transcript view, search, tiles), 24 next; 22 ✅; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 24, 25, 26, 27, then 12.4, 4, 7, 8
+> **Current Milestone**: 24 🔄 P1a done (24.1 to 24.3: write errors surfaced, saved-class data, pruning policy); 23 ✅ UX revamp T2-a, T2-b, T2-c done; 22 ✅; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 24 (24.4 to 24.6), 25, 26, 27, then 12.4, 4, 7, 8
 > **Source**: UX Critique (20 issues identified) + Brand Redesign QA (72→100 compliance); Milestones 11-16 added from "Whisper Transcription Pipeline: Accuracy and Observability Fixes" task spec (2026-09-28); Milestones 17-27 added from the UX/UI revamp brief and plan (UX_REVAMP_PLAN.md, 2026-09-29)
 > **Supersedes**: None
 
@@ -586,7 +586,7 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 
 **Priority**: P0: user decision Q10, write errors first.
 
-**Status**: ⬜ Not started
+**Status**: 🔄 24.1 to 24.3 done (P1a, 2026-09-29); 24.4 to 24.6 open (P1b)
 
 **Depends on**: Milestone 23
 
@@ -594,9 +594,9 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 
 | Task | Description | Status | Notes |
 |------|-------------|--------|-------|
-| 24.1 | RunStore write errors are no longer swallowed: every failed save shows a message and nothing already saved is lost (first) | ⬜ | Not started; today every write error is swallowed |
-| 24.2 | Keep completed runs with original-format audio, absolute-time segments and metadata (name, language, exact decoded duration) | ⬜ | Not started |
-| 24.3 | Saved classes exempt from the 5 run / 7 day pruning; only the user deletes them | ⬜ | Not started |
+| 24.1 | RunStore write errors are no longer swallowed: every failed save shows a message and nothing already saved is lost (first) | ✅ | `app/static/js/core/storage.js` (`sf.storage.report`, `estimate`), `storage:error` in `core/events.js`, catch handlers in `engine/transcribe.js`; `tools/ux/p1a_check.mjs` quota and other scenarios: 1 toast, run completes, hash equals baseline, earlier record readable; screens `storage-error-full/other` axe 0 |
+| 24.2 | Keep completed runs with original-format audio, absolute-time segments and metadata (name, language, exact decoded duration) | ✅ | `RunStore.saveClass` (`engine/run-store.js`) called from `saveClassRecord` (`engine/transcribe.js`); 12 min upload: name, fileName, sizeBytes 5922331 = file size, mimeType audio/x-m4a, durationSec 720, 22 segments = model, strictly increasing |
+| 24.3 | Saved classes exempt from the 5 run / 7 day pruning; only the user deletes them | ✅ | `pruneOldRuns` in `engine/run-store.js` only touches in-progress and aborted; seeded check: 7 done, 2 partial kept, 3 old and excess recovery runs gone; `tests/test_server.py::test_partial_runs_are_offered_for_resume_and_not_pruned` |
 | 24.4 | `navigator.storage.persist()` with a calm notice if refused and a retry after each save | ⬜ | Not started |
 | 24.5 | Storage-full handling: message before or during saving, offer to delete old classes | ⬜ | Not started |
 | 24.6 | "Descargar" backup per class (original audio format plus transcript .txt) | ⬜ | Not started |
@@ -770,7 +770,7 @@ Milestone 22 (Failed chunks and retry, T3-b) ✅ DONE ◄── 21
     ↓
 Milestone 23 (Transcript view, search, export, T2-a to T2-c) ✅ DONE ◄── 22
     ↓
-Milestone 24 (Storage, P1) ⬜ ◄── 23
+Milestone 24 (Storage, P1) 🔄 P1a done, P1b open ◄── 23
     ↓
 Milestone 25 (Synchronized player, P2) ⬜ ◄── 24
     ↓
@@ -852,18 +852,18 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 21 | UX revamp: progress (T3-a) | 6 | P0 | ✅ |
 | 22 | UX revamp: failed chunks and retry (T3-b) | 4 | P0 | ✅ |
 | 23 | UX revamp: transcript view, search, export | 5 | P0 | ✅ |
-| 24 | UX revamp: storage (P1) | 6 | P0 | ⬜ |
+| 24 | UX revamp: storage (P1) | 6 | P0 | 🔄 (3/6; 24.4 to 24.6 open) |
 | 25 | UX revamp: synchronized player (P2) | 6 | P1 | ⬜ |
 | 26 | UX revamp: saved classes (P3) | 6 | P1 | ⬜ |
 | 27 | UX revamp: final verification (F) | 7 | P0 | ⬜ |
 | 28 | Repo housekeeping and a single branch | 5 | P1 | 🔄 (4/5; 28.5 runs last) |
 | **Total** | | **157 tasks** | | |
-| **Completed (✅)** | | **101 (64%)** | | **✅** |
+| **Completed (✅)** | | **104 (66%)** | | **✅** |
 | **In progress (🔄)** | | **1 (1%)** | | **🔄** |
 | **Blocked (⚠️)** | | **1 (1%)** | | **⚠️** |
-| **Open (⬜)** | | **54 (34%)** | | **⬜** |
+| **Open (⬜)** | | **51 (32%)** | | **⬜** |
 
-Note: recounted from the task rows on 2026-09-29 (T2-c): 101 ✅, 1 🔄, 1 ⚠️, 54 ⬜ = 157. Counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
+Note: recounted from the task rows on 2026-09-29 (P1a): 104 ✅, 1 🔄, 1 ⚠️, 51 ⬜ = 157 (Milestone 24 is now partial: 24.1 to 24.3 ✅). Counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
 
 ---
 

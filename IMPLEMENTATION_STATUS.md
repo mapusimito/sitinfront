@@ -1,7 +1,7 @@
 # sitinfront - Implementation Status
 
 > **Last Updated**: 2026-09-29
-> **Current Milestone**: 27 🔄 F1a, F1b and F1c done (27.1, 27.2, 27.3, 27.5, 27.6 ✅; 27.4 ⚠️ unlogged 12 min run_artifact re-baseline; revamp NOT declared complete before the independent audit); 26 ✅ P3 Mis clases done (26.1 to 26.6: list, open with player, rename, delete, storage summary and banners, header link); 25 🔄 P2 synchronized player built (25.1 to 25.5 ✅, 25.6 open); 24 ✅ P1a and P1b done (24.1 to 24.6: write errors surfaced, saved-class data, pruning policy, persistence notice, storage-full handling, Descargar backup); 23 ✅ UX revamp T2-a, T2-b, T2-c done; 22 ✅; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 27 (27.4, 27.7), 25.6, then 12.4, 4, 7, 8
+> **Current Milestone**: 29 ✅ P4 final visual polish done (29.1 to 29.5); 27 🔄 F1a, F1b and F1c done (27.1, 27.2, 27.3, 27.5, 27.6 ✅; 27.4 ⚠️ unlogged 12 min run_artifact re-baseline; revamp NOT declared complete before the independent audit); 26 ✅ P3 Mis clases done (26.1 to 26.6: list, open with player, rename, delete, storage summary and banners, header link); 25 🔄 P2 synchronized player built (25.1 to 25.5 ✅, 25.6 open); 24 ✅ P1a and P1b done (24.1 to 24.6: write errors surfaced, saved-class data, pruning policy, persistence notice, storage-full handling, Descargar backup); 23 ✅ UX revamp T2-a, T2-b, T2-c done; 22 ✅; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 27 (27.4, 27.7), 25.6, then 12.4, 4, 7, 8
 > **Source**: UX Critique (20 issues identified) + Brand Redesign QA (72→100 compliance); Milestones 11-16 added from "Whisper Transcription Pipeline: Accuracy and Observability Fixes" task spec (2026-09-28); Milestones 17-27 added from the UX/UI revamp brief and plan (UX_REVAMP_PLAN.md, 2026-09-29)
 > **Supersedes**: None
 
@@ -705,7 +705,7 @@ Note: the README rewrite requested in the same housekeeping message is tracked a
 
 **Priority**: P0: they are on main screens ("Mis clases" on mobile) and the user wants screens that are not merely consistent.
 
-**Status**: ⬜ Not started
+**Status**: ✅ Complete (2026-09-29)
 
 **Depends on**: Milestone 26, Milestone 27 (F1c image set)
 
@@ -713,11 +713,11 @@ Note: the README rewrite requested in the same housekeeping message is tracked a
 
 | Task | Description | Status | Notes |
 |------|-------------|--------|-------|
-| 29.1 | "Mis clases" row actions no longer overlap at 375 px (they wrap or compact); remove the global `button { flex: 1; min-width: 100px }` rule from `base.css` and fix every layout that relied on it | ⬜ | Not started; evidence: `final-screens/lib-list__mobile__light.jpg`; style snapshot diff (`tools/ux/style_snapshot.mjs`) must list and justify every change |
-| 29.2 | Headings that receive focus programmatically on view changes (`tabindex="-1"`) show no focus box; real controls keep the 3 px ring | ⬜ | Not started; evidence: yellow box around the h1 in `transcript-finished__mobile__dark.jpg` |
-| 29.3 | Remove the empty duplicate heading "Lo que llevamos" above "Transcripción"; search placeholder fits at 375 px | ⬜ | Not started |
-| 29.4 | Automated text-spill guard: no visible button, link, badge or tile has text wider than its box in any state; added to `tools/ux/screens.mjs` as a blocking check | ⬜ | Not started; must fail on the current library list at 375 before the fix and pass after |
-| 29.5 | Regenerate the final screenshot set with docks static in full-page captures and re-run the privacy scan; index updated | ⬜ | Not started; depends on 29.1 to 29.3 |
+| 29.1 | "Mis clases" row actions no longer overlap at 375 px (they wrap or compact); remove the global `button { flex: 1; min-width: 100px }` rule from `base.css` and fix every layout that relied on it | ✅ | Global rule removed from `app/static/css/base.css:105`; row actions wrap onto several rows at 375 px (`tools/ux/p4_check.mjs`: Tab order and 3 px rings OK); style snapshot diff listed in UX_REVAMP_PLAN.md DL79; guard 0 hits over 136 state-viewports; full sweep 272 rows: 0 serious or overflow |
+| 29.2 | Headings that receive focus programmatically on view changes (`tabindex="-1"`) show no focus box; real controls keep the 3 px ring | ✅ | `app/static/css/base.css:47` (h1 to h3 with `tabindex="-1"`, `:focus` and `:focus-visible`); `p4_check.mjs`: heading focused by code outline `none`, buttons `solid 3px`; `tests/test_text_spill_guard.py` |
+| 29.3 | Remove the empty duplicate heading "Lo que llevamos" above "Transcripción"; search placeholder fits at 375 px | ✅ | `app/templates/index.html` (`h2.rv__sub` removed, placeholder "Buscar"), `app/static/css/status.css`; no other reference (grep), guard reports no placeholder overflow |
+| 29.4 | Automated text-spill guard: no visible button, link, badge or tile has text wider than its box in any state; added to `tools/ux/screens.mjs` as a blocking check | ✅ | `tools/ux/text_spill_lib.mjs`, `text_spill_check.mjs`, blocking check in `tools/ux/screens.mjs`; `tests/test_text_spill_guard.py` (4 tests); flagged lib-list@375 before the fix, 0 hits after (DL82) |
+| 29.5 | Regenerate the final screenshot set with docks static in full-page captures and re-run the privacy scan; index updated | ✅ | `tools/ux/final_screens.mjs` (static docks in full-page captures); 272 JPEGs regenerated, 14 MB, `tests/test_final_screens.py` 6 passed, privacy scan max 0 words, INDEX.md scan 0 |
 
 ---
 
@@ -802,7 +802,7 @@ Milestone 27 (Final verification, F) 🔄 (27.1, 27.2, 27.3, 27.5, 27.6 done; 27
     ↓
 Milestone 28 (Repo housekeeping and a single branch) 🔄 ◄── 27 (28.1 to 28.4 done, 28.5 last)
     ↓
-Milestone 29 (Final visual polish) ⬜ ◄── 26, 27 (runs before 28.5)
+Milestone 29 (Final visual polish) ── ✅ DONE ◄── 26, 27 (runs before 28.5)
 ```
 
 ---
@@ -881,14 +881,14 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 26 | UX revamp: saved classes (P3) | 6 | P1 | ✅ |
 | 27 | UX revamp: final verification (F) | 7 | P0 | 🔄 (5/7; 27.1, 27.2, 27.3, 27.5, 27.6 ✅; 27.4 ⚠️; 27.7 ⬜) |
 | 28 | Repo housekeeping and a single branch | 5 | P1 | 🔄 (4/5; 28.5 runs last) |
-| 29 | UX revamp: final visual polish | 5 | P0 | ⬜ |
+| 29 | UX revamp: final visual polish | 5 | P0 | ✅ |
 | **Total** | | **162 tasks** | | |
-| **Completed (✅)** | | **123 (76%)** | | **✅** |
+| **Completed (✅)** | | **128 (79%)** | | **✅** |
 | **In progress (🔄)** | | **1 (1%)** | | **🔄** |
 | **Blocked (⚠️)** | | **2 (1%)** | | **⚠️** |
-| **Open (⬜)** | | **36 (22%)** | | **⬜** |
+| **Open (⬜)** | | **31 (19%)** | | **⬜** |
 
-Note: recounted from the task rows on 2026-09-29 (F1c): 123 ✅, 1 🔄 (12.4), 2 ⚠️ (19.5 and 27.4), 31 ⬜ = 157 (27.1, 27.2, 27.3, 27.5, 27.6 ✅; 27.4 ⚠️; the count includes the 13 BR.x rows and row 3.2, whose description contains a pipe). Counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
+Note: recounted from the task rows on 2026-09-29 (P4): 128 ✅, 1 🔄 (12.4), 2 ⚠️ (19.5 and 27.4), 31 ⬜ = 162 (rows 14.4 and 14.5 carry '✅ (left as-is)' and count as ✅; previous notes said 157 and omitted those and other rows; the table total 162 was already right). Earlier text: 157 (27.1, 27.2, 27.3, 27.5, 27.6 ✅; 27.4 ⚠️; the count includes the 13 BR.x rows and row 3.2, whose description contains a pipe). Counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
 
 ---
 

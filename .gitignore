@@ -71,5 +71,8 @@ docs/ux-revamp/screens/
 # Playwright MCP session cache (console logs and page snapshots, may contain private file names)
 .playwright-mcp/
 
-# Private research (trackers, plans, handoffs, audits, UX/UI material). Never commit. See CLAUDE.md, "Private research rule".
+# Private research (trackers, plans, handoffs, audits, UX/UI material). Never commit.
 private/
+
+# Agent instructions (local only)
+CLAUDE.md

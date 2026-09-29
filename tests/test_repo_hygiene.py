@@ -35,7 +35,7 @@ def test_env_example_has_no_inline_comments_after_values():
 
 
 # ---------------------------------------------------------------------------
-# Private research rule (CLAUDE.md): research documents are never tracked
+# Private research rule: research documents are never tracked
 # ---------------------------------------------------------------------------
 
 _RESEARCH_PATTERNS = [
@@ -55,7 +55,7 @@ def _tracked():
 
 def test_research_documents_are_not_tracked():
     bad = [f for f in _tracked() if any(re.match(p, f) for p in _RESEARCH_PATTERNS)]
-    assert not bad, f"private research must not be committed (see CLAUDE.md): {bad[:5]}"
+    assert not bad, f"private research must not be committed: {bad[:5]}"
 
 
 def test_private_folder_is_gitignored():

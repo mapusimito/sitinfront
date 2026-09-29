@@ -13,7 +13,7 @@ for (const n of NAMES) {
     .split('\n').map((l) => '  ' + l.trim()).join('\n');
   out += `<symbol id="i-${n}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">\n${inner}\n</symbol>\n`;
 }
-// Brand mark from docs/design/style-guide.html: pixel "S" plus text cursor (74x70 grid).
+// Brand mark from docs/design/brand-guide.html: pixel "S" plus text cursor (74x70 grid).
 out += `<symbol id="mark" viewBox="0 0 74 70"><g fill="currentColor"><rect x="10" y="0" width="40" height="10"/><rect x="0" y="10" width="10" height="20"/><rect x="10" y="30" width="30" height="10"/><rect x="40" y="40" width="10" height="20"/><rect x="0" y="60" width="40" height="10"/><rect x="62" y="0" width="12" height="70"/></g></symbol>\n`;
 out += '</svg>\n';
 fs.writeFileSync(new URL('../../app/static/icons.svg', import.meta.url), out);

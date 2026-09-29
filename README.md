@@ -1,15 +1,23 @@
-# sitinfront
+<div align="center">
+  <img src="app/static/brand/sitinfront-mark.svg" width="72" height="72" alt="sitinfront mark" />
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Engine](https://img.shields.io/badge/engine-CTranslate2-blue)](https://github.com/OpenNMT/CTranslate2)
-[![Model](https://img.shields.io/badge/model-Whisper-blue)](https://github.com/openai/whisper)
-[![API](https://img.shields.io/badge/API-OpenAI--compatible-blue)](#api-reference)
+  # sitinfront
+
+  ### Tú atiende. Nosotros escribimos.
+  *You pay attention. We write it down.*
+
+  [![License](https://img.shields.io/badge/license-MIT-F2FF00.svg?labelColor=000000)](LICENSE)
+  [![Engine](https://img.shields.io/badge/engine-CTranslate2-F2FF00?labelColor=000000)](https://github.com/OpenNMT/CTranslate2)
+  [![Model](https://img.shields.io/badge/model-Whisper-F2FF00?labelColor=000000)](https://github.com/openai/whisper)
+  [![API](https://img.shields.io/badge/API-OpenAI--compatible-F2FF00?labelColor=000000)](#api-reference)
+
+</div>
 
 ---
 
 sitinfront turns a recording of a class into a transcript you can read, search, copy and listen along to. You record in the browser or upload an audio file, and the text comes back with a timestamp on every Whisper segment. The transcription runs on your own server, with [faster-whisper](https://github.com/SYSTRAN/faster-whisper).
 
-The interface is in Spanish. This README is in English and quotes the interface text exactly as it appears in the app.
+The interface is in Spanish (Spain, tuteo). This README is in English and quotes the interface text exactly as it appears in the app.
 
 <p align="center">
   <img src="docs/screenshots/start.jpg" alt="sitinfront start screen: 'Graba o sube tu clase' with the buttons 'Grabar clase' and 'Subir grabación'" width="720" />
@@ -48,7 +56,7 @@ The screenshots below use invented placeholder text, not a real class. They were
 
 ## How it works
 
-sitinfront is a web app on top of faster-whisper (a CTranslate2 reimplementation of OpenAI's Whisper), forked from [neosun100/faster-whisper-web](https://github.com/neosun100/faster-whisper-web). It keeps that transcription pipeline and REST API and rebuilds the interface: Spanish copy, recording and recovery, saved classes and the player.
+sitinfront is a web app on top of faster-whisper (a CTranslate2 reimplementation of OpenAI's Whisper), forked from [neosun100/faster-whisper-web](https://github.com/neosun100/faster-whisper-web). It keeps that transcription pipeline and REST API and rebuilds the interface: its own visual identity, Spanish copy, recording and recovery, saved classes and the player.
 
 The browser cuts the audio into 5 minute chunks (`MAIN_CHUNK_DURATION` in `app/static/js/engine/state.js`), sends up to 3 requests at a time, retries chunks that fail with a retryable error, and puts the chunk texts together in order. There are no overlapping chunks and no merge step between chunks. Everything is also reachable through an OpenAI-compatible REST API at `/v1/audio/transcriptions`, with Swagger docs at `/docs`.
 
@@ -150,7 +158,7 @@ Full interactive docs at `/docs` once the server is running.
 
 ```
 sitinfront/
-├── README.md, LICENSE, CONTRIBUTING.md, CLAUDE.md   Project documents
+├── README.md, LICENSE, CONTRIBUTING.md              Project documents
 ├── Dockerfile, docker-compose.yml, .env.example     Deployment and configuration
 ├── requirements*.txt, setup.py, setup.cfg, MANIFEST.in   Dependencies and packaging
 ├── run.sh, start.sh                                 Launchers (development, container)
@@ -177,19 +185,17 @@ sitinfront/
 ├── docs/                    Public documentation
 │   ├── guides/              How to use and operate (logging, MCP)
 │   ├── reference/           Interfaces and evidence (progress events, README claims)
-│   ├── design/              Visual reference for contributors
+│   ├── design/              Design reference
 │   ├── screenshots/         Images used in this README
 │   └── ux-revamp/baseline/  SHA-256 hashes the transcripts are checked against
 │
-├── runs/                    Local only, git-ignored: one JSON artifact per run
-└── private/                 Local only, git-ignored: working notes, see below
+└── runs/                    Local only, git-ignored: one JSON artifact per run
 ```
 
 Where things go:
 
 - **Code that runs in the product** goes in `app/`. Nothing under `tools/`, `scripts/` or `tests/` is imported by the server.
 - **Anything a user or contributor needs to read** goes in `docs/`, in `guides/` (how to do something), `reference/` (how something works, or evidence) or `design/`.
-- **Working material** (implementation trackers, plans, handoffs, audit notes, mockups, research screenshots) goes in `private/`. It is git-ignored on purpose, and `tests/test_repo_hygiene.py` fails if such files become tracked. The only images allowed in git are under `docs/screenshots/` and `app/static/`.
 - **The root** holds only project documents, deployment files and launchers.
 
 ## Tech stack
@@ -208,7 +214,6 @@ Run one file at a time, for example `pytest tests/test_server.py -v`. Do not run
 
 - [Transcription log and run artifacts](docs/guides/logging.md)
 - [MCP server (inherited from upstream, lightly verified)](docs/guides/mcp.md)
-- [Design reference](docs/design/style-guide.html)
 - [Progress events (the interface for future segment streaming)](docs/reference/progress-events.md)
 - [Evidence for the claims in this README](docs/reference/readme-evidence.md)
 

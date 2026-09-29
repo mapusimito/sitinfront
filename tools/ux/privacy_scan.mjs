@@ -31,7 +31,7 @@ export function buildWhitelist() {
   const sources = [
     path.join(ROOT, 'app/templates/index.html'),
     path.join(ROOT, 'app/static'),
-    path.join(ROOT, 'docs/design/style-guide.html'),
+    path.join(ROOT, 'docs/design/brand-guide.html'),
     path.join(HERE, 'screens.config.mjs'),
     path.join(HERE, 'reader_check.mjs'),
     path.join(HERE, 'mockups'),

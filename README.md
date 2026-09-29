@@ -19,6 +19,23 @@ sitinfront turns a recording of a class into a transcript you can read, search, 
 
 The interface is in Spanish (Spain, tuteo). This README is in English and quotes the interface text exactly as it appears in the app.
 
+<p align="center">
+  <img src="docs/screenshots/start.jpg" alt="sitinfront start screen: 'Graba o sube tu clase' with the buttons 'Grabar clase' and 'Subir grabación'" width="720" />
+</p>
+
+<details>
+<summary>More screens</summary>
+
+The screenshots below use invented placeholder text, not a real class. They were generated with `tools/ux/final_screens.mjs`, which checks each page against the vocabulary of a real recording before an image is kept.
+
+| Transcript with the docked player (a run where one chunk failed) | Saved classes ("Mis clases") |
+|---|---|
+| ![Reading view with timestamps, a highlighted segment, a failed-chunk row and the player](docs/screenshots/transcript-player.jpg) | ![List of saved classes with size, date and actions](docs/screenshots/my-classes.jpg) |
+
+More states (progress, search, errors, dialogs, mobile, light and dark) are in [`docs/ux-revamp/final-screens/INDEX.md`](docs/ux-revamp/final-screens/INDEX.md).
+
+</details>
+
 ## What it does
 
 - **Records or uploads.** Record with the microphone or upload a file ("Subir un archivo"). The browser keeps a local safe copy of a recording while it is being made, and offers to recover it after a reload.
@@ -178,6 +195,13 @@ Run one file at a time, for example `pytest tests/test_server.py -v`. Do not run
 ## Brand
 
 Focus yellow (`#F2FF00`) on room black, Silkscreen for the logotype, Schibsted Grotesk for text, IBM Plex Mono for timestamps. The guide with palette, type, logo usage and voice lives at [`docs/brand-guide.html`](docs/brand-guide.html).
+
+## More documentation
+
+- [Transcription log and run artifacts](docs/logging.md)
+- [MCP server (inherited from upstream, lightly verified)](docs/mcp.md)
+- [Brand guide](docs/brand-guide.html)
+- [Progress events (the interface for future segment streaming)](docs/ux-revamp/PROGRESS_EVENTS.md)
 
 ## License
 

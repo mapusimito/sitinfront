@@ -67,3 +67,6 @@ docs/ux-revamp/baseline/12min/
 docs/ux-revamp/after-*/
 # Working screenshots; the final set is committed by the last UX milestone
 docs/ux-revamp/screens/
+
+# Playwright MCP session cache (console logs and page snapshots, may contain private file names)
+.playwright-mcp/

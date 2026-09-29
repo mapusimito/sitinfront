@@ -1,4 +1,9 @@
-# Faster Whisper MCP Guide
+# sitinfront MCP server (inherited from upstream)
+
+> **Status, checked 2026-09-29.** With `fastmcp` installed, `app/mcp_server.py` loads and exposes exactly the four tools described below (`transcribe`, `get_gpu_status`, `release_gpu`, `list_models`). Transcription through MCP itself has not been exercised in this project, and the web app does not use it.
+> `fastmcp` is not listed in any requirements file: install it yourself (`pip install fastmcp`).
+> This server's defaults (`MODEL_SIZE=base`, `DEVICE=cuda`, `COMPUTE_TYPE=float16`) differ from the web server's auto-detection. On a machine without an NVIDIA GPU set `DEVICE=cpu COMPUTE_TYPE=int8`.
+> The container image built from this repository does not include `fastmcp`, so run the MCP server from a local checkout.
 
 ## Overview
 
@@ -107,29 +112,7 @@ List available Whisper models.
 
 ## MCP Configuration
 
-Add to your MCP client configuration:
-
-```json
-{
-    "mcpServers": {
-        "faster-whisper": {
-            "command": "docker",
-            "args": [
-                "exec", "-i", "faster-whisper",
-                "python", "/app/mcp_server.py"
-            ],
-            "env": {
-                "MODEL_SIZE": "base",
-                "DEVICE": "cuda",
-                "COMPUTE_TYPE": "float16",
-                "GPU_IDLE_TIMEOUT": "300"
-            }
-        }
-    }
-}
-```
-
-Or run directly (if installed locally):
+Add to your MCP client configuration (local checkout, `fastmcp` installed):
 
 ```json
 {

@@ -132,16 +132,23 @@ if (args.pairs) {
     const sr = buf.sampleRate;
     const segs = sf.transcript.get().segments.filter((s) => !s.gap && s.text.trim());
     const out = [];
-    for (const a of segs) {
-      if (out.length >= 8) break;
-      const b = segs.find((s) => Math.abs(s.startMs - a.startMs - 240000) < 60);
-      if (!b || a.startMs < 5000) continue;
-      const win = (ms) => data.subarray(Math.floor(ms / 1000 * sr), Math.floor(ms / 1000 * sr) + 2 * sr);
-      const x = win(a.startMs); const y = win(b.startMs);
+    const corrAt = (x, y) => {
       let sx = 0, sy = 0, sxy = 0, sxx = 0, syy = 0; const len = Math.min(x.length, y.length);
       for (let i = 0; i < len; i++) { sx += x[i]; sy += y[i]; sxy += x[i] * y[i]; sxx += x[i] * x[i]; syy += y[i] * y[i]; }
-      const c = (len * sxy - sx * sy) / Math.sqrt((len * sxx - sx * sx) * (len * syy - sy * sy));
-      out.push(`${(a.startMs / 1000).toFixed(1)}s~${(b.startMs / 1000).toFixed(1)}s:${c.toFixed(3)}`);
+      return (len * sxy - sx * sy) / Math.sqrt((len * sxx - sx * sx) * (len * syy - sy * sy) || 1);
+    };
+    const win = (sec) => data.subarray(Math.max(0, Math.floor(sec * sr)), Math.max(0, Math.floor(sec * sr)) + 2 * sr);
+    // The fixture is the 4 minute clip three times (period exactly 240 s). For each text segment
+    // starting in the first 8 minutes, compare 2 s of PCM at its absolute start with 2 s at start + 240 s.
+    // (Segment pairs whose own starts are 240 s apart do not exist: the tiny model segments each
+    // repetition differently.) High correlation means the decoded stored audio is sound and speech
+    // sits at the absolute time the transcript claims; it does not replace listening.
+    for (const a of segs) {
+      if (out.length >= 10) break;
+      if (a.startMs < 3000 || a.startMs > 470000) continue;
+      const x = win(a.startMs / 1000);
+      const zero = corrAt(x, win(a.startMs / 1000 + 240));
+      out.push(`${(a.startMs / 1000).toFixed(1)}s~${(a.startMs / 1000 + 240).toFixed(1)}s:${zero.toFixed(3)}`);
     }
     return out;
   });

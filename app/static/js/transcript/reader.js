@@ -52,13 +52,18 @@
       time.type = 'button';
       time.setAttribute('aria-label', `Reproducir desde ${hms(s.startMs)}`);
       time.appendChild(document.createTextNode(hms(s.startMs)));
-      if (window.sf && sf.icon) {
-        const ic = document.createElement('span');
-        ic.className = 'sf-segment__now';
-        ic.setAttribute('aria-hidden', 'true');
-        ic.innerHTML = sf.icon('play'); // static icon markup, no user text
-        time.insertBefore(ic, time.firstChild);
-      }
+      const NS = 'http://www.w3.org/2000/svg';
+      const ic = document.createElement('span');
+      ic.className = 'sf-segment__now';
+      ic.setAttribute('aria-hidden', 'true');
+      const svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('class', 'sf-icon');
+      svg.setAttribute('focusable', 'false');
+      const use = document.createElementNS(NS, 'use');
+      use.setAttribute('href', '/static/icons.svg#i-play');
+      svg.appendChild(use);
+      ic.appendChild(svg);
+      time.insertBefore(ic, time.firstChild);
     } else {
       time = el('time', 'sf-segment__time', hms(s.startMs));
       time.setAttribute('datetime', iso(s.startMs));

@@ -109,6 +109,31 @@ const seedLeftover = (page, status) => page.evaluate(async (st) => {
   await checkForRecoverableRecording();
 }, status);
 
+/** P2: a finished synthetic run (3 text rows, one gap) with a real WAV attached to the docked player. */
+const finishedWithPlayer = (extra) => async (p) => {
+  await p.evaluate(() => {
+    const e = (t, d) => sf.events.emit(t, { runId: 'x', ...d });
+    e('run:start', { source: 'upload', totalSeconds: 600, chunkCount: 3, model: 'tiny', language: 'es' });
+    for (let i = 0; i < 3; i++) e('chunk:start', { index: i, total: 3, startMs: i * 200000, endMs: (i + 1) * 200000 });
+    for (const c of [0, 2]) {
+      const segments = [0, 1, 2].map((i) => ({ start: i * 20, end: i * 20 + 15, text: `Frase de prueba ${c * 3 + i + 1}. Es un texto inventado para comprobar el aspecto de la lectura.`, avg_logprob: -0.2 }));
+      e('chunk:done', { index: c, total: 3, text: 'a', segments, wallSec: 30, rawSec: 200 });
+    }
+    e('chunk:fail', { index: 1, status: 400, reason: 'x' });
+    e('run:end', { outcome: 'partial', failedChunks: [] });
+    document.getElementById('copyBtn').style.display = 'flex';
+    document.getElementById('exportBtn').style.display = 'flex';
+    sf.transcriptView.flush();
+  });
+  const b64 = wav(30).toString('base64');
+  await p.evaluate((b) => {
+    const bin = atob(b); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    sf.transcriptPlayer.attach({ blob: new Blob([u], { type: 'audio/wav' }), durationSec: 600 });
+  }, b64);
+  await p.waitForSelector('#tvList button.sf-segment__time');
+  if (extra) await extra(p);
+};
+
 export const screens = [
   // A0 start screen (Direction A). Every A0 state is captured: start, settings open,
   // technical details open, recording, review (with player), file card, mic errors,
@@ -501,4 +526,24 @@ export const screens = [
       await page.waitForSelector('.sf-toast');
     },
   },
+  { name: 'player-docked', path: '/', setup: finishedWithPlayer() },
+  {
+    name: 'player-segment-playing',
+    path: '/',
+    setup: finishedWithPlayer(async (p) => {
+      await p.locator('#tvList .sf-segment').nth(1).locator('button.sf-segment__time').click();
+      await p.waitForSelector('#tvList [aria-current="true"]');
+      await p.evaluate(() => sf.transcriptPlayer.audio().pause());
+    }),
+  },
+  {
+    name: 'player-follow-paused',
+    path: '/',
+    setup: finishedWithPlayer(async (p) => {
+      await p.evaluate(() => window.dispatchEvent(new WheelEvent('wheel', { deltaY: 200 })));
+      await p.waitForSelector('.tv__follow[aria-pressed="false"]');
+    }),
+  },
+  { name: 'player-gap-audio', path: '/', setup: finishedWithPlayer() },
+  { name: 'toolbar-mobile-icons', path: '/', setup: finishedWithPlayer() },
 ];

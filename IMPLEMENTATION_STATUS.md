@@ -1,7 +1,7 @@
 # sitinfront - Implementation Status
 
 > **Last Updated**: 2026-09-29
-> **Current Milestone**: 24 ✅ P1a and P1b done (24.1 to 24.6: write errors surfaced, saved-class data, pruning policy, persistence notice, storage-full handling, Descargar backup); 23 ✅ UX revamp T2-a, T2-b, T2-c done; 22 ✅; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 25, 26, 27, then 12.4, 4, 7, 8
+> **Current Milestone**: 25 🔄 P2 synchronized player built (25.1 to 25.5 ✅, 25.6 open); 24 ✅ P1a and P1b done (24.1 to 24.6: write errors surfaced, saved-class data, pruning policy, persistence notice, storage-full handling, Descargar backup); 23 ✅ UX revamp T2-a, T2-b, T2-c done; 22 ✅; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 25, 26, 27, then 12.4, 4, 7, 8
 > **Source**: UX Critique (20 issues identified) + Brand Redesign QA (72→100 compliance); Milestones 11-16 added from "Whisper Transcription Pipeline: Accuracy and Observability Fixes" task spec (2026-09-28); Milestones 17-27 added from the UX/UI revamp brief and plan (UX_REVAMP_PLAN.md, 2026-09-29)
 > **Supersedes**: None
 
@@ -609,7 +609,7 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 
 **Priority**: P1: builds on stored audio and the transcript view.
 
-**Status**: ⬜ Not started
+**Status**: 🔄 25.1 to 25.5 done (2026-09-29); 25.6 open (Safari and human listening check)
 
 **Depends on**: Milestone 24
 
@@ -617,12 +617,12 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 
 | Task | Description | Status | Notes |
 |------|-------------|--------|-------|
-| 25.1 | Docked player on the finished transcript at 1280 and 375 (reuses `sf-player`) | ⬜ | Not started |
-| 25.2 | Click a segment's timestamp or text to seek and play | ⬜ | Not started |
-| 25.3 | Highlight the playing segment; auto-scroll toggle that pauses on manual scroll | ⬜ | Not started |
-| 25.4 | Keyboard (space, arrows) only outside text fields; every control labelled | ⬜ | Not started |
-| 25.5 | Failed-chunk gap: audio plays, marker says the text is missing | ⬜ | Not started |
-| 25.6 | Acceptance: 5 segment seeks within 0.5 s verified by listening, for Chrome and Safari, recorded and uploaded audio | ⬜ | Not started; Safari part depends on 19.5 |
+| 25.1 | Docked player on the finished transcript at 1280 and 375 (reuses `sf-player`) | ✅ | app/static/js/player/transcript-player.js (attach/detach, run:end hook), `#tvDock` in app/templates/index.html, .tv__dock in app/static/css/transcript.css; 12 min run: dock visible, seek max 720 = stored duration; tools/ux/p2_check.mjs, p2_mobile_check.mjs (readable area 385 px at 375x667); axe 0 serious at 1280 and 375 |
+| 25.2 | Click a segment's timestamp or text to seek and play | ✅ | app/static/js/transcript/reader.js (buildRow, onListClick, setPlayer); 12 min upload: 5 of 5 clicks within 1 s of target after 0.7 s of playback; recording (160 s, Chrome WebM): 5 of 5, element duration Infinity, UI total 00:02:40 |
+| 25.3 | Highlight the playing segment; auto-scroll toggle that pauses on manual scroll | ✅ | transcript-player.js (sync, rAF, follow) and reader.js setCurrent; aria-current moves 7 to 8 across a boundary; manual wheel pauses Seguir, toggle resumes (p2_check.mjs); axe states player-segment-playing, player-follow-paused |
+| 25.4 | Keyboard (space, arrows) only outside text fields; every control labelled | ✅ | transcript-player.js (ArrowLeft/Right, aria-keyshortcuts) plus sf.player Space handler; p2_check.mjs: Space and arrows outside fields, not in search, Space on a focused button activates it; tests/test_transcript_player.py 3 |
+| 25.5 | Failed-chunk gap: audio plays, marker says the text is missing | ✅ | reader.js buildRow gap text with "El audio de este tramo sí se puede escuchar." only while a player is attached; tools/ux/p2_mobile_check.mjs 8 PASS (before/after attach); screen player-gap-audio |
+| 25.6 | Acceptance: 5 segment seeks within 0.5 s verified by listening, for Chrome and Safari, recorded and uploaded audio | ⬜ | Chrome seeks measured (25.2) and PCM correlation substitute done; deferred: listening check needs the user, Safari depends on 19.5 |
 
 ---
 
@@ -772,7 +772,7 @@ Milestone 23 (Transcript view, search, export, T2-a to T2-c) ✅ DONE ◄── 
     ↓
 Milestone 24 (Storage, P1) ✅ DONE ◄── 23
     ↓
-Milestone 25 (Synchronized player, P2) ⬜ ◄── 24
+Milestone 25 (Synchronized player, P2) 🔄 25.1-25.5 done, 25.6 open ◄── 24
     ↓
 Milestone 26 (Saved classes, P3) ⬜ ◄── 25
     ↓
@@ -853,17 +853,17 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 22 | UX revamp: failed chunks and retry (T3-b) | 4 | P0 | ✅ |
 | 23 | UX revamp: transcript view, search, export | 5 | P0 | ✅ |
 | 24 | UX revamp: storage (P1) | 6 | P0 | ✅ |
-| 25 | UX revamp: synchronized player (P2) | 6 | P1 | ⬜ |
+| 25 | UX revamp: synchronized player (P2) | 6 | P1 | 🔄 (5/6; 25.6 ⬜) |
 | 26 | UX revamp: saved classes (P3) | 6 | P1 | ⬜ |
 | 27 | UX revamp: final verification (F) | 7 | P0 | ⬜ |
 | 28 | Repo housekeeping and a single branch | 5 | P1 | 🔄 (4/5; 28.5 runs last) |
 | **Total** | | **157 tasks** | | |
-| **Completed (✅)** | | **107 (68%)** | | **✅** |
+| **Completed (✅)** | | **112 (71%)** | | **✅** |
 | **In progress (🔄)** | | **1 (1%)** | | **🔄** |
 | **Blocked (⚠️)** | | **1 (1%)** | | **⚠️** |
-| **Open (⬜)** | | **48 (31%)** | | **⬜** |
+| **Open (⬜)** | | **43 (27%)** | | **⬜** |
 
-Note: recounted from the task rows on 2026-09-29 (P1b): 107 ✅, 1 🔄, 1 ⚠️, 48 ⬜ = 157 (Milestone 24 is complete: 24.1 to 24.6 ✅). Counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
+Note: recounted from the task rows on 2026-09-29 (P2): 112 ✅, 1 🔄, 1 ⚠️, 43 ⬜ = 157 (25.1 to 25.5 ✅, 25.6 open). Counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
 
 ---
 

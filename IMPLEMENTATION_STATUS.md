@@ -699,7 +699,29 @@ Note: the README rewrite requested in the same housekeeping message is tracked a
 
 ---
 
-### Deferred / Not in Scope (UX revamp, Milestones 17-28)
+## Milestone 29: Final visual polish (defects found in the lead's image review)
+
+**Goal**: Fix the visible defects that axe and the overflow check cannot see, and add an automated guard against text spilling out of its box.
+
+**Priority**: P0: they are on main screens ("Mis clases" on mobile) and the user wants screens that are not merely consistent.
+
+**Status**: ⬜ Not started
+
+**Depends on**: Milestone 26, Milestone 27 (F1c image set)
+
+**Source ref**: lead's review of the committed final screenshots, 2026-09-29 (UX_REVAMP_PLAN.md DL78)
+
+| Task | Description | Status | Notes |
+|------|-------------|--------|-------|
+| 29.1 | "Mis clases" row actions no longer overlap at 375 px (they wrap or compact); remove the global `button { flex: 1; min-width: 100px }` rule from `base.css` and fix every layout that relied on it | ⬜ | Not started; evidence: `final-screens/lib-list__mobile__light.jpg`; style snapshot diff (`tools/ux/style_snapshot.mjs`) must list and justify every change |
+| 29.2 | Headings that receive focus programmatically on view changes (`tabindex="-1"`) show no focus box; real controls keep the 3 px ring | ⬜ | Not started; evidence: yellow box around the h1 in `transcript-finished__mobile__dark.jpg` |
+| 29.3 | Remove the empty duplicate heading "Lo que llevamos" above "Transcripción"; search placeholder fits at 375 px | ⬜ | Not started |
+| 29.4 | Automated text-spill guard: no visible button, link, badge or tile has text wider than its box in any state; added to `tools/ux/screens.mjs` as a blocking check | ⬜ | Not started; must fail on the current library list at 375 before the fix and pass after |
+| 29.5 | Regenerate the final screenshot set with docks static in full-page captures and re-run the privacy scan; index updated | ⬜ | Not started; depends on 29.1 to 29.3 |
+
+---
+
+### Deferred / Not in Scope (UX revamp, Milestones 17-29)
 
 - Surface `scripts/analyze_run.py` loop detection in the UI.
 - Server-side cancellation of an in-progress chunk.
@@ -779,6 +801,8 @@ Milestone 26 (Saved classes, P3) ✅ DONE ◄── 25
 Milestone 27 (Final verification, F) 🔄 (27.1, 27.2, 27.3, 27.5, 27.6 done; 27.4 issue) ◄── 26
     ↓
 Milestone 28 (Repo housekeeping and a single branch) 🔄 ◄── 27 (28.1 to 28.4 done, 28.5 last)
+    ↓
+Milestone 29 (Final visual polish) ⬜ ◄── 26, 27 (runs before 28.5)
 ```
 
 ---
@@ -857,11 +881,12 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 26 | UX revamp: saved classes (P3) | 6 | P1 | ✅ |
 | 27 | UX revamp: final verification (F) | 7 | P0 | 🔄 (5/7; 27.1, 27.2, 27.3, 27.5, 27.6 ✅; 27.4 ⚠️; 27.7 ⬜) |
 | 28 | Repo housekeeping and a single branch | 5 | P1 | 🔄 (4/5; 28.5 runs last) |
-| **Total** | | **157 tasks** | | |
-| **Completed (✅)** | | **123 (78%)** | | **✅** |
+| 29 | UX revamp: final visual polish | 5 | P0 | ⬜ |
+| **Total** | | **162 tasks** | | |
+| **Completed (✅)** | | **123 (76%)** | | **✅** |
 | **In progress (🔄)** | | **1 (1%)** | | **🔄** |
 | **Blocked (⚠️)** | | **2 (1%)** | | **⚠️** |
-| **Open (⬜)** | | **31 (20%)** | | **⬜** |
+| **Open (⬜)** | | **36 (22%)** | | **⬜** |
 
 Note: recounted from the task rows on 2026-09-29 (F1c): 123 ✅, 1 🔄 (12.4), 2 ⚠️ (19.5 and 27.4), 31 ⬜ = 157 (27.1, 27.2, 27.3, 27.5, 27.6 ✅; 27.4 ⚠️; the count includes the 13 BR.x rows and row 3.2, whose description contains a pipe). Counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
 

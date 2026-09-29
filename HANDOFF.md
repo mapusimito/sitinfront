@@ -54,7 +54,7 @@ None in `components.css`. Input-specific pieces live in `input.css` (`in-` prefi
 - `progressToggle` ("Progreso" header button) is still switched on at record start, legacy, T3's.
 - Undecodable audio that passes the metadata check is only caught at the decode step (after Transcribir, before any request). No request is made in either case.
 - Recovered recordings use the recorder mimeType for the blob; normal recordings keep `audio/wav` as before (mislabeled, not sent anywhere).
-- Q9 (getSummary TDZ) still open, untouched.
+- Q9 (getSummary TDZ) is RESOLVED: fixed in `ffa1a40` (user approved). Runs that hit the bug earlier may remain "in progress" in IndexedDB and the resume banner will offer them.
 - I did not update IMPLEMENTATION_STATUS.md (plan gives it to milestone F).
 
 ## Next agent (T3-a, T3-b: system status) should verify first
@@ -137,3 +137,27 @@ PASS  K16 focus stays on the drop zone after a rejection
 
 keyboard pass OK
 ```
+
+
+---
+
+## Lead notes (2026-09-29): user decisions and manual checks
+
+Relay state: PAUSED after T1-b. D0 (design directions, `docs/ux-revamp/directions/index.html`) is done and waiting for the user's choice. P0 (audio persistence facts, `docs/ux-revamp/p0-findings.md`) is done. Decisions Q10 to Q12 are recorded in UX_REVAMP_PLAN.md (DL7 to DL9). Commits since T1: `ffa1a40` (getSummary fix), `24c007d` (test RUNS_DIR isolation), `5e0026e`/`3ed6335` (plan amendment, P0 facts), `f0bd24e` (recorder blob label = real MIME type).
+
+### Safari with WebDriver (user enables it once)
+1. In Terminal: `sudo safaridriver --enable` (asks for your password).
+2. Safari > Settings > Advanced > tick "Show features for web developers"; then menu Develop > "Allow Remote Automation".
+3. Tell the lead it is on. Safari criteria (recorder format, whether Safari plays Chrome's WebM, duration/seek of Safari recordings, IndexedDB persistence, storage quota) are then measured through WebDriver and written to `docs/ux-revamp/p0-findings.md`.
+
+### Safari storage-eviction test for localhost (time-based, do not assume)
+Question: does Safari delete IndexedDB / localStorage for `http://localhost:<port>` after a period without use? Protocol: (a) on day 0 write a marker (an IndexedDB record with a 5 MB Blob plus a localStorage key, each with the written-at timestamp) from a page served at http://localhost:8600, using a WebDriver session, and note the date here; (b) do not open that origin again; use Safari normally; (c) check the marker on day 8 and day 15 (WebKit documents a 7 day cap for script-writable storage of sites without user interaction, which may or may not apply to localhost, so the result must be measured). Record: date written, dates checked, present or gone. RESULT: PENDING (needs Safari automation, see above).
+
+### iOS manual check (for the user, about 10 minutes, after the relevant milestones exist)
+Prerequisites: iPhone and Mac on the same Wi-Fi, server running on the Mac (`./run.sh`, port 8600).
+Important: iOS Safari only allows the microphone on a secure origin. `http://<Mac IP>:8600` is NOT secure, so recording will show the "insecure context" banner (that banner is itself part of the check). Uploading works over http. To test recording on iOS you need an https URL (for example a temporary tunnel such as `cloudflared tunnel --url http://localhost:8600`, or a local certificate); tell the lead which you use.
+1. Upload check: open the app on the iPhone, choose a short audio file (1 to 2 min). Expected: the file card shows name, size and a real duration; Transcribir works; the transcript appears.
+2. Recording check (https only): tap Grabar, allow the microphone, speak 30 s, tap Parar. Expected: the review step shows about 30 s (not 0, not NaN). Tap Transcribir. Expected: a transcript.
+3. Reload check: during a recording, reload the page. Expected: a "Recuperar" banner.
+4. Playback check (after P2 exists): open the saved class, tap 5 different segments. Expected: audio seeks close to each segment (within about half a second) and matches the text.
+5. Report back: iOS version, what worked, what did not, and anything that looked wrong (screenshots welcome).

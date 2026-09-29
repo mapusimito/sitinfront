@@ -1,7 +1,7 @@
 # sitinfront - Implementation Status
 
 > **Last Updated**: 2026-09-29
-> **Current Milestone**: 23 🔄 UX revamp T2-a and T2-b (data model, reading view) done, T2-c next; 22 ✅; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 22, 23, 24, 25, 26, 27, then 12.4, 4, 7, 8
+> **Current Milestone**: 23 ✅ UX revamp T2-a, T2-b, T2-c done (transcript view, search, tiles), 24 next; 22 ✅; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 24, 25, 26, 27, then 12.4, 4, 7, 8
 > **Source**: UX Critique (20 issues identified) + Brand Redesign QA (72→100 compliance); Milestones 11-16 added from "Whisper Transcription Pipeline: Accuracy and Observability Fixes" task spec (2026-09-28); Milestones 17-27 added from the UX/UI revamp brief and plan (UX_REVAMP_PLAN.md, 2026-09-29)
 > **Supersedes**: None
 
@@ -558,13 +558,13 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 
 ---
 
-## Milestone 23: UX revamp: transcript view, search, copy and export (T2-a, T2-b)
+## Milestone 23: UX revamp: transcript view, search, copy and export (T2-a, T2-b, T2-c)
 
 **Goal**: Make the transcript, the actual product, comfortable to read, search and export.
 
 **Priority**: P0: the transcript is the product.
 
-**Status**: 🔄 T2-a and T2-b done (data model, clean export, reading view, 2026-09-29); T2-c (search, toolbar, tiles: 23.3, 23.5) next
+**Status**: ✅ T2-a, T2-b and T2-c done (data model, clean export, reading view, search, toolbar, tiles) (2026-09-29)
 
 **Depends on**: Milestone 22
 
@@ -574,9 +574,9 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 |------|-------------|--------|-------|
 | 23.1 | Reading view rendered from a data model (chunks and segments with absolute times), not only the live stream; title, counts, mono timestamps, honest "Prob. media de token" badge | ✅ | `app/static/js/transcript/reader.js` renders `sf.transcript.get().segments` (one row per segment, incremental append), `app/static/css/transcript.css`, markup in `app/templates/index.html` region-transcript. Real 12 min upload: 22 rows = 22 model segments, first 00:00:00, increasing, text equal (`tools/ux/reader_real_check.mjs`). 2,000 segments: 2000 rows, no long task (`tools/ux/reader_check.mjs`). axe 0 serious/critical, 0 overflow (`screens.config.mjs` transcript-finished, transcript-partial, transcript-2000). Search, toolbar and tiles are T2-c |
 | 23.2 | Incomplete banner and gap marker (text missing, audio available) | ✅ | Banner `sf-banner--warning` and `sf-segment[data-state="failed"]` gap row with real minutes (`reader.js`); `retry_check.mjs --scenario one`: 14 rows, gap "05:00 a 10:00", banner for 1 fragmento, after retry 22 rows and banner hidden. The "audio available" wording is deliberately not written until the player exists (P2), DL38 |
-| 23.3 | In-page search: sticky toolbar, "3 de 27", previous and next, highlight | ⬜ | Not started |
+| 23.3 | In-page search: sticky toolbar, "3 de 27", previous and next, highlight | ✅ | `app/static/js/transcript/search.js` (accent-insensitive model search, `sf-mark` DOM nodes, Enter, Shift+Enter, Escape, wrap), toolbar in `index.html`/`transcript.css`; `tools/ux/search_check.mjs`: real 12 min upload counter equals independent count (96 of "centro", plain, folded and accented), 2,000 segments 130 ms after debounce, max long task 77 ms, sticky at 1280 and 375, XSS literal; `tests/test_transcript_search.py` 4 |
 | 23.4 | Copy and export .txt from clean lines (`[HH:MM:SS] text`, DL32), not the DOM; render model text safely (no innerHTML injection) | ✅ | T2-a: `transcript/model.js` `toText()` used by copy/export. T2-b: `transcript/reader.js` uses `textContent` only and `transcript/segment.js` `appendSegmentToTranscript` rebuilt with `createElement`; XSS check (`reader_check.mjs`): no child elements, `window.__xss` undefined, text literal in both the view and the legacy appender; `tests/test_transcript_reader.py` (2 tests) |
-| 23.5 | Summary tiles with real metrics only; empty state | ⬜ | Not started |
+| 23.5 | Summary tiles with real metrics only; empty state | ✅ | `app/static/js/transcript/summary.js` builds `sf-stat` tiles (Palabras, Duración de la clase, Tiempo de procesamiento, Prob. media de token, Idioma elegido); real run: 1431 words equals model, 57 % equals `calculateAverageTokenProb()`; legacy summary markup and CSS deleted; empty state: tiles hidden until a run ends; header now counts "segmentos" |
 
 ---
 
@@ -768,7 +768,7 @@ Milestone 21 (Progress, T3-a) ✅ DONE ◄── 20
     ↓
 Milestone 22 (Failed chunks and retry, T3-b) ✅ DONE ◄── 21
     ↓
-Milestone 23 (Transcript view, search, export, T2-a and T2-b) 🔄 (T2-a, T2-b done) ◄── 22
+Milestone 23 (Transcript view, search, export, T2-a to T2-c) ✅ DONE ◄── 22
     ↓
 Milestone 24 (Storage, P1) ⬜ ◄── 23
     ↓
@@ -851,19 +851,19 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 20 | UX revamp: adaptation to Direction A (A0) | 4 | P0 | ✅ |
 | 21 | UX revamp: progress (T3-a) | 6 | P0 | ✅ |
 | 22 | UX revamp: failed chunks and retry (T3-b) | 4 | P0 | ✅ |
-| 23 | UX revamp: transcript view, search, export | 5 | P0 | 🔄 (3/5; 23.3, 23.5 in T2-c) |
+| 23 | UX revamp: transcript view, search, export | 5 | P0 | ✅ |
 | 24 | UX revamp: storage (P1) | 6 | P0 | ⬜ |
 | 25 | UX revamp: synchronized player (P2) | 6 | P1 | ⬜ |
 | 26 | UX revamp: saved classes (P3) | 6 | P1 | ⬜ |
 | 27 | UX revamp: final verification (F) | 7 | P0 | ⬜ |
 | 28 | Repo housekeeping and a single branch | 5 | P1 | 🔄 (4/5; 28.5 runs last) |
 | **Total** | | **157 tasks** | | |
-| **Completed (✅)** | | **99 (63%)** | | **✅** |
+| **Completed (✅)** | | **101 (64%)** | | **✅** |
 | **In progress (🔄)** | | **1 (1%)** | | **🔄** |
 | **Blocked (⚠️)** | | **1 (1%)** | | **⚠️** |
-| **Open (⬜)** | | **56 (36%)** | | **⬜** |
+| **Open (⬜)** | | **54 (34%)** | | **⬜** |
 
-Note: counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
+Note: recounted from the task rows on 2026-09-29 (T2-c): 101 ✅, 1 🔄, 1 ⚠️, 54 ⬜ = 157. Counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
 
 ---
 

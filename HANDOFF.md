@@ -1,48 +1,52 @@
 # HANDOFF
 
-> Overwritten by each relay step. Last writer: **T2-b relay agent**, 2026-09-29, after building the transcript reading view (milestone 23, tasks 23.1, 23.2, 23.4).
+> Overwritten by each relay step. Last writer: **T2-c relay agent**, 2026-09-29, after building search, the sticky toolbar and the summary tiles (milestone 23, tasks 23.3 and 23.5). Milestone 23 is done.
 
 ## Milestones completed since the last handoff
 | ID | Commits | What |
 |---|---|---|
-| T2-b (milestone 23, partial) | `T2-b: transcript reading view ...` (see `git log`) | Reading view rendered from `sf.transcript`, gap rows and incomplete banner, safe DOM in the legacy appender, new acceptance scripts and screens. |
+| T2-c (milestone 23, done) | `T2-c: search, sticky toolbar, summary tiles` (see `git log`) | `transcript/search.js`, toolbar in the transcript region, `sf-stat` tiles, header says "segmentos", legacy summary deleted. |
 
-## Verified (real command output, 2026-09-29, server `MODEL_SIZE=tiny DEVICE=cpu COMPUTE_TYPE=int8 PORT=8629`)
-- Real 12 min upload, `tools/ux/reader_real_check.mjs`: rows 22, model segments 22, first `00:00:00`, increasing true, text equal true, title `sample_es_12min.m4a`, meta `00:12:00 | 22 fragmentos | 1431 palabras`, banner hidden, 0 page errors.
-- Partial run, `retry_check.mjs --scenario one` (now also prints `readerAfterFail`, `readerAfterRetry`): after failure 14 rows, gap "Falta el texto de los minutos 05:00 a 10:00.", banner "Transcripción incompleta: falta el texto de 1 fragmento."; after retry 22 rows, no gap, banner hidden, `exportSha` `ae2308e7...ab19` (unchanged baseline).
-- `tools/ux/reader_check.mjs` (synthetic events): XSS through the model and the legacy appender: `window.__xss` undefined, 0 child elements, text literal, 0 img. 2,000 segments (100 chunks of 20): 2000 rows, 2000 model segments, max long task 0 ms, no overflow, whole feed 688 ms including 100 timer yields. Reading width at 1280: 69 to 73 characters per line (12 lines). Tab order reaches `copyBtn` then `exportBtn`. 0 page errors.
-- axe via `screens.mjs --only transcript-finished,transcript-partial,transcript-2000,app-idle` (1280 and 375, light and dark): 16 rows, 0 serious or critical, 0 overflow.
+## Verified (real command output, 2026-09-29, server `MODEL_SIZE=tiny DEVICE=cpu COMPUTE_TYPE=int8 PORT=8631`)
+- Real 12 min upload, `tools/ux/search_check.mjs --real 1`: word "centro", independent count 96 (per segment and over `toText()`), counter "1 de 96", 96 `sf-mark` nodes. Unaccented query and accented query "céntro" both 96. Enter 96 times returns to 1, Shift+Enter goes to 96 (wraps). Escape: 0 marks, empty counter, empty field. 0 page errors.
+- Tiles on that run: Palabras 1431 (model words 1431), Duración de la clase 00:12:00, Tiempo de procesamiento 14s (engine value), Prob. media de token 57 % (`calculateAverageTokenProb()` 0.5656), Idioma elegido Español. Header `00:12:00, 22 segmentos, 1431 palabras`.
+- 2,000 synthetic segments: query "clasificacion de los ejercicios" (text has "clasificación"): 2000 marks, counter "1 de 2000", expected 2000, 281 ms from `fill` including the 150 ms debounce (about 130 ms of work), max long task 77 to 79 ms. No results: "Sin resultados para «zzzq»", 2000 rows still visible.
+- Sticky after scrolling about 12,000 px: toolbar top 0, fully visible at 1280 (61 px tall) and 375 (165 px tall, wraps to 4 rows), no horizontal overflow, all buttons at least 44 px and inside the viewport.
+- XSS: query `<img src=x onerror="window.__xss=1">` against a segment containing it: `__xss` undefined, 0 img, mark text literal. No-results message with `<b>x</b>` shows it literally (0 `b` elements).
+- Keyboard: Tab reaches `tvQuery`, typing, Enter twice moves 1 to 3, Shift+Enter back to 2, Escape clears (0 marks), next Tab lands on `copyBtn` then `exportBtn` (prev and next are disabled without results). Focus outline 3px solid everywhere.
+- axe (`screens.mjs --only transcript-finished,transcript-partial,transcript-2000,transcript-search-results,transcript-search-none,transcript-tiles`, 1280 and 375, light and dark): 24 rows, 0 serious or critical, 0 overflow, 0 page errors. First run found a 21 px overflow at 375 in the no-results state (toolbar buttons shrinking under long counter text): fixed with `flex: none` on buttons and a shrinkable counter, rerun clean.
 - Hashes: `transcribe_check.mjs` 4 min and 12 min into `/tmp/h`, `shasum -c`: 6 of 6 OK. `node tools/ux/contrast.mjs`: all pairs pass.
-- pytest per file: `test_transcript_reader.py` 2 passed, `test_repo_hygiene.py` 3, `test_transcript_model.py` 1, `test_input.py` 21, `test_server.py` 49. `tests/test_utils.py` and the whole suite not run.
-- Not run: axe on the empty (hidden) state beyond `app-idle` (same hidden region), Safari.
+- pytest per file: `test_transcript_search.py` 4 passed (new), `test_transcript_reader.py` 2, `test_repo_hygiene.py` 3, `test_transcript_model.py` 1, `test_input.py` 21, `test_server.py` 49. `tests/test_utils.py` and the whole suite not run.
+- `IMPLEMENTATION_STATUS.md` Summary recounted from task rows: 101 done, 1 in progress, 1 blocked, 54 open = 157 (the previous 99 was correct for before this milestone; per-milestone counts match the rows).
 
 ## Every displayed value traced to its source
 | Value | Source |
 |---|---|
-| Row text, time | `sf.transcript.get().segments` (`text`, `startMs`) |
-| Badge NN % | `round(100 * exp(avgLogprob))` of that segment, omitted when null |
-| Title | `currentContext`, else `pendingFileName`, else "Grabación del <hoy>" (recordings) |
-| Duration | `run:start.totalSeconds` |
-| Fragmentos, palabras | count of rows with text, words of their text |
-| Gap minutes, banner count | failed chunk bounds from the model, number of gap rows |
+| Search matches and counter | `sf.transcript.get().segments` text (normalized), ordinal in reading order |
+| Palabras, header words | model segments (not gaps), whitespace split |
+| Duración de la clase | `run:start.totalSeconds` via `sf.transcript.get().meta` |
+| Tiempo de procesamiento | engine measurement passed to `displaySummaryCard`, formatted by `formatProcessingTime` |
+| Prob. media de token | `calculateAverageTokenProb()` (duration weighted), "N/D" when null |
+| Idioma elegido | text of the selected option of `#languageSelect` (selection, not detection) |
+| Header "N segmentos" | count of rows with text; banner and gap rows keep "fragmentos" (5 min chunks) |
 
 ## Files touched
-`app/static/js/transcript/{reader,segment}.js`, `app/static/css/{transcript,shell,legacy}.css`, `app/templates/index.html`, `tests/{test_transcript_reader,test_input}.py`, `tests/harness/engine_harness.cjs` (reader.js added to SKIP), `tools/ux/{reader_check,reader_real_check,retry_check,screens.config}.mjs`, `IMPLEMENTATION_STATUS.md`, `UX_REVAMP_PLAN.md` (DL37 to DL40), this file. Engine, server, faster_whisper untouched.
+`app/static/js/transcript/{search,summary,reader}.js`, `app/static/css/{transcript,legacy}.css`, `app/templates/index.html`, `tests/test_transcript_search.py`, `tests/harness/engine_harness.cjs` (search.js in SKIP), `tools/ux/{search_check,screens.config}.mjs`, `IMPLEMENTATION_STATUS.md`, `UX_REVAMP_PLAN.md` (DL41 to DL45), this file. Engine, server, faster_whisper untouched.
 
 ## Deviations from the brief
-- Header "fragmentos" counts segments, banner counts chunks (DL37). Flagged for the user.
-- Reading column is 55ch (brief said 65 to 75 characters, not `ch`; measured 69 to 73 characters).
-- `#region-transcript[data-empty]` replaces the `:has(.transcript-box.empty)` rule (the view sets it), `test_input.py` assertion updated accordingly.
-- `content-visibility: auto` on rows (not in the brief) for long transcripts.
+- `#summaryCard` keeps its id and `active` class (frozen scripts and `tests/harness` read them); it is now the tiles container.
+- Tiles sit below the list (unchanged position), not above it.
+- "Idioma elegido" is the tile label (the brief said Idioma with "elegido").
+- `sf.transcriptView.onRender(fn)` added to the reader so search re-applies highlights after renders.
 
 ## Known issues and unfinished edges
-- A chunk arriving out of order rebuilds the rows after it (rare, cheap).
-- `#summaryCard` legacy summary still below the list (T2-c replaces it).
-- `<time>` is not a seek button yet (P2).
+- At 375 the sticky toolbar is 165 px tall (about a fifth of the screen) when Copiar and Exportar are visible. Candidate for icon-only buttons on mobile, needs a user decision.
+- Search re-runs fully on each render while a run is active (2,000 segments measured fine).
+- `<time>` is not a seek button yet (P2). Docked player is P2.
 
-## What the next agent (T2-c) must verify first
+## What the next agent must verify first
 1. `venv/bin/python -m pytest` per file as above, `node tools/ux/contrast.mjs`, `shasum -c` of the 6 hashes.
-2. `sf.transcriptView.flush()` renders immediately (tests use it); search and toolbar hook into `#tvList` rows (`.sf-segment__text`).
+2. Next milestone is 24 (storage, P1).
 
 ## Manual checks waiting for the user
 Unchanged: Safari via WebDriver, Safari storage eviction (tasks 19.5, 19.6), iOS manual check.

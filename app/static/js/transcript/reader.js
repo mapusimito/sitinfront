@@ -10,6 +10,7 @@
   let rows = []; // { key, el }
   let info = { fileName: '', title: '', active: false };
   let scheduled = false;
+  const afterRender = [];
 
   const p2 = (n) => String(n).padStart(2, '0');
   function hms(ms) {
@@ -99,7 +100,7 @@
     const vals = [
       info.fileName && info.fileName !== title ? info.fileName : '',
       meta && Number.isFinite(meta.totalSeconds) ? hms(meta.totalSeconds * 1000) : '',
-      texts ? `${texts.toLocaleString('es-ES')} ${texts === 1 ? 'fragmento' : 'fragmentos'}` : '',
+      texts ? `${texts.toLocaleString('es-ES')} ${texts === 1 ? 'segmento' : 'segmentos'}` : '',
       words ? `${words.toLocaleString('es-ES')} ${words === 1 ? 'palabra' : 'palabras'}` : '',
     ];
     const metaEl = $('tvMeta');
@@ -115,6 +116,7 @@
     if (partial) {
       $('tvBannerTitle').textContent = `Transcripción incompleta: falta el texto de ${gaps} ${gaps === 1 ? 'fragmento' : 'fragmentos'}.`;
     }
+    afterRender.forEach((f) => f());
   }
 
   function schedule() {
@@ -141,7 +143,7 @@
     sf.events.on('run:end', () => { info.active = false; schedule(); });
     render();
     // For tests and scripted checks: render now instead of on the next frame.
-    sf.transcriptView = { flush: render };
+    sf.transcriptView = { flush: render, onRender: (f) => afterRender.push(f) };
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

@@ -399,6 +399,34 @@ export const screens = [
       });
     },
   },
+  ...[
+    ['transcript-search-results', 'prueba'],
+    ['transcript-search-none', 'zzzq'],
+    ['transcript-tiles', ''],
+  ].map(([name, query]) => ({
+    name,
+    path: '/',
+    setup: async (p) => {
+      await p.evaluate(() => {
+        const e = (t, d) => sf.events.emit(t, { runId: 'x', ...d });
+        e('run:start', { source: 'upload', totalSeconds: 600, chunkCount: 2, model: 'tiny', language: 'es' });
+        for (let c = 0; c < 2; c++) {
+          e('chunk:start', { index: c, total: 2, startMs: c * 300000, endMs: (c + 1) * 300000 });
+          const segments = [0, 1, 2].map((i) => ({ start: i * 20, end: i * 20 + 15, text: `Frase de prueba ${c * 3 + i + 1}. Es un texto inventado para comprobar la búsqueda y la lectura.`, avg_logprob: -0.15 - i * 0.05 }));
+          e('chunk:done', { index: c, total: 2, text: segments.map((s) => s.text).join(' '), segments, wallSec: 30, rawSec: 300 });
+        }
+        e('run:end', { outcome: 'done' });
+        document.getElementById('copyBtn').style.display = 'flex';
+        document.getElementById('exportBtn').style.display = 'flex';
+        sf.transcriptView.flush();
+        displaySummaryCard(42000);
+      });
+      if (query) {
+        await p.fill('#tvQuery', query);
+        await p.waitForTimeout(400);
+      }
+    },
+  })),
   { name: 'gallery', path: '/static/gallery.html' },
   {
     name: 'gallery-confirm-dialog',

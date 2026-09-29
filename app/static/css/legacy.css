@@ -204,53 +204,6 @@
             background: var(--muted);
         }
 
-        .summary-card {
-            display: none;
-            margin-top: 24px;
-            padding: 20px;
-            background: color-mix(in srgb, var(--accent-text) 6%, transparent);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-        }
-
-        .summary-card.active {
-            display: block;
-            animation: fadeInSegment 0.5s ease-in;
-        }
-
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-        }
-
-        .summary-item {
-            padding: 12px;
-            background: color-mix(in srgb, var(--muted) 12%, transparent);
-            border-radius: 6px;
-            border-left: 3px solid var(--accent-edge);
-        }
-
-        .summary-item-icon {
-            font-size: 20px;
-            margin-right: 8px;
-            display: none;
-        }
-
-        .summary-item-label {
-            font-size: 11px;
-            color: var(--muted);
-            margin-bottom: 4px;
-        }
-
-        .summary-item-value {
-            font-size: 18px;
-            font-weight: 600;
-            color: var(--accent-text);
-            display: flex;
-            align-items: center;
-        }
-
         .toast {
             position: fixed;
             bottom: 20px;

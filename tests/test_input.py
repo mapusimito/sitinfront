@@ -161,7 +161,8 @@ def test_a0_no_em_dash_in_a0_files():
 
 def test_a0_transcript_hidden_only_while_empty_and_not_running():
     shell = (A0_CSS / "shell.css").read_text()
-    assert 'body:not([data-stage="running"]) #region-transcript:has(.transcript-box.empty)' in shell
+    assert '#region-transcript[data-empty] { display: none; }' in shell
+    assert 'id="region-transcript"' in INDEX and ' data-empty>' in INDEX
 
 
 def test_a0_context_field_is_hidden_on_the_start_screen():

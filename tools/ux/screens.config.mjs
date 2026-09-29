@@ -343,6 +343,62 @@ export const screens = [
       await playerReady(p).catch(() => {});
     },
   },
+  // Transcript reading view (T2-b). Segments are invented placeholders fed through the model events.
+  {
+    name: 'transcript-finished',
+    path: '/',
+    setup: async (p) => {
+      await p.evaluate(() => {
+        const e = (t, d) => sf.events.emit(t, { runId: 'x', ...d });
+        e('run:start', { source: 'upload', totalSeconds: 600, chunkCount: 2, model: 'tiny', language: 'es' });
+        for (let c = 0; c < 2; c++) {
+          e('chunk:start', { index: c, total: 2, startMs: c * 300000, endMs: (c + 1) * 300000 });
+          const segments = [0, 1, 2].map((i) => ({ start: i * 20, end: i * 20 + 15, text: `Frase de prueba ${c * 3 + i + 1}. Es un texto inventado para comprobar el aspecto de la lectura.`, avg_logprob: -0.15 - i * 0.05 }));
+          e('chunk:done', { index: c, total: 2, text: segments.map((s) => s.text).join(' '), segments, wallSec: 30, rawSec: 300 });
+        }
+        e('run:end', { outcome: 'done' });
+        document.getElementById('copyBtn').style.display = 'flex';
+        document.getElementById('exportBtn').style.display = 'flex';
+        sf.transcriptView.flush();
+      });
+    },
+  },
+  {
+    name: 'transcript-partial',
+    path: '/',
+    setup: async (p) => {
+      await p.evaluate(() => {
+        const e = (t, d) => sf.events.emit(t, { runId: 'x', ...d });
+        e('run:start', { source: 'upload', totalSeconds: 900, chunkCount: 3, model: 'tiny', language: 'es' });
+        for (let i = 0; i < 3; i++) e('chunk:start', { index: i, total: 3, startMs: i * 300000, endMs: (i + 1) * 300000 });
+        for (const c of [0, 2]) e('chunk:done', { index: c, total: 3, text: 'a', segments: [{ start: 0, end: 8, text: `Fragmento de prueba ${c}.`, avg_logprob: -0.2 }], wallSec: 30, rawSec: 300 });
+        e('chunk:fail', { index: 1, status: 400, reason: 'x' });
+        e('run:end', { outcome: 'partial', failedChunks: [] });
+        document.getElementById('copyBtn').style.display = 'flex';
+        document.getElementById('exportBtn').style.display = 'flex';
+        sf.transcriptView.flush();
+      });
+    },
+  },
+  {
+    name: 'transcript-2000',
+    path: '/',
+    setup: async (p) => {
+      await p.evaluate(() => {
+        const e = (t, d) => sf.events.emit(t, { runId: 'x', ...d });
+        e('run:start', { source: 'upload', totalSeconds: 10800, chunkCount: 100, model: 'tiny', language: 'es' });
+        for (let c = 0; c < 100; c++) {
+          e('chunk:start', { index: c, total: 100, startMs: c * 108000, endMs: (c + 1) * 108000 });
+          const segments = Array.from({ length: 20 }, (_, i) => ({ start: i * 5, end: i * 5 + 5, text: `Texto de prueba número ${c * 20 + i} para medir la vista.`, avg_logprob: -0.3 }));
+          e('chunk:done', { index: c, total: 100, text: 'a', segments, wallSec: 1, rawSec: 108 });
+        }
+        e('run:end', { outcome: 'done' });
+        document.getElementById('copyBtn').style.display = 'flex';
+        document.getElementById('exportBtn').style.display = 'flex';
+        sf.transcriptView.flush();
+      });
+    },
+  },
   { name: 'gallery', path: '/static/gallery.html' },
   {
     name: 'gallery-confirm-dialog',

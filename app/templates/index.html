@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="/static/css/shell.css">
     <link rel="stylesheet" href="/static/css/input.css">
     <link rel="stylesheet" href="/static/css/status.css">
+    <link rel="stylesheet" href="/static/css/transcript.css">
 </head>
 <body data-stage="idle">
     <a class="sf-skip" href="#main">Saltar al contenido</a>
@@ -230,27 +231,31 @@
         </section>
 
         <!-- region: transcript (owner: transcript team). Reading view, summary, copy/export. -->
-        <section id="region-transcript" class="shell-region" aria-label="Transcripción">
-        <div class="card">
-            <div class="section">
-                <div class="section-title">Transcripción</div>
-                <div id="errorBoundary" hidden aria-hidden="true"></div>
-                <div class="transcript-container">
-                    <div class="transcript-actions">
-                        <button class="btn-secondary" id="copyBtn" onclick="copyToClipboard()" style="display: none;">Copiar</button>
-                        <button class="btn-secondary" id="exportBtn" onclick="exportAsFile()" style="display: none;">Exportar</button>
-                    </div>
-                    <div id="transcript" class="transcript-box empty">Aún no hay transcripción. Graba o sube una clase para empezar.</div>
-                    <div id="summaryCard" class="summary-card">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
-                            <div style="width: 4px; height: 20px; background: var(--foco); border-radius: 2px;"></div>
-                            <div class="section-title" style="margin: 0;">Resumen</div>
-                        </div>
-                        <div class="summary-grid" id="summaryGrid"></div>
-                    </div>
+        <section id="region-transcript" class="shell-region tv" aria-labelledby="tvTitle" data-empty>
+            <div id="errorBoundary" hidden aria-hidden="true"></div>
+            <header class="tv__head">
+                <h2 class="tv__title" id="tvTitle">Transcripción</h2>
+                <p class="tv__meta" id="tvMeta"></p>
+                <div class="tv__actions">
+                    <button type="button" class="sf-btn" id="copyBtn" onclick="copyToClipboard()" style="display: none;"><svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-copy"></use></svg>Copiar transcripción</button>
+                    <button type="button" class="sf-btn" id="exportBtn" onclick="exportAsFile()" style="display: none;"><svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-download"></use></svg>Exportar .txt</button>
                 </div>
+            </header>
+            <div class="sf-banner sf-banner--warning" id="tvBanner" role="status" hidden>
+                <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-triangle-alert"></use></svg>
+                <div class="sf-banner__body"><div class="sf-banner__title" id="tvBannerTitle"></div></div>
             </div>
-        </div>
+            <span class="sf-sr-only" id="tvBadgeHelp">Probabilidad media que el modelo asignó a cada palabra de este fragmento</span>
+            <div class="tv__list" id="tvList"></div>
+            <!-- Legacy appender target (frozen callers and tests). Hidden; the reading view above is the display. -->
+            <div id="transcript" class="transcript-box empty" hidden aria-hidden="true"></div>
+            <div id="summaryCard" class="summary-card">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                    <div style="width: 4px; height: 20px; background: var(--foco); border-radius: 2px;"></div>
+                    <div class="section-title" style="margin: 0;">Resumen</div>
+                </div>
+                <div class="summary-grid" id="summaryGrid"></div>
+            </div>
         </section>
 
         <!-- region: history (owner: system status team). Server-side run log, kept behind a disclosure. -->
@@ -276,6 +281,7 @@
     <script src="/static/js/core/icons.js"></script>
     <script src="/static/js/core/events.js"></script>
     <script src="/static/js/transcript/model.js"></script>
+    <script src="/static/js/transcript/reader.js"></script>
     <script src="/static/js/core/toast.js"></script>
     <script src="/static/js/core/dialog.js"></script>
     <script src="/static/js/engine/state.js"></script>

@@ -14,7 +14,9 @@ const scripts = [...html.matchAll(/<script src="\/static\/([^"]+)"/g)].map((m) =
 const SKIP = new Set(['js/engine/run-store.js', 'js/engine/audio.js', 'js/main.js', 'js/core/shell.js',
   'js/core/theme.js', 'js/core/ui.js', 'js/core/icons.js',
   // Input region scripts wire the real page (DOM, mic, IndexedDB) and are not engine code.
-  'js/input/stage.js', 'js/input/safe-copy.js', 'js/input/recorder.js', 'js/input/upload.js', 'js/input/resume.js']);
+  'js/input/stage.js', 'js/input/safe-copy.js', 'js/input/recorder.js', 'js/input/upload.js', 'js/input/resume.js',
+  // Reading view: pure DOM rendering of the model (T2-b), not engine code.
+  'js/transcript/reader.js']);
 
 const [variant, failArg, failStatusArg, cancelArg] = process.argv.slice(2);
 const cancelAt = cancelArg === undefined ? -1 : Number(cancelArg);

@@ -1,51 +1,48 @@
 # HANDOFF
 
-> Overwritten by each relay step. Last writer: **T2-a relay agent**, 2026-09-29, after building the transcript data model and clean export text (milestone 23, task 23.4 partly, data model of 23.1).
+> Overwritten by each relay step. Last writer: **T2-b relay agent**, 2026-09-29, after building the transcript reading view (milestone 23, tasks 23.1, 23.2, 23.4).
 
 ## Milestones completed since the last handoff
 | ID | Commits | What |
 |---|---|---|
-| T2-a (milestone 23, partial) | `T2-a: transcript data model, ...` and the docs commit after it (see `git log`) | `sf.transcript` model, copy/export/partial export read `toText()` (clean lines), guards read the model, two export hashes re-baselined. |
+| T2-b (milestone 23, partial) | `T2-b: transcript reading view ...` (see `git log`) | Reading view rendered from `sf.transcript`, gap rows and incomplete banner, safe DOM in the legacy appender, new acceptance scripts and screens. |
 
-## Verified (real command output, 2026-09-29, server `MODEL_SIZE=tiny DEVICE=cpu COMPUTE_TYPE=int8 PORT=8627`)
-- Unit (node vm via `tests/test_transcript_model.py`): reset, addChunk in and out of order, absolute times, failed-chunk gap, failed never overwrites done, retry replaces the gap, seedFromRecord (ignores bridge and pending), events, subscribe, empty string, exact expected strings. 1 passed.
-- 12 min upload, `tools/ux/transcript_model_check.mjs`: `{"paragraphs":"22","segments":"22","chunks":"3","firstStamp":"00:00:00","strictlyIncreasing":"true","endsSingleNewline":"true","joinEqual":"true","clipboardEqual":"true","exportEqual":"true","errors":[]}`.
-- Fault, `retry_check.mjs --scenario one` (chunk 1 returns 400): after the failure `toText()` has `[00:05:00] (sin texto: este tramo no se pudo transcribir, hasta 00:10:00)`; after the retry `exportSha` is `ae2308e7...ab19`, equal to the uninterrupted run. `sha` of `.segment-text` still `05f6d73b...9289`.
-- Reload, `--scenario reload`: 1 resume banner, Continuar, final `exportSha` `ae2308e7...ab19` (model seeded from the record), 0 page errors.
-- Hashes: `transcribe_check.mjs` 4 min and 12 min into `/tmp/h`, then `shasum -c` against the new SHA256SUMS: 6 of 6 OK. Before the re-baseline only the two export lines failed; `run_artifact.json` and `transcript_segments.txt` (4 lines) were byte-identical. The script exits 3 if legacy DOM `.segment-text` differs from the model chunk texts (it did not).
-- Export hashes: 4 min `081c17822c32...c758` to `4006a14dc63d...9116`; 12 min `ccb178e9845f...0166` to `ae2308e79c4a...ab19`.
-- pytest per file: `test_input.py` 21 passed, `test_server.py` 49 passed, `test_repo_hygiene.py` 3 passed, `test_transcript_model.py` 1 passed. `contrast.mjs`: all pairs pass. `tests/test_utils.py` and the whole suite not run.
-- axe (`screens.mjs --only app-idle,run-ended-partial`, output to /tmp/scr): 8 rows, 0 serious or critical, 0 overflow, 0 page errors.
-- `git diff HEAD` on `app/server.py`, `faster_whisper/`, `app/static/js/engine/`: empty.
+## Verified (real command output, 2026-09-29, server `MODEL_SIZE=tiny DEVICE=cpu COMPUTE_TYPE=int8 PORT=8629`)
+- Real 12 min upload, `tools/ux/reader_real_check.mjs`: rows 22, model segments 22, first `00:00:00`, increasing true, text equal true, title `sample_es_12min.m4a`, meta `00:12:00 | 22 fragmentos | 1431 palabras`, banner hidden, 0 page errors.
+- Partial run, `retry_check.mjs --scenario one` (now also prints `readerAfterFail`, `readerAfterRetry`): after failure 14 rows, gap "Falta el texto de los minutos 05:00 a 10:00.", banner "Transcripción incompleta: falta el texto de 1 fragmento."; after retry 22 rows, no gap, banner hidden, `exportSha` `ae2308e7...ab19` (unchanged baseline).
+- `tools/ux/reader_check.mjs` (synthetic events): XSS through the model and the legacy appender: `window.__xss` undefined, 0 child elements, text literal, 0 img. 2,000 segments (100 chunks of 20): 2000 rows, 2000 model segments, max long task 0 ms, no overflow, whole feed 688 ms including 100 timer yields. Reading width at 1280: 69 to 73 characters per line (12 lines). Tab order reaches `copyBtn` then `exportBtn`. 0 page errors.
+- axe via `screens.mjs --only transcript-finished,transcript-partial,transcript-2000,app-idle` (1280 and 375, light and dark): 16 rows, 0 serious or critical, 0 overflow.
+- Hashes: `transcribe_check.mjs` 4 min and 12 min into `/tmp/h`, `shasum -c`: 6 of 6 OK. `node tools/ux/contrast.mjs`: all pairs pass.
+- pytest per file: `test_transcript_reader.py` 2 passed, `test_repo_hygiene.py` 3, `test_transcript_model.py` 1, `test_input.py` 21, `test_server.py` 49. `tests/test_utils.py` and the whole suite not run.
+- Not run: axe on the empty (hidden) state beyond `app-idle` (same hidden region), Safari.
 
-## Every displayed or exported value traced to its source
+## Every displayed value traced to its source
 | Value | Source |
 |---|---|
-| Paragraph text | `chunk:done.segments[].text` (trimmed) or stored `chunkResults['main-N'].segments` |
-| Paragraph timestamp | `chunk:start.startMs` (or stored `startMs`) + `round(segment.start * 1000)`, floored to seconds |
-| Gap paragraph range | `chunk:start.startMs/endMs` of the failed chunk |
+| Row text, time | `sf.transcript.get().segments` (`text`, `startMs`) |
+| Badge NN % | `round(100 * exp(avgLogprob))` of that segment, omitted when null |
+| Title | `currentContext`, else `pendingFileName`, else "Grabación del <hoy>" (recordings) |
+| Duration | `run:start.totalSeconds` |
+| Fragmentos, palabras | count of rows with text, words of their text |
+| Gap minutes, banner count | failed chunk bounds from the model, number of gap rows |
 
 ## Files touched
-`app/static/js/transcript/{model,view}.js`, `app/static/js/status/failures.js`, `app/templates/index.html` (one script tag), `tools/ux/{transcribe_check,retry_check,transcript_model_check}.mjs`, `tests/test_transcript_model.py`, `tests/harness/transcript_model_test.cjs`, `docs/ux-revamp/baseline/SHA256SUMS`, `IMPLEMENTATION_STATUS.md`, `UX_REVAMP_PLAN.md` (DL34 to DL36), this file.
+`app/static/js/transcript/{reader,segment}.js`, `app/static/css/{transcript,shell,legacy}.css`, `app/templates/index.html`, `tests/{test_transcript_reader,test_input}.py`, `tests/harness/engine_harness.cjs` (reader.js added to SKIP), `tools/ux/{reader_check,reader_real_check,retry_check,screens.config}.mjs`, `IMPLEMENTATION_STATUS.md`, `UX_REVAMP_PLAN.md` (DL37 to DL40), this file. Engine, server, faster_whisper untouched.
 
 ## Deviations from the brief
-- 23.4 is marked 🔄 not ✅: copy and export are done, the safe-rendering part (no `innerHTML`) belongs to T2-b.
-- Code commit and docs commit are separate (acceptance runs happened between them).
-- `retry_check.mjs` extended (prints `modelAfterFail`, `exportSha`).
+- Header "fragmentos" counts segments, banner counts chunks (DL37). Flagged for the user.
+- Reading column is 55ch (brief said 65 to 75 characters, not `ch`; measured 69 to 73 characters).
+- `#region-transcript[data-empty]` replaces the `:has(.transcript-box.empty)` rule (the view sets it), `test_input.py` assertion updated accordingly.
+- `content-visibility: auto` on rows (not in the brief) for long transcripts.
 
 ## Known issues and unfinished edges
-- Legacy `#transcript` DOM and appender remain (T2-b replaces them); `appendSegmentToTranscript` still uses `innerHTML`.
-- A gap paragraph appears for a failed chunk only if a `chunk:start` for it was seen (always true in the engine today).
-- Session env forces color in Node output: tests that parse Node output must print strings or JSON.
+- A chunk arriving out of order rebuilds the rows after it (rare, cheap).
+- `#summaryCard` legacy summary still below the list (T2-c replaces it).
+- `<time>` is not a seek button yet (P2).
 
-## What the next agent (T2-b) must verify first
-1. `git log --oneline | head` shows the T2-a commits; `venv/bin/python -m pytest tests/test_input.py tests/test_server.py tests/test_repo_hygiene.py tests/test_transcript_model.py -q`, `node tools/ux/contrast.mjs`.
-2. `sf.transcript.subscribe` is the hook for rendering; keep `toText()` bytes stable (the two export hashes are now baselines).
+## What the next agent (T2-c) must verify first
+1. `venv/bin/python -m pytest` per file as above, `node tools/ux/contrast.mjs`, `shasum -c` of the 6 hashes.
+2. `sf.transcriptView.flush()` renders immediately (tests use it); search and toolbar hook into `#tvList` rows (`.sf-segment__text`).
 
 ## Manual checks waiting for the user
 Unchanged: Safari via WebDriver, Safari storage eviction (tasks 19.5, 19.6), iOS manual check.
-
----
-
-## Lead update after T2-a (2026-09-29)
-T2-a verified by the lead: engine/server/faster_whisper diff empty; SHA256SUMS changed only in the two `transcript_export.txt` lines; pytest per file (server 49, input 21, hygiene 3, duration 3, analyze 2, tokenizer 3, transcript model 1) passed; contrast OK; 6 hashes OK; 12 min model check (22 paragraphs, 22 segments, 3 chunks, strictly increasing, single trailing newline, joined text equal); keyboard pass; axe 144 rows, 0 serious/critical, 0 overflow, 0 page errors. Next: T2-b (reading view), brief at `docs/ux-revamp/briefs/T2-b.md`.

@@ -6,20 +6,33 @@
                 transcriptBox.classList.remove('empty');
             }
 
-            const statsBadge = (avgTokenProb === null || avgTokenProb === undefined)
-                ? ''
-                : `<span class="segment-badge">${Math.round(avgTokenProb * 100)}% prob. media de token</span>`;
-
+            // DOM built with createElement and textContent: model text is never parsed as HTML.
             const segment = document.createElement('div');
             segment.className = 'segment highlight';
-            segment.innerHTML = `
-                <div class="segment-header">
-                    <span class="segment-timestamp">[${formatTimestamp(startMs)}]</span>
-                    ${statsBadge}
-                    <span style="color: var(--muted); font-size: 12px;">Segment ${segmentNumber}/${totalSegs}</span>
-                </div>
-                <div class="segment-text">${text}</div>
-            `;
+
+            const header = document.createElement('div');
+            header.className = 'segment-header';
+            const stamp = document.createElement('span');
+            stamp.className = 'segment-timestamp';
+            stamp.textContent = `[${formatTimestamp(startMs)}]`;
+            header.appendChild(stamp);
+            if (avgTokenProb !== null && avgTokenProb !== undefined) {
+                const badge = document.createElement('span');
+                badge.className = 'segment-badge';
+                badge.textContent = `${Math.round(avgTokenProb * 100)}% prob. media de token`;
+                header.appendChild(badge);
+            }
+            const counter = document.createElement('span');
+            counter.style.cssText = 'color: var(--muted); font-size: 12px;';
+            counter.textContent = `Segment ${segmentNumber}/${totalSegs}`;
+            header.appendChild(counter);
+
+            const body = document.createElement('div');
+            body.className = 'segment-text';
+            body.textContent = text;
+
+            segment.appendChild(header);
+            segment.appendChild(body);
 
             transcriptBox.appendChild(segment);
 

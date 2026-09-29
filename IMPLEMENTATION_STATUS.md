@@ -1,7 +1,7 @@
 # sitinfront - Implementation Status
 
 > **Last Updated**: 2026-09-29
-> **Current Milestone**: 23 🔄 UX revamp T2-a (transcript data model, clean export) done, T2-b next; 22 ✅; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 22, 23, 24, 25, 26, 27, then 12.4, 4, 7, 8
+> **Current Milestone**: 23 🔄 UX revamp T2-a and T2-b (data model, reading view) done, T2-c next; 22 ✅; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 22, 23, 24, 25, 26, 27, then 12.4, 4, 7, 8
 > **Source**: UX Critique (20 issues identified) + Brand Redesign QA (72→100 compliance); Milestones 11-16 added from "Whisper Transcription Pipeline: Accuracy and Observability Fixes" task spec (2026-09-28); Milestones 17-27 added from the UX/UI revamp brief and plan (UX_REVAMP_PLAN.md, 2026-09-29)
 > **Supersedes**: None
 
@@ -564,7 +564,7 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 
 **Priority**: P0: the transcript is the product.
 
-**Status**: 🔄 T2-a done (data model, clean-line copy/export, 2026-09-29); T2-b (view, search) next
+**Status**: 🔄 T2-a and T2-b done (data model, clean export, reading view, 2026-09-29); T2-c (search, toolbar, tiles: 23.3, 23.5) next
 
 **Depends on**: Milestone 22
 
@@ -572,10 +572,10 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 
 | Task | Description | Status | Notes |
 |------|-------------|--------|-------|
-| 23.1 | Reading view rendered from a data model (chunks and segments with absolute times), not only the live stream; title, counts, mono timestamps, honest "Prob. media de token" badge | ⬜ | Data model done in T2-a (`transcript/model.js`, fed by events and seeded from the run record); the view itself is not rendered from it yet (T2-b) |
-| 23.2 | Incomplete banner and gap marker (text missing, audio available) | ⬜ | Not started |
+| 23.1 | Reading view rendered from a data model (chunks and segments with absolute times), not only the live stream; title, counts, mono timestamps, honest "Prob. media de token" badge | ✅ | `app/static/js/transcript/reader.js` renders `sf.transcript.get().segments` (one row per segment, incremental append), `app/static/css/transcript.css`, markup in `app/templates/index.html` region-transcript. Real 12 min upload: 22 rows = 22 model segments, first 00:00:00, increasing, text equal (`tools/ux/reader_real_check.mjs`). 2,000 segments: 2000 rows, no long task (`tools/ux/reader_check.mjs`). axe 0 serious/critical, 0 overflow (`screens.config.mjs` transcript-finished, transcript-partial, transcript-2000). Search, toolbar and tiles are T2-c |
+| 23.2 | Incomplete banner and gap marker (text missing, audio available) | ✅ | Banner `sf-banner--warning` and `sf-segment[data-state="failed"]` gap row with real minutes (`reader.js`); `retry_check.mjs --scenario one`: 14 rows, gap "05:00 a 10:00", banner for 1 fragmento, after retry 22 rows and banner hidden. The "audio available" wording is deliberately not written until the player exists (P2), DL38 |
 | 23.3 | In-page search: sticky toolbar, "3 de 27", previous and next, highlight | ⬜ | Not started |
-| 23.4 | Copy and export .txt from clean lines (`[HH:MM:SS] text`, DL32), not the DOM; render model text safely (no innerHTML injection) | 🔄 | T2-a done: `app/static/js/transcript/model.js` `toText()`, used by `transcript/view.js` copy/export and `status/failures.js`; `tests/test_transcript_model.py` (1 test, 15 assertions), `tools/ux/transcript_model_check.mjs` (clipboard and download bytes equal `toText()`). Open: the safe rendering part (T2-b), `appendSegmentToTranscript` still uses `innerHTML` |
+| 23.4 | Copy and export .txt from clean lines (`[HH:MM:SS] text`, DL32), not the DOM; render model text safely (no innerHTML injection) | ✅ | T2-a: `transcript/model.js` `toText()` used by copy/export. T2-b: `transcript/reader.js` uses `textContent` only and `transcript/segment.js` `appendSegmentToTranscript` rebuilt with `createElement`; XSS check (`reader_check.mjs`): no child elements, `window.__xss` undefined, text literal in both the view and the legacy appender; `tests/test_transcript_reader.py` (2 tests) |
 | 23.5 | Summary tiles with real metrics only; empty state | ⬜ | Not started |
 
 ---
@@ -768,7 +768,7 @@ Milestone 21 (Progress, T3-a) ✅ DONE ◄── 20
     ↓
 Milestone 22 (Failed chunks and retry, T3-b) ✅ DONE ◄── 21
     ↓
-Milestone 23 (Transcript view, search, export, T2-a and T2-b) 🔄 (T2-a done) ◄── 22
+Milestone 23 (Transcript view, search, export, T2-a and T2-b) 🔄 (T2-a, T2-b done) ◄── 22
     ↓
 Milestone 24 (Storage, P1) ⬜ ◄── 23
     ↓

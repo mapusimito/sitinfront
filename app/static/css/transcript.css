@@ -1,0 +1,21 @@
+/*
+ * Transcript reading view (milestone T2-b). Prefix tv-. Composes sf-btn,
+ * sf-banner and sf-segment. Tokens only.
+ */
+.tv { display: grid; gap: var(--sp-4); }
+.tv__head { display: grid; gap: var(--sp-2); }
+.tv__title { font-size: var(--fs-h2); overflow-wrap: anywhere; }
+.tv__meta { color: var(--muted); display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); overflow-wrap: anywhere; margin: 0; }
+.tv__meta:empty { display: none; }
+.tv__actions { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); }
+.tv__list { display: grid; }
+.tv__list:empty { display: none; }
+/* Reading measure: about 70 characters per line. */
+.tv .sf-segment { grid-template-columns: 5.5rem minmax(0, 55ch); }
+.tv .sf-segment__text { margin: 0; overflow-wrap: anywhere; }
+.tv .sf-segment[data-state="failed"] .sf-segment__text { color: var(--danger); }
+@media (max-width: 30rem) {
+  .tv .sf-segment { grid-template-columns: minmax(0, 1fr); }
+}
+/* Long transcripts: skip layout work for rows far off screen. */
+.tv .sf-segment { content-visibility: auto; contain-intrinsic-size: auto 5rem; }

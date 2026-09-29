@@ -28,6 +28,16 @@ const rec = await page.evaluate(async (secs) => {
   const sizes = pieces.map((p) => p.size);
   return { support, mimeType: r.mimeType, audioBitsPerSecond: r.audioBitsPerSecond, trackSettings: settings, pieces: sizes, bytes: blob.size, decodedSeconds: buf.duration, decodedRate: buf.sampleRate, channels: buf.numberOfChannels, bytesPerSecond: blob.size / buf.duration, decodedWavBytesAt16kMono: buf.duration * 16000 * 2 };
 }, Number(args.secs || 30));
+const mp4 = await page.evaluate(async () => {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const r = new MediaRecorder(stream, { mimeType: 'audio/mp4' }); const pieces = []; r.ondataavailable = (e) => pieces.push(e.data);
+  const stopped = new Promise((res) => (r.onstop = res)); r.start(5000); await new Promise((res) => setTimeout(res, 12000)); r.stop(); await stopped; stream.getTracks().forEach((t) => t.stop());
+  const blob = new Blob(pieces, { type: r.mimeType }); const a = new Audio(); const u = URL.createObjectURL(blob);
+  const load = await new Promise((res) => { a.onloadedmetadata = () => res('ok'); a.onerror = () => res('error'); a.src = u; });
+  const ac = new AudioContext(); const buf = await ac.decodeAudioData(await blob.arrayBuffer());
+  return { mimeType: r.mimeType, bytes: blob.size, pieces: pieces.length, audioDuration: String(a.duration), load, decodedSeconds: buf.duration, bytesPerSecond: blob.size / buf.duration };
+}).catch((e) => ({ error: String(e) }));
+console.log('RECORDER_MP4', JSON.stringify(mp4));
 console.log('RECORDER', JSON.stringify(rec, null, 1));
 
 // 2. file matrix through IndexedDB
@@ -40,8 +50,8 @@ const rows = [];
 for (const f of list) {
   const ext = path.extname(f).slice(1).toLowerCase(); if (!types[ext]) continue;
   const b64 = fs.readFileSync(f).toString('base64');
-  for (const label of [types[ext], 'audio/wav']) { // second pass: same bytes mislabelled 'audio/wav' (what the old recorder code did)
-    if (label === 'audio/wav' && !['webm', 'm4a'].includes(ext)) continue;
+  for (const label of [...new Set([types[ext], 'audio/wav'])]) { // second pass: same bytes mislabelled 'audio/wav' (what the old recorder code did)
+    if (label === 'audio/wav' && types[ext] !== 'audio/wav' && !['webm', 'm4a'].includes(ext)) continue;
     const r = await page.evaluate(async ({ b64, label, name }) => {
       const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
       const blob = new Blob([bytes], { type: label });

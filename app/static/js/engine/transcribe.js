@@ -235,7 +235,7 @@
                 };
                 if (exactSec) meta.durationExactSec = exactSec;
                 if (!blob) { delete meta.sizeBytes; delete meta.mimeType; delete meta.fileName; }
-                RunStore.saveClass(runId, meta).catch((err) => sf.storage.report(err, { op: 'saveClass', runId }));
+                RunStore.saveClass(runId, meta).then(() => sf.storage.afterSave()).catch((err) => sf.storage.report(err, { op: 'saveClass', runId }));
             } catch (err) { sf.storage.report(err, { op: 'saveClass', runId }); }
         }
 

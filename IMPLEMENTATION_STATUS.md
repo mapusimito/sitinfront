@@ -668,6 +668,7 @@ Note: this milestone delivers the settings scope of Milestone 4 (settings live i
 | 27.4 | Before and after transcript evidence (6 hashes) and unchanged backend/engine diff | ⬜ | Not started |
 | 27.5 | `legacy.css` deleted and `_UNTOKENIZED_LEGACY` empty | ⬜ | Not started |
 | 27.6 | Progress-event interface documented; deferred and open items listed; ready for independent audit | ⬜ | Not started |
+| 27.7 | README rewrite: describe only what the app does at that point (correct streaming, search, bridges/consensus, Lucide, MODEL_SIZE/DEVICE/COMPUTE_TYPE defaults, upstream Docker image); brand voice | ⬜ | Not started; requirements in UX_REVAMP_PLAN.md section 15; every claim mapped to evidence in HANDOFF.md |
 
 Note: the user's brief says do not declare the revamp complete before an independent audit.
 
@@ -688,6 +689,7 @@ Note: the user's brief says do not declare the revamp complete before an indepen
 - The brand guide promises 4 h and MP4; the app enforces 500 MB and audio only.
 - Repository is public and commit `d3f4902` contains lecture text (two screenshots and a quoted phrase); history not rewritten, awaiting the user's decision.
 - `origin/master` (GitHub default branch) is behind `origin/main`; nothing on master is missing from main.
+- Deployment defaults disagree: `app/server.py` (MODEL_SIZE large-v3-turbo, DEVICE auto-detect, COMPUTE_TYPE per device) versus `docker-compose.yml` (base, cuda, float16), `Dockerfile` (turbo, cuda) and `start.sh` (base, cuda). Outside the UX revamp; the README rewrite (27.7) must state what really happens per way of running.
 - Safari behavior is unverified until 19.5.
 - Runs that hit the old `getSummary` bug may remain "in progress" in IndexedDB and will be offered by the resume banner.
 
@@ -826,12 +828,12 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 24 | UX revamp: storage (P1) | 6 | P0 | ⬜ |
 | 25 | UX revamp: synchronized player (P2) | 6 | P1 | ⬜ |
 | 26 | UX revamp: saved classes (P3) | 6 | P1 | ⬜ |
-| 27 | UX revamp: final verification (F) | 6 | P0 | ⬜ |
-| **Total** | | **150 tasks** | | |
+| 27 | UX revamp: final verification (F) | 7 | P0 | ⬜ |
+| **Total** | | **151 tasks** | | |
 | **Completed (✅)** | | **78 (52%)** | | **✅** |
 | **In progress (🔄)** | | **5 (3%)** | | **🔄** |
 | **Blocked (⚠️)** | | **1 (1%)** | | **⚠️** |
-| **Open (⬜)** | | **66 (44%)** | | **⬜** |
+| **Open (⬜)** | | **67 (44%)** | | **⬜** |
 
 Note: counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5 and the 🔄 rows are 20.1 to 20.4 (committed by an agent, awaiting the lead's verification, so not counted as done).
 

@@ -38,3 +38,12 @@ def test_header_status_pill_wraps_to_its_own_row_on_small_screens():
     block = css[start:css.index("/* ---------- Disclosure", start)]
     assert ".sf-head { flex-wrap: wrap; }" in block
     assert ".sf-head__status:has(.sf-head__pill:not([hidden]))" in block and "flex: 1 0 100%" in block
+
+
+def test_library_row_actions_use_two_columns_on_phones():
+    """Lead polish after P4: five actions per class took 3 to 4 ragged rows at 375 px."""
+    from pathlib import Path
+    css = (Path(__file__).parent.parent / "app" / "static" / "css" / "library.css").read_text()
+    start = css.index("@media (max-width: 30rem)", css.index(".lib-class__act {"))
+    block = css[start:css.index("}\n}", start) + 3]
+    assert ".lib-class__act { display: grid; grid-template-columns: 1fr 1fr; }" in block

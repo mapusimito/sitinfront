@@ -24,6 +24,11 @@
 .lib-class__name a { text-decoration-thickness: 2px; }
 .lib-class__meta { display: flex; flex-wrap: wrap; gap: var(--sp-1) var(--sp-4); align-items: center; color: var(--muted); font-size: var(--fs-sm); }
 .lib-class__act { display: flex; flex-wrap: wrap; gap: var(--sp-2); }
+/* Phones: two even columns instead of one ragged wrapped row per action (5 actions: 3 rows, not 5). */
+@media (max-width: 30rem) {
+  .lib-class__act { display: grid; grid-template-columns: 1fr 1fr; }
+  .lib-class__act .sf-btn { justify-content: center; text-align: center; padding-inline: var(--sp-2); font-size: var(--fs-sm); white-space: normal; }
+}
 .lib-class__rename { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: flex-end; }
 .lib-class__rename .sf-field { flex: 1 1 14rem; }
 .lib-err { margin: 0; color: var(--danger); font-size: var(--fs-sm); font-weight: var(--fw-bold); }

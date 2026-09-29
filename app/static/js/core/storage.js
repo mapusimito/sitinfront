@@ -31,7 +31,11 @@ sf.storage = (() => {
         title: kind === 'full'
           ? 'No se ha podido guardar la clase en este navegador: almacenamiento lleno.'
           : 'No se ha podido guardar la clase en este navegador.',
-        message: 'La transcripción sigue en marcha y podrás copiarla o exportarla.',
+        message: 'La transcripción no se pierde: puedes copiarla o exportarla.',
+        actions: [
+          { label: 'Gestionar clases', onClick: () => { try { sf.persist.openManager(); } catch (_) { /* never throw */ } } },
+          ...(runId ? [{ label: 'Descargar copia', onClick: () => { try { sf.persist.downloadCopy(runId); } catch (_) { /* never throw */ } } }] : [])
+        ],
         duration: 0
       });
     } catch (_) { /* never throw */ }
@@ -46,5 +50,22 @@ sf.storage = (() => {
     } catch (_) { return null; }
   }
 
-  return { report, estimate, classify };
+  // 'granted' | 'refused' | 'unsupported'. Never throws.
+  async function ensurePersistent() {
+    try {
+      const st = navigator.storage;
+      if (!st || typeof st.persist !== 'function') return 'unsupported';
+      if (typeof st.persisted === 'function' && await st.persisted()) return 'granted';
+      return (await st.persist()) ? 'granted' : 'refused';
+    } catch (_) { return 'unsupported'; }
+  }
+
+  // Called after every successful saveClass: retry persist() and tell the UI to refresh.
+  async function afterSave() {
+    const state = await ensurePersistent();
+    try { sf.events.emit('storage:saved', { persistence: state }); } catch (_) { /* never throw */ }
+    return state;
+  }
+
+  return { report, estimate, classify, ensurePersistent, afterSave };
 })();

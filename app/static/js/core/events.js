@@ -14,6 +14,7 @@
  *   segment     {index, chunkIndex, startMs, endMs, text, avgLogprob}
  *               RESERVED for future server-side streaming. Not emitted today.
  *   run:end     {outcome:'complete'|'partial'|'aborted'|'cancelled', failedChunks:[]}
+ *   storage:saved {persistence:'granted'|'refused'|'unsupported'}  a class was saved, persist() retried (core/storage.js)
  *   storage:error {op, runId, kind:'full'|'other', message}  a RunStore save failed (core/storage.js)
  *
  * Full contract: UX_REVAMP_PLAN.md section 6.
@@ -21,7 +22,7 @@
 window.sf = window.sf || {};
 sf.events = (() => {
   const TYPES = ['run:start', 'phase', 'chunk:start', 'chunk:retry', 'chunk:done', 'chunk:fail',
-    'eta', 'segment', 'run:end', 'storage:error'];
+    'eta', 'segment', 'run:end', 'storage:error', 'storage:saved'];
   const handlers = new Map();
 
   function on(type, fn) {

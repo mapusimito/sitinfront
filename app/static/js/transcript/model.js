@@ -95,9 +95,10 @@ sf.transcript = (() => {
     return `${p(Math.floor(t / 3600))}:${p(Math.floor((t % 3600) / 60))}:${p(t % 60)}`;
   }
 
-  function toText() {
+  // One implementation of the clean-line format, shared by toText() and the stored-class download.
+  function formatText(segs) {
     const paras = [];
-    for (const s of get().segments) {
+    for (const s of (segs || [])) {
       if (s.gap) {
         paras.push(`[${stamp(s.startMs)}] (sin texto: este tramo no se pudo transcribir, hasta ${stamp(s.endMs)})`);
       } else {
@@ -107,6 +108,8 @@ sf.transcript = (() => {
     }
     return paras.length ? paras.join('\n\n') + '\n' : '';
   }
+
+  function toText() { return formatText(get().segments); }
 
   function subscribe(fn) {
     subs.add(fn);
@@ -132,5 +135,5 @@ sf.transcript = (() => {
     sf.events.on('chunk:fail', (d) => { markFailed(d.index); });
   }
 
-  return { reset, addChunk, markFailed, seedFromRecord, get, toText, subscribe };
+  return { reset, addChunk, markFailed, seedFromRecord, get, toText, formatText, subscribe };
 })();

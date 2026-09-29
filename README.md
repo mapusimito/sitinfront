@@ -78,7 +78,9 @@ Open `http://localhost:8600`. With no `MODEL_SIZE` the server default (`large-v3
 
 Verified on Apple silicon (Docker 28.5, linux/arm64): the build succeeded; the container started with `MODEL_SIZE=tiny` and the host Hugging Face cache mounted read-only; `GET /health` returned `healthy` with device `cpu`; the page load made 54 requests, all to the container's own host; one real transcription of a 4 minute Spanish file through the UI completed. `docker compose up` was not run (only `docker compose config`). The old build failure was pip 22.0.2 from Ubuntu 22.04 (resolver assertion), reproduced again with `pip==22.0.2` in the new base; the new image has pip 26.2.1.
 
-Known limit: the transcript from the container is not byte-identical to the one recorded on the host before the revamp (same model, settings and ctranslate2 version, but a different platform). See `docs/ux-revamp/README_EVIDENCE.md`.
+The `docker run` command above is the recommended form. The run that was verified used another port and mounted the host Hugging Face cache read-only, so the exact command shown was not executed word for word.
+
+Known limit: the transcript from the container is not byte-identical to the one recorded on the macOS host before the revamp (same model, settings and ctranslate2 version, but a different platform). The difference already exists before the model runs: decoding the same 4 minute file gives different sample values in the container and on the host (checked with `faster_whisper.audio.decode_audio`; both decode to 240.0 s), because the audio libraries are separate builds per platform. Within one platform the output is deterministic (two container runs were identical). Do not expect identical text across platforms. See `docs/ux-revamp/README_EVIDENCE.md`.
 
 ## Configuration
 

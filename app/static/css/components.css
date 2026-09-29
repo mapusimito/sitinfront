@@ -337,6 +337,14 @@
 .sf-head__end { display: flex; align-items: center; gap: var(--sp-2); margin-left: auto; }
 .sf-head__pill { min-height: 2rem; font-size: var(--fs-sm); color: var(--fg); border-color: var(--muted); }
 .sf-head__pill[hidden], .sf-recdot[hidden] { display: none; }
+/* Small screens: when the status pill has something to say it moves to its own row instead of
+   pushing the header past the viewport (logo + link + theme button + a long pill do not fit at 375 px). */
+@media (max-width: 40rem) {
+  .sf-head { flex-wrap: wrap; }
+  .sf-head__end { flex-wrap: wrap; justify-content: flex-end; min-width: 0; }
+  .sf-head__status:has(.sf-head__pill:not([hidden])) { order: 10; flex: 1 0 100%; display: flex; justify-content: flex-end; }
+  .sf-head__pill { white-space: normal; max-width: 100%; }
+}
 
 /* ---------- Disclosure (settings summary, technical details) ---------- */
 .sf-sum { list-style: none; cursor: pointer; display: flex; align-items: center; gap: var(--sp-2); min-height: var(--hit); }

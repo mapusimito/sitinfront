@@ -27,3 +27,14 @@ def test_class_flow_wiring():
     assert "Guardado en este navegador." in LIB
     assert "No encontramos esa clase" in HTML
     assert "/static/js/library/router.js" in HTML and "/static/css/library.css" in HTML
+
+
+def test_header_status_pill_wraps_to_its_own_row_on_small_screens():
+    """Regression (found by the lead's final axe run): logo + "Mis clases" link + theme button + a long
+    status pill overflowed 375 px by 12 px once P3 added the link. The pill must move to its own row."""
+    from pathlib import Path
+    css = (Path(__file__).parent.parent / "app" / "static" / "css" / "components.css").read_text()
+    start = css.index("@media (max-width: 40rem)", css.index(".sf-head__pill[hidden]"))
+    block = css[start:css.index("/* ---------- Disclosure", start)]
+    assert ".sf-head { flex-wrap: wrap; }" in block
+    assert ".sf-head__status:has(.sf-head__pill:not([hidden]))" in block and "flex: 1 0 100%" in block

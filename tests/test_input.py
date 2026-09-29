@@ -148,9 +148,7 @@ def test_a0_player_script_is_loaded_before_the_input_scripts():
 
 
 def test_a0_legacy_css_has_nothing_for_replaced_regions():
-    legacy = (A0_CSS / "legacy.css").read_text()
-    for gone in ("select {", "shell-", "in-entry", "in-drop", "header-log-toggle", "shell-theme", "logsSection"):
-        assert gone not in legacy, gone
+    assert not (A0_CSS / "legacy.css").exists()  # F1a: the whole legacy stylesheet is gone
     assert "shell-tagline" not in INDEX and "header-log-toggle" not in INDEX and "progressToggle" not in INDEX
 
 

@@ -24,10 +24,15 @@
         function updateChunkETA(chunkId, elapsedMs, chunkIndex, totalChunks) {}
         function updateChunkProgress(current, total) {}
 
+        // One-line message under the input panel, drawn as an sf-banner (text only, no icon).
+        // The 'show' class has no style: engine/eta.js reads it to know a status is on screen.
         function showStatus(msg, type) {
             const el = document.getElementById('statusBox');
+            const mod = { success: ' sf-banner--success', error: ' sf-banner--danger', warning: ' sf-banner--warning' }[type] || '';
             el.textContent = msg;
-            el.className = `status-box show ${type}`;
+            el.className = `sf-banner${mod} show`;
+            el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+            el.hidden = false;
         }
 
         function updateHeaderStatus(msg) {

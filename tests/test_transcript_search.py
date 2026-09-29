@@ -29,8 +29,7 @@ def test_toolbar_markup_and_ids_kept():
 
 def test_legacy_summary_removed_and_tiles_are_real_metrics():
     assert "summary-grid" not in HTML and "summary-item" not in HTML
-    css = (ROOT / "app/static/css/legacy.css").read_text()
-    assert "summary-" not in css
+    assert not (ROOT / "app/static/css/legacy.css").exists()
     src = (JS / "summary.js").read_text()
     assert "sf-stat" in src
     assert "Tiempo de lectura" not in src

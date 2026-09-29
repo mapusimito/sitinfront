@@ -245,7 +245,7 @@
   font-size: var(--fs-read);
   line-height: var(--lh-read);
 }
-.sf-segment__time { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--muted); padding-top: 0.25rem; }
+.sf-segment__time { font-family: var(--font-mono); font-size: var(--fs-sm); font-weight: 600; color: var(--muted); padding-top: 0.25rem; }
 .sf-segment__meta { margin-top: var(--sp-1); }
 .sf-segment[data-state="failed"] { color: var(--danger); }
 .sf-mark { background: var(--mark-bg); color: var(--mark-fg); padding: 0 0.15em; }

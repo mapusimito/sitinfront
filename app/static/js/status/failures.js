@@ -15,7 +15,7 @@
             a.download = `partial-transcript-${new Date().toISOString().slice(0, 10)}.txt`;
             a.click();
             URL.revokeObjectURL(url);
-            showToast('Transcripción parcial exportada');
+            sf.toast({ kind: 'success', title: 'Transcripción parcial exportada' });
         }
 
         function exportErrorLog() {
@@ -27,9 +27,6 @@
             a.download = `error-log-${new Date().toISOString().slice(0, 10)}.json`;
             a.click();
             URL.revokeObjectURL(url);
-            showToast('Registro de errores exportado');
+            sf.toast({ kind: 'success', title: 'Registro de errores exportado' });
         }
 
-        function retryAll() {
-            location.reload();
-        }

@@ -100,3 +100,14 @@ button, input, select, textarea { font: inherit; color: inherit; }
 @media (forced-colors: active) {
   :focus-visible { outline-color: Highlight; }
 }
+
+/* Buttons keep the sizing they had under the retired legacy stylesheet (F1a: no visual change).
+   Rows of buttons share the free space; a later design pass may drop this. */
+button { flex: 1; min-width: 100px; cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+
+/* Scrollbars (moved from the retired legacy stylesheet). */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--panel); }
+::-webkit-scrollbar-thumb { background: var(--grafito); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }

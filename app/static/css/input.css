@@ -9,6 +9,8 @@
 .in-notices, .in-alerts { display: grid; gap: var(--sp-3); }
 .in-notices:not(:empty) { margin-bottom: var(--sp-4); }
 .in-alerts:empty { display: none; }
+#statusBox { margin-bottom: var(--sp-4); }
+#statusBox[hidden] { display: none; }
 .in-detail { color: var(--muted); font-size: var(--fs-sm); overflow-wrap: anywhere; }
 
 .in-title { font-size: var(--fs-lg); font-weight: var(--fw-black); letter-spacing: -0.01em; }

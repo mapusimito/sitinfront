@@ -593,4 +593,8 @@ screens.push(
   { name: 'lib-class-open', path: '/', setup: async (p) => { await seedLibrary({})(p); await gotoLib('#/clases/lib-0')(p); await p.waitForSelector('#tvDock .sf-player'); await p.waitForSelector('#tvList .sf-segment'); } },
   { name: 'lib-class-partial', path: '/', setup: async (p) => { await seedLibrary({ partial: true })(p); await gotoLib('#/clases/lib-1')(p); await p.waitForSelector('#tvDock .sf-player'); await p.waitForSelector('#tvList [data-state=failed]'); } },
   { name: 'lib-missing', path: '/', setup: async (p) => { await gotoLib('#/clases/no-existe')(p); await p.waitForSelector('#viewMissing:not([hidden])'); } },
+  // F1a: the one-line status message that showStatus() writes (end of run, recorder failures).
+  { name: 'status-line-success', path: '/', setup: (p) => p.evaluate(() => showStatus('Todos los segmentos transcriptos', 'success')) },
+  { name: 'status-line-error', path: '/', setup: (p) => p.evaluate(() => showStatus('No se pudo transcribir la grabación: sin conexión', 'error')) },
+  { name: 'status-line-warning', path: '/', setup: (p) => p.evaluate(() => showStatus('Transcripción cancelada. Se conserva lo ya transcrito.', 'warning')) },
 );

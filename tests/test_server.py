@@ -657,6 +657,13 @@ def test_no_hardcoded_colors_or_fonts_outside_tokens():
     assert not offenders, f"hardcoded color/font values outside css/tokens.css: {offenders}"
 
 
+def test_legacy_stylesheet_is_gone_and_exemption_list_is_empty():
+    """F1a: the pre-revamp stylesheet is deleted, nothing is exempt from the token gate, page does not link it."""
+    assert not (REPO_ROOT / "app" / "static" / "css" / "legacy.css").exists()
+    assert _UNTOKENIZED_LEGACY == set()
+    assert "legacy.css" not in (REPO_ROOT / "app" / "templates" / "index.html").read_text()
+
+
 def test_legacy_untokenized_list_has_no_stale_entries():
     """An entry that no longer needs the exemption must be removed, so the list only shrinks."""
     import re

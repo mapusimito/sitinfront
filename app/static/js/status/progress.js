@@ -26,7 +26,19 @@
 
         // One-line message under the input panel, drawn as an sf-banner (text only, no icon).
         // The 'show' class has no style: engine/eta.js reads it to know a status is on screen.
+        // The frozen engine words a few messages in a form that is not the brand's voice (Spain, tuteo,
+        // "fragmentos", not "segmentos"/"transcriptos"). The wording is mapped here, at the UI edge.
+        function brandStatusText(msg) {
+            if (msg === 'Todos los segmentos transcriptos') return 'Tu clase está transcrita.';
+            if (msg === 'Algunos segmentos fallaron en la transcripción') return 'Algunos fragmentos no se han podido transcribir.';
+            if (msg === 'Transcripción interrumpida por errores repetidos') return 'La transcripción se ha interrumpido por errores repetidos.';
+            const m = /^Completado parcialmente: (\d+)\/(\d+) segmentos \((\d+) fallados\)$/.exec(msg);
+            if (m) return `Transcripción incompleta: ${m[1]} de ${m[2]} fragmentos listos, ${m[3]} ${m[3] === '1' ? 'fallido' : 'fallidos'}.`;
+            return msg;
+        }
+
         function showStatus(msg, type) {
+            msg = brandStatusText(msg);
             const el = document.getElementById('statusBox');
             const mod = { success: ' sf-banner--success', error: ' sf-banner--danger', warning: ' sf-banner--warning' }[type] || '';
             el.textContent = msg;

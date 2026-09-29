@@ -780,7 +780,7 @@ def test_partial_failure_still_shows_summary_and_export_and_marks_run(variant):
     assert r["copyDisplay"] == "flex" and r["exportDisplay"] == "flex"
     assert r["marks"] == ["partial"]          # unfinished run: offered for resume after a reload (DL31)
     assert r["runEnd"] == [{"outcome": "partial", "failedChunks": ["main-1"]}]
-    assert "2/3" in r["statusText"] and "1 fallados" in r["statusText"]
+    assert "2 de 3 fragmentos listos" in r["statusText"] and "1 fallido" in r["statusText"]   # brand wording (F1a follow-up)
 
 
 @pytest.mark.parametrize("variant", ["record", "upload"])
@@ -851,3 +851,31 @@ def test_resume_restores_the_original_runs_model_language_and_context():
     r = json.loads(out)
     assert r["seen"] == {"model": "tiny", "language": "en", "context": "Biología"}
     assert r["afterUnknown"] == "tiny"
+
+
+def test_status_messages_use_the_brand_voice():
+    """The engine (frozen) words some status lines as 'segmentos'/'transcriptos'/'fallados'; the UI adapter
+    shows them in the brand's Spain-Spanish voice (audit item A13)."""
+    import json
+    src = (REPO_ROOT / "app" / "static" / "js" / "status" / "progress.js").read_text()
+    start = src.index("function brandStatusText(")
+    end = src.index("function showStatus(")
+    out = _run_node(src[start:end] + """
+    console.log(JSON.stringify([
+      brandStatusText('Todos los segmentos transcriptos'),
+      brandStatusText('Algunos segmentos fallaron en la transcripción'),
+      brandStatusText('Completado parcialmente: 2/3 segmentos (1 fallados)'),
+      brandStatusText('Completado parcialmente: 5/12 segmentos (7 fallados)'),
+      brandStatusText('Transcripción interrumpida por errores repetidos'),
+      brandStatusText('Transcripción cancelada. Se conserva lo ya transcrito.'),
+    ]));""")
+    got = json.loads(out)
+    assert got == [
+        "Tu clase está transcrita.",
+        "Algunos fragmentos no se han podido transcribir.",
+        "Transcripción incompleta: 2 de 3 fragmentos listos, 1 fallido.",
+        "Transcripción incompleta: 5 de 12 fragmentos listos, 7 fallidos.",
+        "La transcripción se ha interrumpido por errores repetidos.",
+        "Transcripción cancelada. Se conserva lo ya transcrito.",
+    ]
+    assert not any("transcriptos" in g or "segmentos" in g for g in got)

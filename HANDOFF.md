@@ -1,44 +1,39 @@
 # HANDOFF
 
-> Overwritten by each relay step. Last writer: **F2 relay agent**, 2026-09-29, after the README rewrite (task 27.7 done). Still open: 25.6 (Safari and the human listening check), 27.4 (DL70, needs a user decision), 28.5 (single branch). The revamp is NOT declared complete: the independent audit comes first.
+> Overwritten by each relay step. Last writer: **container relay agent**, 2026-09-29, task 28.6 (Docker path). Still open: 25.6 (Safari and the human listening check), 27.4 (DL70, needs a user decision), DL90 (container hash mismatch). The revamp is NOT declared complete: the independent audit comes first.
 
 ## Milestones completed since the last handoff
 | ID | Commits | What |
 |---|---|---|
-| F2 (27.7) | `docs: rewrite README from verified facts` (37cb9ce), `docs: out-of-date notice on upstream README translations` (ba24163), `docs: correct CLAUDE.md ...` (own commit), then tracker, plan DL84 to DL87 and this file | `README.md` rewritten. New: `docs/ux-revamp/README_EVIDENCE.md`, `tests/test_readme_claims.py` (4 guards). Notice on top of `README_CN.md`, `README_JP.md`, `README_TW.md`. `CLAUDE.md` corrected (structure, no bridges, icon sprite, no task counts, per-file test commands). No application code, styles, or frozen files touched. |
+| 28.6 | `fix: CPU container that builds ...`, then `docs: README Docker section from verified runs ...` | `Dockerfile` now `python:3.11-slim` with `pip install --upgrade pip` (CPU only). `docker-compose.yml` uses image `sitinfront:local`, volumes for the model cache and `./runs`. `start.sh` and the Dockerfile no longer override the server defaults. README Docker section and defaults table rewritten from what was run. `tests/test_readme_claims.py` gained `test_container_files_follow_server_defaults` (5 tests total). Plan DL89 and DL90. No app code touched. |
 
-## Evidence (README claim group to proof)
-Full table: `docs/ux-revamp/README_EVIDENCE.md`. Headlines:
+## Evidence
+Full rows in `docs/ux-revamp/README_EVIDENCE.md` ("Docker (task 28.6...)" and "Docker hash check").
 | Claim | Evidence |
 |---|---|
-| 5 minute chunks, 3 in flight, 500 MB | `app/static/js/engine/state.js:21-23`, guard test |
-| No outside hosts | Playwright load of `/` on port 8648: 54 requests, hosts `["localhost:8648"]` |
-| `stream=true` NDJSON | real request: `info` then `done` lines (silent tone); code `app/server.py:327-353` |
-| Quick start | fresh venv, `pip install -r requirements.server.txt` exit 0, server up, `/health` healthy |
-| Docker | `docker build -t sitinfront:local .` FAILED in pip (Ubuntu 22.04 pip assertion). Section marked planned, no command |
-| Defaults | `app/server.py:59-68`, `.env.example`; deployment table from reading the files (only `server.py` row run) |
+| Root cause | `pip==22.0.2` in `python:3.11-slim` reproduces `assert len(weights) == expected_node_count`; new image has pip 26.2.1 |
+| Build | `docker build -t sitinfront:local .` exit 0, linux/arm64, Docker 28.5. Image 343 MB content, 1.35 GB in `docker images` |
+| Run | `/health` healthy, device cpu; page load 54 requests, host `localhost:8655` only; one UI transcription of the 4 min file (tiny, host HF cache mounted read-only) |
+| Hash check | FAILED for `transcript_segments.txt` and `run_artifact.json`; two container runs identical to each other |
 
-## Verified (real command output, 2026-09-29)
-- pytest per file: `tests/test_readme_claims.py` 4 passed, `tests/test_repo_hygiene.py` 3 passed, `tests/test_server.py` 51 passed.
-- Not run: whole suite, `tests/test_utils.py` (per instructions), Safari, `./run.sh` (see known issues).
-
-## Files touched
-`README.md`, `README_CN.md`, `README_JP.md`, `README_TW.md`, `CLAUDE.md`, `tests/test_readme_claims.py`, `docs/ux-revamp/README_EVIDENCE.md`, `IMPLEMENTATION_STATUS.md` (27.7, header, Milestone 27 status, graph, Summary recount: 129 done, 1 in progress, 2 blocked, 30 open, 162), `UX_REVAMP_PLAN.md` (DL84 to DL87), `HANDOFF.md`.
+## Verified (real command output)
+- pytest per file: `tests/test_readme_claims.py` 5 passed, `tests/test_repo_hygiene.py` 3 passed, `tests/test_server.py` 51 passed.
+- `docker compose config -q` ok. `docker compose up` NOT run.
+- Not run: whole suite, `tests/test_utils.py`, GPU image (none exists), Safari.
 
 ## Deviations and notes
-- The brief said to remove the Docker section if the build failed. A short "planned" section remains, explaining that the build fails, so nobody assumes a container path exists.
-- The README dropped the old screenshot `sitinfront-proper-layout.png` (the file is deleted in the working tree, not committed as deleted).
-- Feature claims for safe copy and recovery, progress view, search and export rely on earlier verified steps (`docs/ux-revamp/FINAL_REPORT.md`), not on re-runs in this step.
+- Hash mismatch (DL90): same model, settings and ctranslate2 4.8.2, different platform. Baseline unchanged. A host control run failed with an `av` TypeError (`metadata_errors`) in both local venvs, so the cause is not proven.
+- The test container and its temp dirs were removed. The `sitinfront:local` image was kept. `python:3.11-slim` (212 MB) is also cached.
+- No CUDA image: dropped on purpose, not documented as tested.
 
 ## Known issues and unfinished edges
-- `docker build -t sitinfront:local .` fails at `pip3 install -r requirements.server.txt` (old pip resolver assertion). `docker-compose.yml` tags its image with the upstream project's name. Deployment defaults disagree between `app/server.py`, `docker-compose.yml`, `Dockerfile`, `start.sh` (table in the README). All frozen, not changed.
 - `requirements.txt` lacks fastapi and uvicorn; only `requirements.server.txt` starts the server.
-- `./run.sh` could not run here: the local gitignored `venv/bin/activate` points to `/Users/dagam/faster-whisper-web/venv` (moved venv). A fresh venv would not have this.
-- Safari and iOS not tested. A page-wide file drop while a class is open goes home. Deleting a class whose run is still on screen does not clear that transcript.
+- `./run.sh` could not run here (moved gitignored venv). Local venvs pair `av` with a faster-whisper call that raises `TypeError` (`metadata_errors`); the container's `av` 18.1.0 works.
+- Safari and iOS not tested.
 
 ## What the next agent must verify first
-1. pytest per file (`test_readme_claims`, `test_repo_hygiene`, `test_server`, `test_final_screens`, `test_library`).
-2. Then the independent audit. The user must decide on DL70 (27.4) and on the Docker path (fix the Dockerfile or drop it).
+1. pytest per file (`test_readme_claims`, `test_repo_hygiene`, `test_server`).
+2. The user decides DL70 (27.4) and DL90. Then the independent audit.
 
 ## Manual checks waiting for the user
-Safari via WebDriver, Safari storage eviction (19.5, 19.6), iOS manual check, the listening check (25.6), a look at the centered dialogs (DL67), the decision on lecture text in commit `d3f4902`, the single-branch step 28.5, the DL70 decision, and whether to fix the Dockerfile (frozen file).
+Safari via WebDriver, Safari storage eviction (19.5, 19.6), iOS manual check, the listening check (25.6), the DL67 dialogs, lecture text in commit `d3f4902`, the DL70 and DL90 decisions, and `docker compose up` on the user's machine.

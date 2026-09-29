@@ -39,3 +39,19 @@ def test_chunk_length_matches_engine():
     assert f"{minutes} minute chunks" in README
     assert f"up to {conc} requests" in README
     assert f"{mb} MB" in README
+
+
+def test_container_files_follow_server_defaults():
+    docker = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+    compose = (ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+    start = (ROOT / "start.sh").read_text(encoding="utf-8")
+    for name, text in (("Dockerfile", docker), ("docker-compose.yml", compose), ("start.sh", start)):
+        assert "neosun" not in text.lower(), name
+    assert "image: sitinfront:" in compose
+    # DEVICE, COMPUTE_TYPE and MODEL_SIZE must not be given a value here: server.py decides.
+    assert not re.search(r"^\s*ENV\s+.*\b(DEVICE|COMPUTE_TYPE|MODEL_SIZE)=", docker, re.M)
+    assert not re.search(r"(DEVICE|COMPUTE_TYPE|MODEL_SIZE)=\$\{[A-Z_]+:-", compose)
+    assert not re.search(r"export\s+(DEVICE|COMPUTE_TYPE|MODEL_SIZE)=", start)
+    assert "pip install --upgrade pip" in docker
+    assert "docker build -t sitinfront:local ." in README
+    assert "planned" not in README.lower().split("### docker")[1].split("## configuration")[0]

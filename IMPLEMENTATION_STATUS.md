@@ -1,7 +1,7 @@
 # sitinfront - Implementation Status
 
 > **Last Updated**: 2026-09-29
-> **Current Milestone**: 29 ✅ P4 final visual polish done (29.1 to 29.5); 27 🔄 F1a, F1b, F1c and F2 done (27.1, 27.2, 27.3, 27.5, 27.6, 27.7 ✅; 27.4 ⚠️ unlogged 12 min run_artifact re-baseline; revamp NOT declared complete before the independent audit); 26 ✅ P3 Mis clases done (26.1 to 26.6: list, open with player, rename, delete, storage summary and banners, header link); 25 🔄 P2 synchronized player built (25.1 to 25.5 ✅, 25.6 open); 24 ✅ P1a and P1b done (24.1 to 24.6: write errors surfaced, saved-class data, pruning policy, persistence notice, storage-full handling, Descargar backup); 23 ✅ UX revamp T2-a, T2-b, T2-c done; 22 ✅; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 27.4 (needs a user decision), 25.6, then 12.4, 4, 7, 8
+> **Current Milestone**: 28 ✅ container path (28.6) done; 29 ✅ P4 final visual polish done (29.1 to 29.5); 27 🔄 F1a, F1b, F1c and F2 done (27.1, 27.2, 27.3, 27.5, 27.6, 27.7 ✅; 27.4 ⚠️ unlogged 12 min run_artifact re-baseline; revamp NOT declared complete before the independent audit); 26 ✅ P3 Mis clases done (26.1 to 26.6: list, open with player, rename, delete, storage summary and banners, header link); 25 🔄 P2 synchronized player built (25.1 to 25.5 ✅, 25.6 open); 24 ✅ P1a and P1b done (24.1 to 24.6: write errors surfaced, saved-class data, pruning policy, persistence notice, storage-full handling, Descargar backup); 23 ✅ UX revamp T2-a, T2-b, T2-c done; 22 ✅; 21 ✅; Milestones 17, 18, 20, 21 ✅ Done, 19 🔄 (Safari checks pending on the user); 11, 13-16 ✅; 12 🔄 (large-v3-turbo measurement outstanding, UI default stays `small`) — Next planned: 27.4 (needs a user decision), 25.6, then 12.4, 4, 7, 8
 > **Source**: UX Critique (20 issues identified) + Brand Redesign QA (72→100 compliance); Milestones 11-16 added from "Whisper Transcription Pipeline: Accuracy and Observability Fixes" task spec (2026-09-28); Milestones 17-27 added from the UX/UI revamp brief and plan (UX_REVAMP_PLAN.md, 2026-09-29)
 > **Supersedes**: None
 
@@ -681,7 +681,7 @@ Note: the user's brief says do not declare the revamp complete before an indepen
 
 **Priority**: P1: the remote is public and currently has two branches.
 
-**Status**: ✅ Completed (2026-09-29): all five tasks done
+**Status**: ✅ Completed (2026-09-29): all six tasks done (28.6 container path added; hash check against the host baseline did not match, see 28.6 notes)
 
 **Depends on**: Milestone 27
 
@@ -694,6 +694,7 @@ Note: the user's brief says do not declare the revamp complete before an indepen
 | 28.3 | `.env.example` lists every variable the app reads, with safe placeholder values and comments on their own lines | ✅ | `07868aa`; `tests/test_repo_hygiene.py` (3 tests: `.env` untracked, every `os.environ` name documented, no inline comments) |
 | 28.4 | Report what `origin/master` contains that `origin/main` does not | ✅ | 0 commits and 0 files: master is an ancestor of main, so main can replace it by fast-forward (main is 31 or more commits ahead, merge base `71aae64`); reported 2026-09-29 |
 | 28.5 | Single branch: make `main` the GitHub default branch, delete `origin/master`, prune, and verify a fresh clone shows only `main` | ✅ | Done 2026-09-29 with the user's confirmation: `gh repo edit --default-branch main`, `git push origin --delete master`, `git remote prune origin`; `gh api repos/mapusimito/sitinfront/branches` lists only `main`; master had 0 commits that main lacked (main was 91 ahead), tag `v0.10.1` (upstream history) unaffected. Consequence: `.github/workflows/ci.yml` triggers only on `master`, so CI is now inactive; it is inherited upstream boilerplate (black, isort, flake8, full pytest, PyPI publish on tags) and was deliberately NOT retargeted (see open issues) |
+| 28.6 | Container path: make `docker build -t sitinfront:local .` work on Apple silicon, defaults match `app/server.py`, compose uses the sitinfront image name, document only what was run | ✅ | Root cause pip 22.0.2 of Ubuntu 22.04 (reproduced). `Dockerfile` (python:3.11-slim, pip upgrade), `docker-compose.yml`, `start.sh`, README Docker section, `docs/ux-revamp/README_EVIDENCE.md`, `tests/test_readme_claims.py` (5 tests). Build, `/health`, page load and one UI transcription ran. Deviation: the 4min `shasum -c` FAILED (platform numerics, DL90). No GPU image (not built, not documented as tested). |
 
 Note: the README rewrite requested in the same housekeeping message is tracked as task 27.7 (Milestone F), not repeated here.
 
@@ -881,15 +882,15 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 25 | UX revamp: synchronized player (P2) | 6 | P1 | ✅ |
 | 26 | UX revamp: saved classes (P3) | 6 | P1 | ✅ |
 | 27 | UX revamp: final verification (F) | 7 | P0 | ✅ (independent audit still owed) |
-| 28 | Repo housekeeping and a single branch | 5 | P1 | ✅ |
+| 28 | Repo housekeeping and a single branch | 6 | P1 | ✅ |
 | 29 | UX revamp: final visual polish | 5 | P0 | ✅ |
-| **Total** | | **162 tasks** | | |
-| **Completed (✅)** | | **132 (81%)** | | **✅** |
+| **Total** | | **163 tasks** | | |
+| **Completed (✅)** | | **133 (82%)** | | **✅** |
 | **In progress (🔄)** | | **1 (1%)** | | **🔄** |
 | **Blocked (⚠️)** | | **1 (1%)** | | **⚠️** |
 | **Open (⬜)** | | **28 (17%)** | | **⬜** |
 
-Note: recounted from the task rows on 2026-09-29 (F2, after 27.7): 129 ✅, 1 🔄 (12.4), 2 ⚠️ (19.5 and 27.4), 30 ⬜ = 162 (a script counted the 149 numbered rows: 115 ✅ 1 🔄 2 ⚠️ 31 ⬜ before the 27.7 flip, plus the 13 BR.x rows, all ✅) (rows 14.4 and 14.5 carry '✅ (left as-is)' and count as ✅; previous notes said 157 and omitted those and other rows; the table total 162 was already right). Earlier text: 157 (27.1, 27.2, 27.3, 27.5, 27.6 ✅; 27.4 ⚠️; the count includes the 13 BR.x rows and row 3.2, whose description contains a pipe). Counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
+Note: recounted from the task rows on 2026-09-29 (28.6 added): 133 ✅, 1 🔄 (12.4), 1 ⚠️ (19.5), 28 ⬜ = 163 (149 numbered rows counted by script, 119 ✅ 1 🔄 1 ⚠️ 28 ⬜ before 28.6, plus 13 BR.x rows all ✅, plus 28.6 ✅). Earlier note follows. Recounted (F2, after 27.7): 129 ✅, 1 🔄 (12.4), 2 ⚠️ (19.5 and 27.4), 30 ⬜ = 162 (a script counted the 149 numbered rows: 115 ✅ 1 🔄 2 ⚠️ 31 ⬜ before the 27.7 flip, plus the 13 BR.x rows, all ✅) (rows 14.4 and 14.5 carry '✅ (left as-is)' and count as ✅; previous notes said 157 and omitted those and other rows; the table total 162 was already right). Earlier text: 157 (27.1, 27.2, 27.3, 27.5, 27.6 ✅; 27.4 ⚠️; the count includes the 13 BR.x rows and row 3.2, whose description contains a pipe). Counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
 
 ---
 

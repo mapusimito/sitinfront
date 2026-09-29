@@ -64,7 +64,21 @@ Open `http://localhost:8600`. Use `requirements.server.txt`: `requirements.txt` 
 
 ### Docker
 
-planned. The `Dockerfile` in this repository does not build today: `docker build -t sitinfront:local .` fails at the `pip3 install -r requirements.server.txt` step (an error inside the pip that ships with Ubuntu 22.04). There is no tested container command yet. Also, `docker-compose.yml` tags its image with the upstream project's name, so it does not describe a sitinfront image either.
+CPU image, built from `python:3.11-slim`. There is no GPU image: the CTranslate2 wheels for linux/arm64 are CPU only, and no CUDA path was built or tested.
+
+```
+docker build -t sitinfront:local .
+docker run -d --name sitinfront -p 8600:8600 \
+  -v whisper-cache:/root/.cache \
+  -v "$PWD/runs:/app/runs" \
+  sitinfront:local
+```
+
+Open `http://localhost:8600`. With no `MODEL_SIZE` the server default (`large-v3-turbo`) applies and is downloaded on the first request into the `whisper-cache` volume. Add `-e MODEL_SIZE=tiny` (or `small`) for a smaller download. `docker compose up -d --build` starts the same image (`sitinfront:local`) with the same two volumes and reads `PORT`, `MODEL_SIZE`, `DEVICE`, `COMPUTE_TYPE`, `IDLE_TIMEOUT` and `KEEP_AUDIO` from your shell or `.env`; unset variables fall through to the server defaults.
+
+Verified on Apple silicon (Docker 28.5, linux/arm64): the build succeeded; the container started with `MODEL_SIZE=tiny` and the host Hugging Face cache mounted read-only; `GET /health` returned `healthy` with device `cpu`; the page load made 54 requests, all to the container's own host; one real transcription of a 4 minute Spanish file through the UI completed. `docker compose up` was not run (only `docker compose config`). The old build failure was pip 22.0.2 from Ubuntu 22.04 (resolver assertion), reproduced again with `pip==22.0.2` in the new base; the new image has pip 26.2.1.
+
+Known limit: the transcript from the container is not byte-identical to the one recorded on the host before the revamp (same model, settings and ctranslate2 version, but a different platform). See `docs/ux-revamp/README_EVIDENCE.md`.
 
 ## Configuration
 
@@ -87,11 +101,11 @@ What you get depends on how you start the server:
 |---|---|---|---|
 | `python3 app/server.py` | `MODEL_SIZE` or `large-v3-turbo` | `DEVICE` or auto, `COMPUTE_TYPE` or auto | `PORT` or 8600 |
 | `./run.sh [model]` | argument or `base` | `cpu`, `int8` (fixed) | 8600 (fixed) |
-| `start.sh` | `MODEL_SIZE` or `base` | `DEVICE` or `cuda`, `COMPUTE_TYPE` or `float16` | `PORT` or 8600 |
-| `Dockerfile` | `turbo` | `cuda`, `float16` | 8600 |
-| `docker-compose.yml` | `MODEL_SIZE` or `base` | `DEVICE` or `cuda`, `COMPUTE_TYPE` or `float16` | `PORT` or 8600 on the host |
+| `start.sh` | `MODEL_SIZE` or server default (`large-v3-turbo`) | `DEVICE` or auto, `COMPUTE_TYPE` or auto | `PORT` or 8600 |
+| `Dockerfile` (image `sitinfront:local`) | server default (`large-v3-turbo`) | auto (`cpu`, `int8` in the image) | 8600 |
+| `docker-compose.yml` | `MODEL_SIZE` or server default | `DEVICE` or auto, `COMPUTE_TYPE` or auto | `PORT` or 8600 on the host |
 
-Those defaults come from reading each file. Only the `app/server.py` row was run. The deployment files disagree with the server and with each other, and they are tracked as an open issue.
+The `app/server.py` row was run, and so was the `Dockerfile` row (container reported device `cpu`; the tiny model was set explicitly for the test). The `start.sh`, `run.sh` and compose rows come from reading the files.
 
 ## API Reference
 

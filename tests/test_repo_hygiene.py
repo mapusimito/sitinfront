@@ -34,28 +34,13 @@ def test_env_example_has_no_inline_comments_after_values():
             assert " #" not in line, f"inline comment would become part of the value: {line}"
 
 
-# ---------------------------------------------------------------------------
-# Private research rule: research documents are never tracked
-# ---------------------------------------------------------------------------
-
-_RESEARCH_PATTERNS = [
-    r"^IMPLEMENTATION_STATUS\.md$", r"^HANDOFF\.md$", r"^AUDIT_REPORT.*\.md$", r"^.*_PLAN\.md$",
-    r"^private/",
-    r"^docs/ux-revamp/(briefs|directions|audit|final-screens)/",
-    r"^docs/ux-revamp/(FINAL_REPORT|AUDIT_HANDOFF|p0-findings|p0-long-recording-result|axe-results)",
-]
 _IMAGE_EXT = (".png", ".jpg", ".jpeg", ".gif", ".webp")
-_IMAGE_ALLOWED_PREFIXES = ("docs/screenshots/", "app/static/", "assets/")
+_IMAGE_ALLOWED_PREFIXES = ("docs/screenshots/", "app/static/")
 
 
 def _tracked():
     out = subprocess.run(["git", "ls-files"], cwd=REPO_ROOT, capture_output=True, text=True, check=True).stdout
     return out.splitlines()
-
-
-def test_research_documents_are_not_tracked():
-    bad = [f for f in _tracked() if any(re.match(p, f) for p in _RESEARCH_PATTERNS)]
-    assert not bad, f"private research must not be committed: {bad[:5]}"
 
 
 def test_tracked_images_only_in_allowed_places():

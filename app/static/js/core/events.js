@@ -16,8 +16,6 @@
  *   run:end     {outcome:'complete'|'partial'|'aborted'|'cancelled', failedChunks:[]}
  *   storage:saved {persistence:'granted'|'refused'|'unsupported'}  a class was saved, persist() retried (core/storage.js)
  *   storage:error {op, runId, kind:'full'|'other', message}  a RunStore save failed (core/storage.js)
- *
- * Full contract: UX_REVAMP_PLAN.md section 6.
  */
 window.sf = window.sf || {};
 sf.events = (() => {

@@ -1,4 +1,4 @@
-// Builds private/ux-revamp/directions/index.html (comparison page) and index.css.
+// Builds .work/ux-revamp/directions/index.html (comparison page) and index.css.
 import fs from 'node:fs';
 import path from 'node:path';
 import { OUT, ic, logo, themeBtn } from './lib.mjs';

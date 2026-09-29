@@ -3,8 +3,6 @@
  *
  * The ONLY file allowed to contain color values or font names. Everything
  * else references these variables. Source: docs/design/brand-guide.html ("guía de marca").
- * Where the guide is silent the value is derived and logged in
- * UX_REVAMP_PLAN.md (section 2.2, decision log).
  *
  * Theme mechanism is the guide's: light by default, dark via
  * prefers-color-scheme unless data-theme="light", or forced with

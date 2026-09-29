@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const OUT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../private/ux-revamp/directions');
+export const OUT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../.work/ux-revamp/directions');
 
 export const ic = (n, cls = '') =>
   `<svg class="sf-icon${cls ? ' ' + cls : ''}" aria-hidden="true"><use href="/static/icons.svg#i-${n}"></use></svg>`;

@@ -126,7 +126,7 @@ def test_default_model_is_large_v3_turbo(monkeypatch):
 def test_ui_default_model_is_small_pending_turbo_availability():
     """The backend's MODEL_SIZE default is large-v3-turbo for API clients (above), but the
     UI's own selected/default model must stay 'small' until large-v3-turbo's weights are
-    confirmed available and its CPU speed is measured (see IMPLEMENTATION_STATUS.md M12/12.4)
+    confirmed available and its CPU speed is measured
     — otherwise a fresh install's out-of-the-box UI transcription fails or hangs offline."""
     html = _frontend_source()
     assert "let currentModel = 'small';" in html
@@ -727,7 +727,7 @@ def test_every_css_variable_used_is_defined():
 
 
 def test_engine_emits_the_documented_progress_events():
-    """The progress interface (UX_REVAMP_PLAN.md section 6) is the only channel from the
+    """The progress interface (sf.events, docs/reference/progress-events.md) is the only channel from the
     engine to the UI. Every documented event except the reserved 'segment' must be emitted by
     engine code; 'segment' must NOT be emitted until the server can really stream segments."""
     import re

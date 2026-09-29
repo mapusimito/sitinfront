@@ -10,4 +10,4 @@ function bodies by that indentation.
 
 - `engine/`: state, chunk plan, ETA, audio slicing, transcription requests, metrics, IndexedDB run store. Frozen: presentation work must not change what text is produced or what data is sent or stored.
 - `core/`: shared helpers.
-- `input/`, `status/`, `transcript/`: screen code, owned by the matching UX revamp team (see UX_REVAMP_PLAN.md section 5).
+- `input/`, `status/`, `transcript/`: screen code.

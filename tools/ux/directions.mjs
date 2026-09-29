@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { startServer } from './serve_mockups.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const OUT = path.resolve(here, '../../private/ux-revamp/directions');
+const OUT = path.resolve(here, '../../.work/ux-revamp/directions');
 const args = process.argv.slice(2);
 const opt = (k) => { const i = args.indexOf('--' + k); return i >= 0 ? args[i + 1] : null; };
 const dirs = (opt('only') || 'A,B,C').split(',');
@@ -24,7 +24,7 @@ if (!opt('only')) targets.push({ name: 'index', file: 'index', url: 'index.html'
 
 fs.mkdirSync(path.join(OUT, 'shots'), { recursive: true });
 const { server, port } = await startServer(0);
-const base = `http://127.0.0.1:${port}/private/ux-revamp/directions/`;
+const base = `http://127.0.0.1:${port}/.work/ux-revamp/directions/`;
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROME || undefined });
 const rows = []; let blocking = 0;
 

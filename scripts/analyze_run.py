@@ -2,7 +2,7 @@
 """Analyze a run artifact (runs/<run_id>.json) produced by app/server.py.
 
 Read-only: this script changes nothing in the pipeline. It exists so a run can be
-compared against others after the fact, per IMPLEMENTATION_STATUS.md M5.
+compared against others after the fact.
 
 Usage:
     python3 scripts/analyze_run.py runs/<run_id>.json

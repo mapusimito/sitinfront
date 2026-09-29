@@ -436,6 +436,15 @@ export const screens = [
       await page.waitForSelector('dialog[open]');
     },
   },
+  // P1a: storage error toasts, produced by the real sf.storage.report path.
+  ...[['full', 'QuotaExceededError'], ['other', 'UnknownError']].map(([kind, errName]) => ({
+    name: `storage-error-${kind}`,
+    path: '/',
+    setup: async (page) => {
+      await page.evaluate((n) => sf.storage.report(new DOMException('x', n), { op: 'saveClass', runId: 'demo' }), errName);
+      await page.waitForSelector('.sf-toast');
+    },
+  })),
   {
     name: 'gallery-toasts',
     path: '/static/gallery.html',

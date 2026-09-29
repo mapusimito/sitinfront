@@ -14,13 +14,14 @@
  *   segment     {index, chunkIndex, startMs, endMs, text, avgLogprob}
  *               RESERVED for future server-side streaming. Not emitted today.
  *   run:end     {outcome:'complete'|'partial'|'aborted'|'cancelled', failedChunks:[]}
+ *   storage:error {op, runId, kind:'full'|'other', message}  a RunStore save failed (core/storage.js)
  *
  * Full contract: UX_REVAMP_PLAN.md section 6.
  */
 window.sf = window.sf || {};
 sf.events = (() => {
   const TYPES = ['run:start', 'phase', 'chunk:start', 'chunk:retry', 'chunk:done', 'chunk:fail',
-    'eta', 'segment', 'run:end'];
+    'eta', 'segment', 'run:end', 'storage:error'];
   const handlers = new Map();
 
   function on(type, fn) {

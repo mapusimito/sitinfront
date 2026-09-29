@@ -233,7 +233,6 @@ async function startRecording() {
   if (track) track.addEventListener('ended', () => { if (isRecording) { recDeviceLost = true; stopRecording(); } });
 
   mediaRecorder.start(SAFE_COPY_TIMESLICE_MS);
-  document.getElementById('progressToggle').style.display = 'flex';
   updateHeaderStatus('Grabando...');
 
   const timerEl = document.getElementById('timer');

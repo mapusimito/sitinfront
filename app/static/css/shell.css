@@ -1,58 +1,56 @@
-/* App shell: header, landmarks, region layout. Screens live inside the regions. */
+/*
+ * App shell and Direction A layout: one centered column that transforms per
+ * stage. Screens live inside the regions. Tokens only.
+ */
 
-.shell-header {
-  border-bottom: 1px solid var(--line);
-  background: var(--bg);
-}
-.shell-header__inner {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--sp-3) var(--sp-5);
-  padding-block: var(--sp-4);
-}
-.shell-tagline {
-  flex: 1 1 12rem;
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-regular);
-  letter-spacing: 0;
-  line-height: var(--lh-ui);
-}
-.shell-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--sp-3);
-  margin-left: auto;
-}
-.shell-status-text {
-  color: var(--muted);
-  font-size: var(--fs-sm);
-}
+[hidden] { display: none !important; }
 
 .shell-main {
   display: grid;
   gap: var(--sp-5);
-  padding-block: var(--sp-5) var(--sp-7);
-}
-.shell-grid {
-  display: grid;
-  gap: var(--sp-5);
-  grid-template-columns: 1fr;
-  align-items: start;
-}
-@media (min-width: 64rem) {
-  .shell-grid { grid-template-columns: minmax(20rem, 26rem) minmax(0, 1fr); }
+  width: 100%;
+  max-width: 52rem;
+  margin-inline: auto;
+  padding: var(--sp-5) var(--gutter) var(--sp-7);
 }
 .shell-region { min-width: 0; }
 .shell-region > .card:last-child { margin-bottom: 0; }
-
-/* Legacy panels leave no gap of their own once regions space them. */
 .shell-region .card { border-radius: var(--radius); box-shadow: none; }
 
 /* A long option label must not widen its container past the viewport. */
 .shell-region select,
 .shell-region input,
 .shell-region textarea { max-width: 100%; min-width: 0; }
+
+/* The input column: 40rem, centered, one screen at a time. */
+.a-col { width: 100%; max-width: 40rem; margin-inline: auto; display: grid; gap: var(--sp-5); align-content: start; }
+.a-panel { display: grid; gap: var(--sp-5); }
+.a-title { font-size: var(--fs-h2); }
+.a-subtitle { font-size: var(--fs-lg); }
+.a-lead { font-size: var(--fs-lg); color: var(--muted); max-width: 34ch; margin: 0; }
+.a-hint { color: var(--muted); font-size: var(--fs-sm); margin: 0; }
+.a-actions { display: grid; gap: var(--sp-3); }
+.a-big { min-height: 3.5rem; font-size: var(--fs-lg); width: 100%; }
+@media (min-width: 40rem) { .a-actions { grid-template-columns: 1fr 1fr; } }
+.a-slot:empty { display: none; }
+.a-slot { display: grid; gap: var(--sp-4); }
+
+/* Start screen breathes: extra room above the headline on tall viewports. */
+body[data-stage="idle"] #region-input { padding-top: clamp(var(--sp-2), 6vh, var(--sp-7)); }
+
+/* Empty transcript and idle status stay out of the way until a run has content. */
+body:not([data-stage="running"]) #region-transcript:has(.transcript-box.empty) { display: none; }
+
+/* Drop feedback on the upload button (also used for whole-page drops). */
+#uploadArea[data-state="dragover"] { border-color: var(--fg); background: var(--panel); }
+#uploadArea[data-state="invalid"] { border-color: var(--danger); color: var(--danger); }
+
+/* Technical details: the process log. */
+.a-log { max-height: 18rem; overflow-y: auto; border: 1px solid var(--line); border-radius: var(--radius); padding: var(--sp-3); }
+.a-log__list { font-family: var(--font-mono); font-size: var(--fs-sm); }
+.a-log__empty { color: var(--muted); }
+.a-log__row { padding-block: var(--sp-1); border-bottom: 1px solid var(--line); }
+.a-log__row[data-status="success"] .a-log__mark { color: var(--success); }
+.a-log__row[data-status="error"] .a-log__mark { color: var(--danger); }
+.a-log__row[data-status="other"] .a-log__mark { color: var(--warning); }
+.a-log__err { color: var(--danger); }

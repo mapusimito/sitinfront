@@ -324,3 +324,27 @@
 .sf-toast__title { font-weight: var(--fw-bold); }
 .sf-toast__actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; margin-top: var(--sp-2); }
 @keyframes sf-in { from { opacity: 0; transform: translateY(0.5rem); } }
+
+
+/* ---------- Page header (logo, status pill, theme button) ---------- */
+.sf-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--sp-2) var(--sp-3); padding-block: var(--sp-3);
+}
+.sf-head .sf-logo { min-width: 0; }
+.sf-head .sf-logo__mark { width: 1.75rem; }
+.sf-head .sf-logo__word { font-size: var(--fs-lg); }
+.sf-head__end { display: flex; align-items: center; gap: var(--sp-2); margin-left: auto; }
+.sf-head__pill { min-height: 2rem; font-size: var(--fs-sm); color: var(--fg); border-color: var(--muted); }
+.sf-head__pill[hidden], .sf-recdot[hidden] { display: none; }
+
+/* ---------- Disclosure (settings summary, technical details) ---------- */
+.sf-sum { list-style: none; cursor: pointer; display: flex; align-items: center; gap: var(--sp-2); min-height: var(--hit); }
+.sf-sum::-webkit-details-marker { display: none; }
+details[open] > .sf-sum .sf-sum__chev { transform: rotate(180deg); }
+.sf-sum__k { color: var(--muted); }
+.sf-sum__v { font-weight: var(--fw-bold); }
+.sf-sum__chev { margin-left: auto; flex: none; }
+.sf-sum__body { padding-block: var(--sp-3) var(--sp-2); display: grid; gap: var(--sp-3); }
+.sf-disclosure { border-top: 1px solid var(--line); padding-top: var(--sp-1); }
+.sf-fields { display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); }

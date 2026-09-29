@@ -127,7 +127,7 @@ function cancelFileSelection() {
 }
 
 /* ---------- Drop zone ---------- */
-const DROP_TITLE_DEFAULT = 'Subir archivo';
+const DROP_TITLE_DEFAULT = 'Subir grabación';
 function setDropState(state) {
   const zone = document.getElementById('uploadArea');
   const title = document.getElementById('dropTitle');
@@ -269,9 +269,6 @@ async function uploadFileWithProgress(file) {
   document.getElementById('maxSizeLabel').textContent = `${Math.round(MAX_FILE_SIZE / (1024 * 1024))} MB`;
 
   zone.addEventListener('click', () => input.click());
-  zone.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); }
-  });
   zone.addEventListener('dragenter', handleDragOver);
   zone.addEventListener('dragover', handleDragOver);
   zone.addEventListener('dragleave', handleDragLeave);
@@ -280,11 +277,23 @@ async function uploadFileWithProgress(file) {
 
   // A file dropped outside the zone would make the browser navigate away and
   // lose a recording in progress. Only the zone handles drops.
-  for (const type of ['dragover', 'drop']) {
-    window.addEventListener(type, (e) => {
-      if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) e.preventDefault();
-    });
-  }
+  // On the start screen the whole page accepts the drop (the zone's own handlers
+  // stop propagation, so a drop on the button is not handled twice). While a
+  // recording, a chosen file or a run owns the audio, drops are swallowed.
+  const hasFiles = (e) => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+  window.addEventListener('dragover', (e) => {
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    if (inputStage.get() === 'idle') setDropState(dragHasOnlyNonAudio(e) ? 'invalid' : 'dragover');
+  });
+  window.addEventListener('dragleave', (e) => {
+    if (!e.relatedTarget && inputStage.get() === 'idle') setDropState(null);
+  });
+  window.addEventListener('drop', (e) => {
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    if (inputStage.get() === 'idle') handleDrop(e); else setDropState(null);
+  });
 
   document.getElementById('confirmBtn').addEventListener('click', confirmUpload);
   document.getElementById('removeFileBtn').addEventListener('click', cancelFileSelection);

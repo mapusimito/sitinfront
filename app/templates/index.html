@@ -9,36 +9,30 @@
     <link rel="stylesheet" href="/static/css/tokens.css">
     <link rel="stylesheet" href="/static/css/base.css">
     <link rel="stylesheet" href="/static/css/components.css">
+    <link rel="stylesheet" href="/static/css/player.css">
     <link rel="stylesheet" href="/static/css/legacy.css">
     <link rel="stylesheet" href="/static/css/shell.css">
     <link rel="stylesheet" href="/static/css/input.css">
 </head>
-<body>
+<body data-stage="idle">
     <a class="sf-skip" href="#main">Saltar al contenido</a>
 
-    <header class="shell-header">
-        <div class="sf-wrap shell-header__inner">
-            <a class="sf-logo" href="/" aria-label="sitinfront, inicio">
-                <svg class="sf-logo__mark" viewBox="0 0 74 70" aria-hidden="true"><use href="/static/icons.svg#mark"></use></svg>
-                <span class="sf-logo__word">sitinfront</span>
-            </a>
-            <h1 class="shell-tagline">Tú atiende. Nosotros escribimos.</h1>
-            <div class="shell-actions" id="shellActions">
-                <span id="headerStatus" class="shell-status-text" role="status">Listo para grabar</span>
-                <button class="header-log-toggle" id="progressToggle" onclick="toggleProgressDrawer()" style="display: none;">
-                    <span id="toggleIcon">▼</span> Progreso
-                </button>
-                <fieldset class="sf-segctl shell-theme">
-                    <legend class="sf-sr-only">Tema</legend>
-                    <label><input type="radio" name="theme" value="auto"><span>Auto</span></label>
-                    <label><input type="radio" name="theme" value="light"><span>Claro</span></label>
-                    <label><input type="radio" name="theme" value="dark"><span>Oscuro</span></label>
-                </fieldset>
-            </div>
+    <header class="sf-head sf-wrap">
+        <a class="sf-logo" href="/" aria-label="sitinfront, inicio">
+            <svg class="sf-logo__mark" viewBox="0 0 74 70" aria-hidden="true"><use href="/static/icons.svg#mark"></use></svg>
+            <span class="sf-logo__word">sitinfront</span>
+        </a>
+        <div class="sf-head__end">
+            <span class="sf-head__status" role="status">
+                <span class="sf-badge sf-head__pill" id="headerPill" hidden><span class="sf-recdot" id="headerDot" data-live="true" aria-hidden="true" hidden></span><span id="headerStatus"></span></span>
+            </span>
+            <button class="sf-btn sf-btn--ghost sf-btn--icon" type="button" id="themeBtn" data-theme-cycle aria-label="Tema: automático. Cambiar tema">
+                <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-monitor"></use></svg>
+            </button>
         </div>
     </header>
 
-    <main id="main" class="sf-wrap shell-main">
+    <main id="main" class="shell-main">
         <!-- region: status (owner: system status team). Progress, failures, notifications. -->
         <section id="region-status" class="shell-region" aria-label="Estado de la transcripción">
         <div id="progressSection" class="card progress-section">
@@ -56,200 +50,216 @@
         </div>
         </section>
 
-        <div class="shell-grid">
-            <!-- region: input (owner: input team). Settings (moves to a dialog in the status team's milestone), record, upload, resume. -->
-            <section id="region-input" class="shell-region" aria-label="Grabar o subir una clase">
-                <div id="inputNotices" class="in-notices"></div>
-                <div class="sf-card in-card">
-                    <div id="statusBox" class="status-box"></div>
-                    <div id="inputAlerts" class="in-alerts"></div>
+        <!-- region: input (owner: input team). One centered column that changes per stage. -->
+        <section id="region-input" class="shell-region a-col" aria-label="Grabar o subir una clase">
+            <div id="inputNotices" class="in-notices"></div>
+            <div id="statusBox" class="status-box"></div>
+            <div id="inputAlerts" class="in-alerts"></div>
 
-                    <h2 class="in-title" id="inTitle">Tu clase</h2>
+            <!-- Start: two ways in. -->
+            <div id="panelEntry" class="a-panel">
+                <h1 class="a-title" id="inTitle">Graba o sube tu clase</h1>
+                <p class="a-lead">Te devolvemos el texto, con cada frase en su minuto.</p>
+                <div class="a-actions">
+                    <button type="button" id="recordBtn" class="sf-btn sf-btn--primary a-big" aria-describedby="micHint">
+                        <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-mic"></use></svg>
+                        Grabar clase
+                    </button>
+                    <button type="button" id="uploadArea" class="sf-btn a-big" aria-describedby="dropHint">
+                        <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-upload"></use></svg>
+                        <span id="dropTitle">Subir grabación</span>
+                    </button>
+                </div>
+                <p id="micHint" class="a-hint">Al grabar, el navegador te pedirá permiso para usar el micrófono.</p>
+                <p id="dropHint" class="a-hint">Audio de hasta <span id="maxSizeLabel">500 MB</span>. También puedes arrastrarlo a esta página.</p>
+                <div class="a-slot" id="slotEntrySettings"></div>
+            </div>
+            <input type="file" id="fileInput" class="sf-sr-only" accept="audio/*" tabindex="-1" aria-hidden="true">
 
-                    <!-- Empty: two equal ways in. -->
-                    <div id="panelEntry" class="in-entry">
-                        <div class="in-entry__rec">
-                            <button type="button" id="recordBtn" class="sf-btn sf-btn--primary sf-btn--block in-bigbtn" aria-describedby="micHint">
-                                <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-mic"></use></svg>
-                                Grabar
-                            </button>
-                            <p id="micHint" class="in-hint">El navegador te pedirá permiso para usar el micrófono.</p>
-                        </div>
-                        <div id="uploadArea" class="sf-dropzone in-drop" role="button" tabindex="0" aria-labelledby="dropTitle" aria-describedby="dropHint">
-                            <svg class="sf-icon in-drop__icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-upload"></use></svg>
-                            <span id="dropTitle" class="in-drop__title">Subir archivo</span>
-                            <span id="dropHint" class="in-drop__hint">Arrastra un audio aquí o pulsa para elegirlo. Máximo <span id="maxSizeLabel">500 MB</span>.</span>
-                        </div>
+            <!-- Recording. -->
+            <div id="panelRecording" class="in-rec" hidden>
+                <div class="in-rec__head">
+                    <span><span class="sf-recdot" data-live="true" aria-hidden="true"></span><strong>Grabando</strong></span>
+                    <span id="timer" class="in-timer sf-mono" role="timer" aria-label="Tiempo grabado">00:00</span>
+                </div>
+                <div class="in-meter">
+                    <div id="levelMeter" class="in-meter__track" role="meter" aria-label="Nivel del micrófono" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                        <div id="levelFill" class="in-meter__fill"></div>
                     </div>
-                    <input type="file" id="fileInput" class="sf-sr-only" accept="audio/*" tabindex="-1" aria-hidden="true">
+                </div>
+                <p id="levelHint" class="in-note" role="status"></p>
+                <p id="safeNote" class="in-note" role="status"></p>
+                <button type="button" id="stopBtn" class="sf-btn sf-btn--primary a-big">
+                    <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-square"></use></svg>
+                    Parar
+                </button>
+            </div>
 
-                    <!-- Recording. -->
-                    <div id="panelRecording" class="in-rec" hidden>
-                        <div class="in-rec__head">
-                            <span><span class="sf-recdot" data-live="true" aria-hidden="true"></span><strong>Grabando</strong></span>
-                            <span id="timer" class="in-timer sf-mono" role="timer" aria-label="Tiempo grabado">00:00</span>
-                        </div>
-                        <div class="in-meter">
-                            <div id="levelMeter" class="in-meter__track" role="meter" aria-label="Nivel del micrófono" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                                <div id="levelFill" class="in-meter__fill"></div>
-                            </div>
-                        </div>
-                        <p id="levelHint" class="in-note" role="status"></p>
-                        <p id="safeNote" class="in-note" role="status"></p>
-                        <button type="button" id="stopBtn" class="sf-btn sf-btn--primary sf-btn--block in-bigbtn">
-                            <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-square"></use></svg>
-                            Parar
-                        </button>
-                    </div>
-
-                    <!-- Recording finished, not yet transcribed. -->
-                    <div id="panelReview" class="in-review" hidden>
-                        <div class="in-file">
-                            <svg class="sf-icon in-file__icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-file-audio"></use></svg>
-                            <div class="in-file__text">
-                                <div class="in-file__name" id="reviewTitle">Grabación</div>
-                                <div class="in-file__meta">
-                                    <span>Duración <span class="sf-mono" id="reviewDuration"></span></span>
-                                    <span id="reviewSize"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="in-actions">
-                            <button type="button" id="reviewTranscribeBtn" class="sf-btn sf-btn--primary">Transcribir</button>
-                            <button type="button" id="reviewDiscardBtn" class="sf-btn">
-                                <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-trash-2"></use></svg>
-                                Descartar
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Chosen file. -->
-                    <div id="panelFile" class="in-review" hidden>
-                        <div class="in-file">
-                            <svg class="sf-icon in-file__icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-file-audio"></use></svg>
-                            <div class="in-file__text">
-                                <div class="in-file__name" id="metadataFileName"></div>
-                                <div class="in-file__meta">
-                                    <span id="metadataFileSize"></span>
-                                    <span id="metadataDurationWrap" hidden>Duración <span class="sf-mono" id="metadataDuration"></span></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="fileActions" class="in-actions">
-                            <button type="button" id="confirmBtn" class="sf-btn sf-btn--primary">Transcribir</button>
-                            <button type="button" id="removeFileBtn" class="sf-btn">
-                                <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-x"></use></svg>
-                                Quitar
-                            </button>
-                        </div>
-                        <div id="fileSeq" class="in-seq" hidden>
-                            <p id="seqLabel" class="in-seq__label" role="status"></p>
-                            <div class="sf-progress" id="seqBar">
-                                <div class="sf-progress__track" id="seqTrack" role="progressbar" aria-labelledby="seqLabel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-                                    <div class="sf-progress__fill" id="seqFill"></div>
-                                </div>
-                            </div>
-                            <p id="seqDetail" class="in-hint"></p>
-                        </div>
-                    </div>
-
-                    <!-- A run owns the audio: input is locked until it ends. -->
-                    <div id="panelRunning" class="in-running" hidden>
-                        <p id="runningTitle" class="in-running__title" role="status"></p>
-                        <p class="in-hint" id="runningHint"></p>
-                    </div>
-
-                    <div class="in-settings">
-                        <h2 class="in-title in-title--sub">Ajustes</h2>
-                        <div class="in-settings__row">
-                            <div class="sf-field">
-                                <label class="sf-field__label" for="modelSelect">Modelo</label>
-                                <div class="sf-select-wrap">
-                                    <select id="modelSelect" class="sf-select">
-                                        <option value="tiny">Tiny (fastest)</option>
-                                        <option value="base">Base (balanced)</option>
-                                        <option value="small" selected>Small (accurate)</option>
-                                        <option value="medium">Medium (more accurate)</option>
-                                        <option value="large-v3">Large (best accuracy)</option>
-                                        <option value="large-v3-turbo">Large v3 Turbo (strongest, needs model download)</option>
-                                    </select>
-                                    <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-chevron-down"></use></svg>
-                                </div>
-                            </div>
-                            <div class="sf-field">
-                                <label class="sf-field__label" for="languageSelect">Idioma de la clase</label>
-                                <div class="sf-select-wrap">
-                                    <select id="languageSelect" class="sf-select">
-                                        <option value="en">English</option>
-                                        <option value="es" selected>Spanish</option>
-                                        <option value="fr">French</option>
-                                        <option value="de">German</option>
-                                        <option value="it">Italian</option>
-                                        <option value="pt">Portuguese</option>
-                                        <option value="nl">Dutch</option>
-                                        <option value="pl">Polish</option>
-                                        <option value="ja">Japanese</option>
-                                        <option value="zh">Chinese</option>
-                                        <option value="ko">Korean</option>
-                                        <option value="ru">Russian</option>
-                                        <option value="ar">Arabic</option>
-                                    </select>
-                                    <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-chevron-down"></use></svg>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="sf-field">
-                            <label class="sf-field__label" for="contextInput">Contexto de la clase</label>
-                            <input type="text" id="contextInput" class="sf-input" placeholder="Opcional: ¿de qué es la clase? (p. ej., Historia Contemporánea)">
+            <!-- Recording finished, not yet transcribed. -->
+            <div id="panelReview" class="in-review" hidden>
+                <div class="in-file">
+                    <svg class="sf-icon in-file__icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-file-audio"></use></svg>
+                    <div class="in-file__text">
+                        <div class="in-file__name" id="reviewTitle">Grabación</div>
+                        <div class="in-file__meta">
+                            <span>Duración <span class="sf-mono" id="reviewDuration"></span></span>
+                            <span id="reviewSize"></span>
                         </div>
                     </div>
                 </div>
-            </section>
+                <div id="reviewPlayer" class="a-player"></div>
+                <div class="a-slot" id="slotReviewContext"></div>
+                <div class="a-slot" id="slotReviewSettings"></div>
+                <div class="in-actions">
+                    <button type="button" id="reviewTranscribeBtn" class="sf-btn sf-btn--primary">Transcribir</button>
+                    <button type="button" id="reviewDiscardBtn" class="sf-btn">
+                        <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-trash-2"></use></svg>
+                        Descartar
+                    </button>
+                </div>
+            </div>
 
-            <!-- region: transcript (owner: transcript team). Reading view, summary, copy/export. -->
-            <section id="region-transcript" class="shell-region" aria-label="Transcripción">
-            <div class="card">
-                <div class="section">
-                    <div class="section-title">Transcripción</div>
-                    <div id="errorBoundary" class="error-boundary">
-                        <div class="error-boundary-title">Transcripción interrumpida</div>
-                        <div class="error-boundary-text">Demasiados errores consecutivos. Puedes exportar lo transcrito hasta ahora.</div>
-                        <div id="errorSummary" class="error-summary"></div>
-                        <div class="export-buttons">
-                            <button class="btn-secondary" onclick="exportPartialTranscript()">Exportar parcial</button>
-                            <button class="btn-secondary" onclick="exportErrorLog()">Registro de errores</button>
+            <!-- Chosen file. -->
+            <div id="panelFile" class="in-review" hidden>
+                <div class="in-file">
+                    <svg class="sf-icon in-file__icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-file-audio"></use></svg>
+                    <div class="in-file__text">
+                        <div class="in-file__name" id="metadataFileName"></div>
+                        <div class="in-file__meta">
+                            <span id="metadataFileSize"></span>
+                            <span id="metadataDurationWrap" hidden>Duración <span class="sf-mono" id="metadataDuration"></span></span>
                         </div>
                     </div>
-                    <div class="transcript-container">
-                        <div class="transcript-actions">
-                            <button class="btn-secondary" id="copyBtn" onclick="copyToClipboard()" style="display: none;">Copiar</button>
-                            <button class="btn-secondary" id="exportBtn" onclick="exportAsFile()" style="display: none;">Exportar</button>
+                </div>
+                <div class="a-slot" id="slotFileContext"></div>
+                <div class="a-slot" id="slotFileSettings"></div>
+                <div id="fileActions" class="in-actions">
+                    <button type="button" id="confirmBtn" class="sf-btn sf-btn--primary">Transcribir</button>
+                    <button type="button" id="removeFileBtn" class="sf-btn">
+                        <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-x"></use></svg>
+                        Quitar
+                    </button>
+                </div>
+                <div id="fileSeq" class="in-seq" hidden>
+                    <p id="seqLabel" class="in-seq__label" role="status"></p>
+                    <div class="sf-progress" id="seqBar">
+                        <div class="sf-progress__track" id="seqTrack" role="progressbar" aria-labelledby="seqLabel" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                            <div class="sf-progress__fill" id="seqFill"></div>
                         </div>
-                        <div id="transcript" class="transcript-box empty">Aún no hay transcripción. Graba o sube una clase para empezar.</div>
-                        <div id="summaryCard" class="summary-card">
-                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
-                                <div style="width: 4px; height: 20px; background: var(--foco); border-radius: 2px;"></div>
-                                <div class="section-title" style="margin: 0;">Resumen</div>
-                            </div>
-                            <div class="summary-grid" id="summaryGrid"></div>
+                    </div>
+                    <p id="seqDetail" class="in-hint"></p>
+                </div>
+            </div>
+
+            <!-- A run owns the audio: input is locked until it ends. -->
+            <div id="panelRunning" class="in-running" hidden>
+                <p id="runningTitle" class="in-running__title" role="status"></p>
+                <p class="in-hint" id="runningHint"></p>
+            </div>
+
+            <!-- Options. One copy of each; stage.js moves them into the active panel's slot. -->
+            <div id="optContext" class="sf-field">
+                <label class="sf-field__label" for="contextInput">¿De qué es la clase? <span class="sf-field__help">(opcional)</span></label>
+                <input type="text" id="contextInput" class="sf-input" autocomplete="off" aria-describedby="contextHelp">
+                <span class="sf-field__help" id="contextHelp">Ayuda a reconocer nombres y términos. También sirve de título.</span>
+            </div>
+
+            <details id="optSettings" class="sf-disclosure">
+                <summary class="sf-sum">
+                    <span class="sf-sum__k">Ajustes:</span>
+                    <span class="sf-sum__v" id="settingsSummary">Español · modelo small</span>
+                    <svg class="sf-icon sf-sum__chev" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-chevron-down"></use></svg>
+                </summary>
+                <div class="sf-sum__body"><div class="sf-fields">
+                    <div class="sf-field">
+                        <label class="sf-field__label" for="languageSelect">Idioma de la clase</label>
+                        <div class="sf-select-wrap">
+                            <select id="languageSelect" class="sf-select">
+                                <option value="en">Inglés</option>
+                                <option value="es" selected>Español</option>
+                                <option value="fr">Francés</option>
+                                <option value="de">Alemán</option>
+                                <option value="it">Italiano</option>
+                                <option value="pt">Portugués</option>
+                                <option value="nl">Neerlandés</option>
+                                <option value="pl">Polaco</option>
+                                <option value="ja">Japonés</option>
+                                <option value="zh">Chino</option>
+                                <option value="ko">Coreano</option>
+                                <option value="ru">Ruso</option>
+                                <option value="ar">Árabe</option>
+                            </select>
+                            <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-chevron-down"></use></svg>
                         </div>
+                    </div>
+                    <div class="sf-field">
+                        <label class="sf-field__label" for="modelSelect">Modelo</label>
+                        <div class="sf-select-wrap">
+                            <select id="modelSelect" class="sf-select" aria-describedby="modelHelp">
+                                <option value="tiny">Tiny · el más rápido</option>
+                                <option value="base">Base</option>
+                                <option value="small" selected>Small · por defecto</option>
+                                <option value="medium">Medium</option>
+                                <option value="large-v3">Large v3 · el más lento</option>
+                                <option value="large-v3-turbo">Large v3 Turbo · necesita descargar el modelo</option>
+                            </select>
+                            <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-chevron-down"></use></svg>
+                        </div>
+                        <span class="sf-field__help" id="modelHelp">Un modelo más grande tarda más en transcribir.</span>
+                    </div>
+                </div></div>
+            </details>
+        </section>
+
+        <!-- region: transcript (owner: transcript team). Reading view, summary, copy/export. -->
+        <section id="region-transcript" class="shell-region" aria-label="Transcripción">
+        <div class="card">
+            <div class="section">
+                <div class="section-title">Transcripción</div>
+                <div id="errorBoundary" class="error-boundary">
+                    <div class="error-boundary-title">Transcripción interrumpida</div>
+                    <div class="error-boundary-text">Demasiados errores consecutivos. Puedes exportar lo transcrito hasta ahora.</div>
+                    <div id="errorSummary" class="error-summary"></div>
+                    <div class="export-buttons">
+                        <button class="btn-secondary" onclick="exportPartialTranscript()">Exportar parcial</button>
+                        <button class="btn-secondary" onclick="exportErrorLog()">Registro de errores</button>
+                    </div>
+                </div>
+                <div class="transcript-container">
+                    <div class="transcript-actions">
+                        <button class="btn-secondary" id="copyBtn" onclick="copyToClipboard()" style="display: none;">Copiar</button>
+                        <button class="btn-secondary" id="exportBtn" onclick="exportAsFile()" style="display: none;">Exportar</button>
+                    </div>
+                    <div id="transcript" class="transcript-box empty">Aún no hay transcripción. Graba o sube una clase para empezar.</div>
+                    <div id="summaryCard" class="summary-card">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+                            <div style="width: 4px; height: 20px; background: var(--foco); border-radius: 2px;"></div>
+                            <div class="section-title" style="margin: 0;">Resumen</div>
+                        </div>
+                        <div class="summary-grid" id="summaryGrid"></div>
                     </div>
                 </div>
             </div>
-            </section>
         </div>
+        </section>
 
-        <!-- region: history (owner: system status team). Server-side run log. -->
-        <section id="region-history" class="shell-region" aria-label="Historial de procesos">
-        <div id="logsSection" class="card" style="margin-top: 20px;">
-            <div class="section-title">Historial de Procesos</div>
-            <div tabindex="0" role="region" aria-label="Registro de procesos" style="max-height: 300px; overflow-y: auto; border: 1px solid var(--line); border-radius: 6px; padding: 12px;">
-                <div id="logsList" style="font-family: var(--font-mono); font-size: 12px;">
-                    <div style="color: var(--muted);">Cargando registros...</div>
+        <!-- region: history (owner: system status team). Server-side run log, kept behind a disclosure. -->
+        <section id="region-history" class="shell-region a-col" aria-label="Detalles técnicos">
+            <details id="logsSection" class="sf-disclosure" ontoggle="if (this.open) refreshLogs()">
+                <summary class="sf-sum">
+                    <span class="sf-sum__v">Detalles técnicos</span>
+                    <svg class="sf-icon sf-sum__chev" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-chevron-down"></use></svg>
+                </summary>
+                <div class="sf-sum__body">
+                    <h2 class="a-subtitle">Historial de procesos</h2>
+                    <div class="a-log" tabindex="0" role="region" aria-label="Registro de procesos">
+                        <div id="logsList" class="a-log__list">
+                            <div class="a-log__empty">Cargando registros...</div>
+                        </div>
+                    </div>
+                    <button type="button" class="sf-btn" onclick="refreshLogs()">Actualizar</button>
                 </div>
-            </div>
-            <button onclick="refreshLogs()" style="margin-top: 12px; padding: 8px 12px; background: var(--foco); color: var(--sala); border: none; border-radius: 4px; cursor: pointer; font-weight: 500;">Actualizar</button>
-        </div>
+            </details>
         </section>
     </main>
 
@@ -271,6 +281,7 @@
     <script src="/static/js/transcript/segment.js"></script>
     <script src="/static/js/transcript/summary.js"></script>
     <script src="/static/js/transcript/view.js"></script>
+    <script src="/static/js/player/player.js"></script>
     <script src="/static/js/input/stage.js"></script>
     <script src="/static/js/input/safe-copy.js"></script>
     <script src="/static/js/input/recorder.js"></script>

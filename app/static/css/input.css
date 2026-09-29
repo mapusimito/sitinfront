@@ -6,7 +6,6 @@
 
 #region-input .sf-btn { flex: none; }
 
-.in-card { display: grid; gap: var(--sp-5); }
 .in-notices, .in-alerts { display: grid; gap: var(--sp-3); }
 .in-notices:not(:empty) { margin-bottom: var(--sp-4); }
 .in-alerts:empty { display: none; }
@@ -20,23 +19,6 @@
 .in-note:empty { display: none; }
 .in-note[data-kind="failed"] { color: var(--warning); font-weight: var(--fw-medium); }
 
-.in-bigbtn { min-height: 3.5rem; font-size: var(--fs-lg); }
-
-/* Empty state: two equal ways in. */
-.in-entry {
-  display: grid;
-  gap: var(--sp-4);
-  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
-  align-items: stretch;
-}
-.in-entry__rec { display: flex; flex-direction: column; justify-content: center; }
-.in-drop { min-height: 8.5rem; align-content: center; }
-.in-drop:hover .in-drop__title { text-decoration: underline; text-underline-offset: 0.2em; }
-.in-drop__icon { width: 1.75rem; height: 1.75rem; color: var(--fg); }
-.in-drop__title { color: var(--fg); font-weight: var(--fw-bold); }
-.in-drop__hint { font-size: var(--fs-sm); max-width: 30ch; }
-.sf-dropzone[data-state="invalid"] .in-drop__title,
-.sf-dropzone[data-state="invalid"] .in-drop__icon { color: var(--danger); }
 
 /* Recording. --rec appears only through .sf-recdot. */
 .in-rec { display: grid; gap: var(--sp-4); }
@@ -95,10 +77,6 @@
 }
 .in-running__title { font-weight: var(--fw-bold); margin: 0; overflow-wrap: anywhere; }
 .in-running .in-hint { margin: 0; }
-
-/* Settings stay here until the status milestone moves them into a dialog. */
-.in-settings { display: grid; gap: var(--sp-4); border-top: 1px solid var(--line); padding-top: var(--sp-5); }
-.in-settings__row { display: grid; gap: var(--sp-4); grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
 
 @media (forced-colors: active) {
   .in-meter__fill { background: Highlight; }

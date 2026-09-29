@@ -3,7 +3,7 @@
  * recorder, the uploader and the resume/recovery banners.
  *
  * Stages (one panel visible at a time):
- *   idle       Grabar + Subir archivo
+ *   idle       Grabar clase + Subir grabación
  *   recording  live recording
  *   review     recording finished (or recovered), waiting for Transcribir / Descartar
  *   file       file chosen, waiting for Transcribir / Quitar
@@ -24,7 +24,22 @@ const inputStage = (() => {
     running: 'panelRunning',
   };
   const ALL = ['panelEntry', 'panelRecording', 'panelReview', 'panelFile', 'panelRunning'];
+  // The options exist once; they move into the slot of the panel that shows them.
+  // Recording and running have no options.
+  const SETTINGS_SLOT = { idle: 'slotEntrySettings', review: 'slotReviewSettings', file: 'slotFileSettings' };
+  const CONTEXT_SLOT = { review: 'slotReviewContext', file: 'slotFileContext' };
   let current = 'idle';
+
+  function placeOptions(name) {
+    const settings = document.getElementById('optSettings');
+    const context = document.getElementById('optContext');
+    const sSlot = SETTINGS_SLOT[name] && document.getElementById(SETTINGS_SLOT[name]);
+    const cSlot = CONTEXT_SLOT[name] && document.getElementById(CONTEXT_SLOT[name]);
+    if (sSlot) { if (settings.parentNode !== sSlot) sSlot.appendChild(settings); }
+    if (cSlot) { if (context.parentNode !== cSlot) cSlot.appendChild(context); }
+    settings.hidden = !sSlot;
+    context.hidden = !cSlot;
+  }
 
   function set(name, focusId) {
     current = name;
@@ -34,6 +49,8 @@ const inputStage = (() => {
     document.getElementById('fileActions').hidden = busy;
     document.getElementById('fileSeq').hidden = !busy;
     document.getElementById('region-input').dataset.stage = name;
+    document.body.dataset.stage = name;
+    placeOptions(name);
     // Old recovery/resume banners cannot be used while the audio is busy.
     document.getElementById('inputNotices').inert = ['recording', 'reading', 'decoding', 'running'].includes(name);
     if (focusId) {

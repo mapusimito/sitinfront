@@ -5,7 +5,7 @@
 //        --out <dir> [--model tiny] [--language es] [--runs ../../runs]
 //
 // Writes <out>/transcript_segments.txt (text of each segment, in order),
-// <out>/transcript_export.txt (exactly what the Export button would save)
+// <out>/transcript_export.txt (sf.transcript.toText(), what Copy and Export save)
 // and <out>/run_artifact.json (server run artifact minus volatile fields).
 
 import { chromium } from 'playwright';
@@ -46,8 +46,13 @@ await page.waitForFunction(
 );
 
 const runId = await page.evaluate(() => currentRunId);
-const segments = await page.$$eval('.segment-text', (els) => els.map((e) => e.textContent));
-const exported = await page.$eval('#transcript', (el) => el.textContent);
+const domSegments = await page.$$eval('.segment-text', (els) => els.map((e) => e.textContent));
+const segments = await page.evaluate(() => sf.transcript.get().chunks.map((c) => c.text));
+const exported = await page.evaluate(() => sf.transcript.toText());
+if (domSegments.join('\n') !== segments.join('\n')) {
+  console.error('legacy DOM .segment-text differs from the transcript model chunk texts');
+  process.exit(3);
+}
 await browser.close();
 
 fs.writeFileSync(path.join(out, 'transcript_segments.txt'), segments.join('\n') + '\n');

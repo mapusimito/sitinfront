@@ -7,7 +7,7 @@
         }
 
         function exportPartialTranscript() {
-            const text = document.getElementById('transcript').textContent;
+            const text = sf.transcript.toText();
             const blob = new Blob([text], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');

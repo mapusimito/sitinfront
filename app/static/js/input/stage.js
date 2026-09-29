@@ -43,6 +43,7 @@ const inputStage = (() => {
 
   function set(name, focusId) {
     current = name;
+    if (name !== 'review' && typeof unmountReviewPlayer === 'function') unmountReviewPlayer();
     const visible = PANELS[name];
     for (const id of ALL) document.getElementById(id).hidden = id !== visible;
     const busy = name === 'reading' || name === 'decoding';

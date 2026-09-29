@@ -260,7 +260,9 @@ function showRecordingReview() {
   const elapsedMs = (recStopRequestedAt || Date.now()) - recordingStart;
   const sizeBytes = recordedChunks.reduce((n, b) => n + b.size, 0);
   reviewInfo = { elapsedMs, sizeBytes, blob: null, safe: recSafe, recovered: false };
-  fillReview({ title: 'Grabación', elapsedMs, sizeBytes });
+  const recordedType = (recordedChunks[0] && recordedChunks[0].type) || (mediaRecorder && mediaRecorder.mimeType) || '';
+  fillReview({ title: `Grabación del ${formatRecordingDate(recordingStart)}`, elapsedMs, sizeBytes });
+  mountReviewPlayer(new Blob(recordedChunks, { type: recordedType }));
   updateHeaderStatus('Grabación lista');
   if (recDeviceLost) {
     showInputAlert({
@@ -270,6 +272,41 @@ function showRecordingReview() {
     });
   }
   inputStage.set('review', 'reviewTranscribeBtn');
+}
+
+/** "28 sept, 10:02": the day and time the recording started. */
+function formatRecordingDate(ms) {
+  return new Date(ms).toLocaleString('es-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+/* ---------- Listen-back player (review step) ---------- */
+let reviewPlayerEl = null;
+let reviewPlayerToken = 0;
+
+/** Remove the player and revoke its object URL. Called whenever the review step is left. */
+function unmountReviewPlayer() {
+  reviewPlayerToken++;
+  if (reviewPlayerEl) { reviewPlayerEl.destroy(); reviewPlayerEl = null; }
+  const host = document.getElementById('reviewPlayer');
+  host.replaceChildren();
+  host.hidden = true;
+}
+
+/**
+ * The total time comes from the decoded length (Chrome MediaRecorder blobs report an
+ * infinite duration), so measure first and only then show the player.
+ */
+async function mountReviewPlayer(blob) {
+  unmountReviewPlayer();
+  const token = reviewPlayerToken;
+  let seconds;
+  try { seconds = await measureRecordingSeconds(blob); } catch (err) { console.warn('review player: duration unavailable', err); return; }
+  if (token !== reviewPlayerToken || !seconds) return;
+  document.getElementById('reviewDuration').textContent = formatClockSeconds(seconds);
+  const host = document.getElementById('reviewPlayer');
+  reviewPlayerEl = sf.player.create(blob, { durationSec: seconds });
+  host.replaceChildren(reviewPlayerEl);
+  host.hidden = false;
 }
 
 function fillReview({ title, elapsedMs, sizeBytes }) {
@@ -282,7 +319,8 @@ function fillReview({ title, elapsedMs, sizeBytes }) {
 function showRecoveredRecording({ blob, session, safe }) {
   clearInputAlerts();
   reviewInfo = { elapsedMs: session.elapsedMs, sizeBytes: blob.size, blob, safe, recovered: true };
-  fillReview({ title: 'Grabación recuperada', elapsedMs: session.elapsedMs, sizeBytes: blob.size });
+  fillReview({ title: `Grabación recuperada del ${formatRecordingDate(session.startedAt)}`, elapsedMs: session.elapsedMs, sizeBytes: blob.size });
+  mountReviewPlayer(blob);
   updateHeaderStatus('Grabación recuperada');
   inputStage.set('review', 'reviewTranscribeBtn');
 }

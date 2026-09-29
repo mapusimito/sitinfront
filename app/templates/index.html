@@ -96,6 +96,7 @@
 
             <!-- Recording finished, not yet transcribed. -->
             <div id="panelReview" class="in-review" hidden>
+                <h1 class="a-title" id="reviewHeading">Escucha antes de transcribir</h1>
                 <div class="in-file">
                     <svg class="sf-icon in-file__icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-file-audio"></use></svg>
                     <div class="in-file__text">
@@ -106,7 +107,7 @@
                         </div>
                     </div>
                 </div>
-                <div id="reviewPlayer" class="a-player"></div>
+                <div id="reviewPlayer" class="sf-card a-player" hidden></div>
                 <div class="a-slot" id="slotReviewContext"></div>
                 <div class="a-slot" id="slotReviewSettings"></div>
                 <div class="in-actions">

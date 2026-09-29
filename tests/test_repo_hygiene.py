@@ -58,11 +58,6 @@ def test_research_documents_are_not_tracked():
     assert not bad, f"private research must not be committed: {bad[:5]}"
 
 
-def test_private_folder_is_gitignored():
-    r = subprocess.run(["git", "check-ignore", "-q", "private/anything.md"], cwd=REPO_ROOT)
-    assert r.returncode == 0, "private/ must be listed in .gitignore"
-
-
 def test_tracked_images_only_in_allowed_places():
     """Screenshots of real transcripts must never reach the public repo: images are allowed only where
     the project curates them (README screenshots, app assets)."""

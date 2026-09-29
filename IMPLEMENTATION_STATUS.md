@@ -681,7 +681,7 @@ Note: the user's brief says do not declare the revamp complete before an indepen
 
 **Priority**: P1: the remote is public and currently has two branches.
 
-**Status**: 🔄 In progress: 4 of 5 done; the last step (single branch) runs at the end of the implementation, after Milestone 27
+**Status**: ✅ Completed (2026-09-29): all five tasks done
 
 **Depends on**: Milestone 27
 
@@ -693,7 +693,7 @@ Note: the user's brief says do not declare the revamp complete before an indepen
 | 28.2 | Untrack `.env` (keep the local file) | ✅ | `07868aa`; `git ls-files .env` is empty; it was gitignored but tracked since `a970e59`, and Docker Compose read it for `${VAR}` substitution |
 | 28.3 | `.env.example` lists every variable the app reads, with safe placeholder values and comments on their own lines | ✅ | `07868aa`; `tests/test_repo_hygiene.py` (3 tests: `.env` untracked, every `os.environ` name documented, no inline comments) |
 | 28.4 | Report what `origin/master` contains that `origin/main` does not | ✅ | 0 commits and 0 files: master is an ancestor of main, so main can replace it by fast-forward (main is 31 or more commits ahead, merge base `71aae64`); reported 2026-09-29 |
-| 28.5 | Single branch: make `main` the GitHub default branch, delete `origin/master`, prune, and verify a fresh clone shows only `main` | ⬜ | Deferred to the end of the implementation (after 27) by the user's request. Ask before deleting the remote branch. Commands: `gh repo edit mapusimito/sitinfront --default-branch main`, then `git push origin --delete master`, then `git remote prune origin`. No commits are lost (master is an ancestor of main); old tags stay reachable |
+| 28.5 | Single branch: make `main` the GitHub default branch, delete `origin/master`, prune, and verify a fresh clone shows only `main` | ✅ | Done 2026-09-29 with the user's confirmation: `gh repo edit --default-branch main`, `git push origin --delete master`, `git remote prune origin`; `gh api repos/mapusimito/sitinfront/branches` lists only `main`; master had 0 commits that main lacked (main was 91 ahead), tag `v0.10.1` (upstream history) unaffected. Consequence: `.github/workflows/ci.yml` triggers only on `master`, so CI is now inactive; it is inherited upstream boilerplate (black, isort, flake8, full pytest, PyPI publish on tags) and was deliberately NOT retargeted (see open issues) |
 
 Note: the README rewrite requested in the same housekeeping message is tracked as task 27.7 (Milestone F), not repeated here.
 
@@ -737,6 +737,7 @@ Note: the README rewrite requested in the same housekeeping message is tracked a
 - Repository is public and commit `d3f4902` contains lecture text (two screenshots and a quoted phrase); history not rewritten, awaiting the user's decision.
 - `origin/master` (GitHub default branch) is behind `origin/main`; nothing on master is missing from main.
 - Deployment defaults disagree: `app/server.py` (MODEL_SIZE large-v3-turbo, DEVICE auto-detect, COMPUTE_TYPE per device) versus `docker-compose.yml` (base, cuda, float16), `Dockerfile` (turbo, cuda) and `start.sh` (base, cuda). Outside the UX revamp; the README (27.7, done) states what really happens per way of running. Also open: `docker build -t sitinfront:local .` fails in pip inside the image (F2, 2026-09-29), and `requirements.txt` lacks fastapi and uvicorn (the README points to `requirements.server.txt`).
+- CI: `.github/workflows/ci.yml` (inherited from upstream) triggers only on `master`, which no longer exists, so CI is inactive. Do not just retarget it to `main`: it runs `black --check`, `isort`, `flake8`, the full pytest suite (downloads models, hangs offline) and publishes to PyPI on version tags. Review or replace it deliberately.
 - Safari behavior is unverified until 19.5.
 - Runs that hit the old `getSummary` bug may remain "in progress" in IndexedDB and will be offered by the resume banner.
 
@@ -800,7 +801,7 @@ Milestone 26 (Saved classes, P3) ✅ DONE ◄── 25
     ↓
 Milestone 27 (Final verification, F) 🔄 (27.1, 27.2, 27.3, 27.5, 27.6, 27.7 done; 27.4 issue) ◄── 26
     ↓
-Milestone 28 (Repo housekeeping and a single branch) 🔄 ◄── 27 (28.1 to 28.4 done, 28.5 last)
+Milestone 28 (Repo housekeeping and a single branch) ✅ DONE ◄── 27
     ↓
 Milestone 29 (Final visual polish) ── ✅ DONE ◄── 26, 27 (runs before 28.5)
 ```
@@ -880,13 +881,13 @@ Phase 5 — UX Revamp (M17-M27, sequential relay, one small agent per step):
 | 25 | UX revamp: synchronized player (P2) | 6 | P1 | 🔄 (5/6; 25.6 ⬜) |
 | 26 | UX revamp: saved classes (P3) | 6 | P1 | ✅ |
 | 27 | UX revamp: final verification (F) | 7 | P0 | 🔄 (6/7; 27.1, 27.2, 27.3, 27.5, 27.6, 27.7 ✅; 27.4 ⚠️) |
-| 28 | Repo housekeeping and a single branch | 5 | P1 | 🔄 (4/5; 28.5 runs last) |
+| 28 | Repo housekeeping and a single branch | 5 | P1 | ✅ |
 | 29 | UX revamp: final visual polish | 5 | P0 | ✅ |
 | **Total** | | **162 tasks** | | |
-| **Completed (✅)** | | **129 (80%)** | | **✅** |
+| **Completed (✅)** | | **130 (80%)** | | **✅** |
 | **In progress (🔄)** | | **1 (1%)** | | **🔄** |
 | **Blocked (⚠️)** | | **2 (1%)** | | **⚠️** |
-| **Open (⬜)** | | **30 (19%)** | | **⬜** |
+| **Open (⬜)** | | **29 (18%)** | | **⬜** |
 
 Note: recounted from the task rows on 2026-09-29 (F2, after 27.7): 129 ✅, 1 🔄 (12.4), 2 ⚠️ (19.5 and 27.4), 30 ⬜ = 162 (a script counted the 149 numbered rows: 115 ✅ 1 🔄 2 ⚠️ 31 ⬜ before the 27.7 flip, plus the 13 BR.x rows, all ✅) (rows 14.4 and 14.5 carry '✅ (left as-is)' and count as ✅; previous notes said 157 and omitted those and other rows; the table total 162 was already right). Earlier text: 157 (27.1, 27.2, 27.3, 27.5, 27.6 ✅; 27.4 ⚠️; the count includes the 13 BR.x rows and row 3.2, whose description contains a pipe). Counts reflect exact status symbols per the legend above (⚠️ = Blocked/Issues is not counted as Completed). In the 11-16 track no rows are ⚠️ and the only 🔄 row is 12.4 (large-v3-turbo speed measurement). In the UX revamp track (17-27) the only ⚠️ row is 19.5; no revamp rows are 🔄 (Milestone 19 is partial because 19.5 is ⚠️ and 19.6 is ⬜).
 

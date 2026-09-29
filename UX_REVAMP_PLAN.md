@@ -35,7 +35,7 @@ Baseline facts (measured): desktop no horizontal overflow; **mobile 375px: page 
 | A14 | Done | Transcript rendered as one 366-word block labelled "Segment 1/1" (English) with one timestamp; unreadable and unsearchable for a 1 h lecture. Only "Copiar" and "Exportar" | Guide pillar "Encontrable", readability |
 | A15 | Done | Summary card: six tiles of equal weight, yellow text on dark OK but yellow left borders on everything dilutes the guide rule "yellow marks what matters" | Brand guide (color) |
 | A16 | Done | Metric label "Prob. media de token" is honest but unexplained to a student | Clarity (keep the label, add a help text) |
-| A17 | Done | A decoding loop ("¿Tacanot está dentro de puentes de derecho?" repeated 8 times) is presented as a normal, complete result with no signal | Error visibility (see open question Q6: detection would be new logic) |
+| A17 | Done | A decoding loop (one short question repeated 8 times in a row) is presented as a normal, complete result with no signal | Error visibility (see open question Q6: detection would be new logic) |
 | A18 | Error and partial | `showErrorToast`, error boundary and partial export exist in code but were not reproduced in this audit (needs fault injection). The plan requires Team 3 to build and screenshot them with a mocked failing server | Recovery from errors |
 | A19 | Resume | An IndexedDB resume prompt exists (`checkForIncompleteRun`). Its visual state was not captured yet; Team 1 must audit and design it | Error prevention (never lose a recording) |
 | A20 | All | "Historial De Procesos" (Title Case, developer-log look, mono font for non-timestamp text) violates the guide's rule that mono is only for timestamps and durations | Brand guide (type) |

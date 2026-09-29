@@ -26,13 +26,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **`app/main.py`**: Legacy CLI interface (not actively used; server.py is the primary entry point)
 
 ### Frontend (HTML/CSS/JavaScript)
-- **`app/templates/index.html`**: Single-page application (91KB+ due to inline JavaScript)
-  - Two-column layout: settings (left), transcription display (right)
-  - Real-time segment streaming via fetch API
-  - Chunked transcription with overlapping consensus (optional, controlled by `condition_on_previous_text` parameter)
+- **`app/templates/index.html`**: Page shell. CSS lives in `app/static/css/`, JavaScript modules in `app/static/js/` (`engine`, `input`, `status`, `transcript`, `player`, `library`, `persist`, `core`)
+  - Progress and text arrive per 5-minute chunk (segment streaming is not shipped, see `docs/ux-revamp/PROGRESS_EVENTS.md`)
+  - Chunked transcription: 5-minute chunks, up to 3 requests in flight, texts assembled in order (no bridges, no consensus merge)
   - Drag-and-drop upload support
   - Error handling with retry logic and partial transcript export
-  - Lucide React icons for UI elements
+  - Icons: pinned self-hosted SVG sprite `app/static/icons.svg` (built by `tools/ux/build_icons.mjs` from lucide-static), no CDN
   - Spanish localization throughout
 
 ### Core Transcription Engine
@@ -51,8 +50,10 @@ sitinfront/
 │   ├── gpu_manager.py         # GPU/model lifecycle management
 │   ├── mcp_server.py          # MCP integration (if applicable)
 │   ├── templates/
-│   │   └── index.html         # Web UI (91KB single-file SPA)
+│   │   └── index.html         # Page shell
 │   └── static/
+│       ├── css/, js/          # Styles and JavaScript modules (js/engine holds the chunking engine)
+│       ├── fonts/, icons.svg  # Self-hosted fonts and icon sprite
 │       ├── brand/             # sitinfront logo assets (SVG)
 │       └── favicon.svg        # Browser tab icon
 ├── faster_whisper/            # Core transcription engine (upstream fork)
@@ -61,7 +62,7 @@ sitinfront/
 │   └── tokenizer.py           # Transcription post-processing
 ├── tests/                     # Unit tests (minimal coverage)
 ├── benchmark/                 # Performance benchmarking scripts
-├── IMPLEMENTATION_STATUS.md   # Detailed work tracking (41/68 tasks complete)
+├── IMPLEMENTATION_STATUS.md   # Detailed work tracking (counts live in that file)
 └── run.sh                     # Development startup script
 ```
 
@@ -120,17 +121,16 @@ pytest tests/test_transcribe.py     # Single file
 pytest tests/test_transcribe.py::test_base_model  # Single test
 ```
 
-**Note**: Tests require actual audio files and may be slow on CPU.
+**Note**: Tests require actual audio files and may be slow on CPU. Run one file at a time: `tests/test_utils.py` and the whole suite download models and hang when the network is unstable (for example `pytest tests/test_server.py tests/test_repo_hygiene.py tests/test_readme_claims.py -v`).
 
 ## Important Implementation Details
 
 ### Real-Time Transcription Architecture
 The web UI implements real-time segment streaming:
-1. Frontend sends audio chunks (5-min segments + 1-min overlapping bridges)
+1. Frontend sends 5-minute audio chunks (no bridges, no consensus merge)
 2. Backend processes via WhisperModel in parallel (up to 3 concurrent)
-3. Results stream back as segments complete (SSE-style fetch)
-4. Frontend appends to transcript DOM with timestamp, confidence badge, animation
-5. Optional consensus merging at segment boundaries (currently disabled via `condition_on_previous_text=False`)
+3. Each chunk's result arrives when the chunk finishes
+4. Frontend assembles chunk texts in order and renders segments with timestamps
 
 **Key parameter**: `condition_on_previous_text` (in server.py line ~180)
 - `False`: Each segment transcribed independently → no hallucination loops (PREFERRED)
@@ -155,36 +155,23 @@ The web UI implements real-time segment streaming:
   - Schibsted Grotesk (UI text, 400/500/700/900 weights)
   - IBM Plex Mono (timestamps)
 
-- **Icons**: Lucide React (CDN-loaded)
+- **Icons**: self-hosted SVG sprite (`app/static/icons.svg`)
 
 - **Language**: Spanish (all UI text), no emoji icons (brand requirement)
 
 ## Current Implementation Status
 
-**Completed (41/68 tasks)**:
-- ✅ M1: Real-time Streaming Architecture (6/6 tasks)
-- ✅ M2: Typography & Readability (5/5 tasks)
-- ✅ M3: Progress Display & Metadata (7/7 tasks)
-- ✅ M5: Error Handling & Resilience (5/5 tasks)
-- ✅ M6: Upload & Processing Feedback (5/5 tasks)
-- ✅ Brand Redesign: Visual Identity (13/13 tasks)
-
-**Open (27/68 tasks)**:
-- ⬜ M4: Settings Reorganization (6 tasks)
-- ⬜ M7: Keyboard Shortcuts & Session Persistence (5 tasks)
-- ⬜ M8: Export Formats (6 tasks)
-- ⬜ M9: Mobile Optimization & Accessibility (6 tasks)
-- ⬜ M10: Language Detection & Display (4 tasks)
+Task counts and milestone status change often: read `IMPLEMENTATION_STATUS.md` instead of relying on numbers here.
 
 See `IMPLEMENTATION_STATUS.md` for full breakdown with task-level detail and git commit references.
 
 ## Common Development Tasks
 
 ### Modify Web UI
-1. Edit `app/templates/index.html`
+1. Edit `app/templates/index.html` or the files under `app/static/css/` and `app/static/js/`
 2. Restart server: `./run.sh`
 3. **Important**: Hard refresh browser (Cmd+Shift+R or Ctrl+Shift+R) to bypass cache
-4. Test transcription flow: record or upload audio, verify streaming behavior
+4. Test transcription flow: record or upload audio, verify progress per chunk
 
 ### Add Backend Endpoint
 1. Edit `app/server.py`
@@ -256,17 +243,17 @@ Large models (medium, large-v3) require significant GPU memory:
 Use CPU for testing small models. Use GPU + int8 quantization for production.
 
 ### Chunk Size Tuning
-Current implementation: 5-minute main chunks + 1-minute bridge overlaps.
-Edit `MAIN_CHUNK_DURATION` and `BRIDGE_DURATION` in `app/templates/index.html` (lines ~1062-1063) to adjust.
+Current implementation: 5-minute chunks, no overlaps.
+Edit `MAIN_CHUNK_DURATION` in `app/static/js/engine/state.js` to adjust.
 
 ### Concurrent Request Limits
-`MAX_CONCURRENT_REQUESTS = 3` (line ~1064 in index.html) limits parallel chunk processing.
+`MAX_CONCURRENT_REQUESTS = 3` (in `app/static/js/engine/state.js`) limits parallel chunk processing.
 Increase cautiously — each concurrent request needs VRAM.
 
 ## References
 
 - **README.md**: Project overview, features, quick-start, configuration
-- **IMPLEMENTATION_STATUS.md**: Detailed work tracking with 41/68 tasks complete
+- **IMPLEMENTATION_STATUS.md**: Detailed work tracking (task counts live in that file)
 - **Upstream Faster-Whisper**: https://github.com/SYSTRAN/faster-whisper
 - **CTranslate2**: https://github.com/OpenNMT/CTranslate2
 - **Whisper Documentation**: https://platform.openai.com/docs/guides/speech-to-text

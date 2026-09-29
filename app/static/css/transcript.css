@@ -37,3 +37,42 @@
 }
 /* Long transcripts: skip layout work for rows far off screen. */
 .tv .sf-segment { content-visibility: auto; contain-intrinsic-size: auto 5rem; }
+
+/* ---------- P2: synchronized player ---------- */
+/* Docked player: stays at the bottom of the viewport while the reading view is on screen. */
+.tv__dock {
+  position: sticky; bottom: 0; z-index: 2;
+  padding: var(--sp-2) 0 var(--sp-3); background: var(--bg); border-top: 1px solid var(--line);
+  display: grid; gap: var(--sp-1);
+}
+.tv__dock[hidden] { display: none; }
+.tv__dockhelp { margin: 0; color: var(--muted); font-size: var(--fs-sm); }
+.tv__follow { margin-left: auto; }
+.tv__follow[aria-pressed="true"] { border-color: var(--fg); background: var(--panel); }
+.tv__follow[data-paused="true"] { border-style: dashed; }
+/* Timestamps become buttons only while a player is attached (28 px target, DL11). */
+.tv .sf-segment button.sf-segment__time {
+  display: inline-flex; align-items: center; gap: var(--sp-1); align-self: start; justify-self: start;
+  min-height: 1.75rem; padding: 0 var(--sp-1); margin: 0; background: transparent; cursor: pointer;
+  border: 1px solid transparent; border-radius: var(--radius); color: var(--muted);
+}
+.tv .sf-segment button.sf-segment__time:hover { color: var(--fg); border-color: var(--line); }
+.tv .sf-segment button.sf-segment__time:focus-visible { outline: 3px solid var(--fg); outline-offset: 2px; }
+.tv[data-player] .sf-segment:not([data-state="failed"]) .sf-segment__text { cursor: pointer; }
+.tv .sf-segment__now { display: none; }
+.tv .sf-segment[data-current] {
+  background: var(--panel); box-shadow: inset 4px 0 0 var(--fg);
+  padding-inline: var(--sp-2);
+}
+.tv .sf-segment[data-current] .sf-segment__now { display: inline-flex; color: var(--fg); }
+.tv .sf-segment[data-current] .sf-segment__time { color: var(--fg); }
+@media (max-width: 40rem) {
+  /* Copiar and Exportar keep their accessible name and title; only the icon shows. */
+  .tv__act { min-width: var(--hit); padding-inline: 0; }
+  .tv__act .tv__lbl {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  .tv__dockhelp { display: none; }
+  .tv__follow { margin-left: 0; }
+}

@@ -246,8 +246,8 @@
                 <span class="tv__count" id="tvCount" role="status" aria-live="polite" aria-atomic="true"></span>
                 <button type="button" class="sf-btn sf-btn--icon" id="tvPrev" aria-label="Resultado anterior" disabled><svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-chevron-up"></use></svg></button>
                 <button type="button" class="sf-btn sf-btn--icon" id="tvNext" aria-label="Resultado siguiente" disabled><svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-chevron-down"></use></svg></button>
-                <button type="button" class="sf-btn" id="copyBtn" onclick="copyToClipboard()" style="display: none;"><svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-copy"></use></svg>Copiar transcripción</button>
-                <button type="button" class="sf-btn" id="exportBtn" onclick="exportAsFile()" style="display: none;"><svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-download"></use></svg>Exportar .txt</button>
+                <button type="button" class="sf-btn tv__act" id="copyBtn" onclick="copyToClipboard()" style="display: none;" aria-label="Copiar transcripción" title="Copiar transcripción"><svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-copy"></use></svg><span class="tv__lbl">Copiar transcripción</span></button>
+                <button type="button" class="sf-btn tv__act" id="exportBtn" onclick="exportAsFile()" style="display: none;" aria-label="Exportar .txt" title="Exportar .txt"><svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-download"></use></svg><span class="tv__lbl">Exportar .txt</span></button>
             </div>
             <div class="sf-banner sf-banner--warning" id="tvBanner" role="status" hidden>
                 <svg class="sf-icon" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-triangle-alert"></use></svg>
@@ -256,6 +256,7 @@
             <span class="sf-sr-only" id="tvTileHelp">Probabilidad media que el modelo asignó a cada palabra de la transcripción, ponderada por la duración de cada fragmento</span>
             <span class="sf-sr-only" id="tvBadgeHelp">Probabilidad media que el modelo asignó a cada palabra de este fragmento</span>
             <div class="tv__list" id="tvList"></div>
+            <div class="tv__dock" id="tvDock" hidden></div>
             <!-- Legacy appender target (frozen callers and tests). Hidden; the reading view above is the display. -->
             <div id="transcript" class="transcript-box empty" hidden aria-hidden="true"></div>
             <div id="summaryCard" class="tv__tiles" role="group" aria-label="Resumen de la transcripción"></div>
@@ -305,6 +306,7 @@
     <script src="/static/js/transcript/summary.js"></script>
     <script src="/static/js/transcript/view.js"></script>
     <script src="/static/js/player/player.js"></script>
+    <script src="/static/js/player/transcript-player.js"></script>
     <script src="/static/js/input/stage.js"></script>
     <script src="/static/js/input/safe-copy.js"></script>
     <script src="/static/js/input/recorder.js"></script>

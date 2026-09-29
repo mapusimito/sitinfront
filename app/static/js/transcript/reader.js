@@ -11,6 +11,10 @@
   let info = { fileName: '', title: '', active: false };
   let scheduled = false;
   const afterRender = [];
+  // Set by sf.transcriptPlayer while an audio player is attached: { seek(sec) }.
+  // Without it timestamps are plain <time> and gap rows do not mention audio.
+  let player = null;
+  let currentIdx = -1;
 
   const p2 = (n) => String(n).padStart(2, '0');
   function hms(ms) {
@@ -37,17 +41,35 @@
   }
 
   function keyOf(s) {
-    return `${s.chunkIndex}|${s.startMs}|${s.endMs}|${s.gap ? 'gap' : (s.avgLogprob == null ? '-' : s.avgLogprob)}|${s.text}`;
+    return `${player ? 'p' : '-'}|${s.chunkIndex}|${s.startMs}|${s.endMs}|${s.gap ? 'gap' : (s.avgLogprob == null ? '-' : s.avgLogprob)}|${s.text}`;
   }
 
   function buildRow(s) {
     const row = el('div', 'sf-segment');
-    const time = el('time', 'sf-segment__time', hms(s.startMs));
-    time.setAttribute('datetime', iso(s.startMs));
+    let time;
+    if (player) {
+      time = el('button', 'sf-segment__time');
+      time.type = 'button';
+      time.setAttribute('aria-label', `Reproducir desde ${hms(s.startMs)}`);
+      time.appendChild(document.createTextNode(hms(s.startMs)));
+      if (window.sf && sf.icon) {
+        const ic = document.createElement('span');
+        ic.className = 'sf-segment__now';
+        ic.setAttribute('aria-hidden', 'true');
+        ic.innerHTML = sf.icon('play'); // static icon markup, no user text
+        time.insertBefore(ic, time.firstChild);
+      }
+    } else {
+      time = el('time', 'sf-segment__time', hms(s.startMs));
+      time.setAttribute('datetime', iso(s.startMs));
+    }
     const body = el('div');
     if (s.gap) {
       row.dataset.state = 'failed';
-      body.appendChild(el('p', 'sf-segment__text', `Falta el texto de los minutos ${ms2(s.startMs)} a ${ms2(s.endMs)}.`));
+      const range = `${ms2(s.startMs)} a ${ms2(s.endMs)}`;
+      body.appendChild(el('p', 'sf-segment__text', player
+        ? `Falta el texto de los minutos ${range}. El audio de este tramo sí se puede escuchar.`
+        : `Falta el texto de los minutos ${range}.`));
     } else {
       body.appendChild(el('p', 'sf-segment__text', s.text.trim()));
       if (typeof s.avgLogprob === 'number' && Number.isFinite(s.avgLogprob)) {
@@ -60,6 +82,46 @@
     }
     row.append(time, body);
     return row;
+  }
+
+  function setCurrent(i, force) {
+    if (!force && i === currentIdx) return false;
+    if (currentIdx >= 0 && rows[currentIdx] && currentIdx !== i) {
+      rows[currentIdx].el.removeAttribute('aria-current');
+      rows[currentIdx].el.removeAttribute('data-current');
+    }
+    currentIdx = i;
+    if (i >= 0 && rows[i] && !rows[i].gap) {
+      rows[i].el.setAttribute('aria-current', 'true');
+      rows[i].el.dataset.current = '';
+    }
+    return true;
+  }
+
+  // Attach or detach the player hook: rebuild every row (buttons vs <time>, gap text).
+  function setPlayer(p) {
+    player = p || null;
+    currentIdx = -1;
+    rows.forEach((r) => r.el.remove());
+    rows = [];
+    const tv = $('tvList') && $('tvList').closest('.tv');
+    if (tv) tv.toggleAttribute('data-player', !!player);
+    render();
+  }
+
+  function onListClick(e) {
+    if (!player) return;
+    const rowEl = e.target.closest && e.target.closest('.sf-segment');
+    if (!rowEl) return;
+    const i = rows.findIndex((r) => r.el === rowEl);
+    if (i < 0) return;
+    const onTime = e.target.closest('.sf-segment__time');
+    if (!onTime) {
+      if (!e.target.closest('.sf-segment__text') || rows[i].gap) return;
+      const sel = window.getSelection && window.getSelection();
+      if (sel && !sel.isCollapsed && String(sel).trim()) return; // selecting text is not a seek
+    }
+    player.seek(rows[i].startMs / 1000);
   }
 
   function render() {
@@ -76,11 +138,13 @@
     rows.length = i;
     const frag = document.createDocumentFragment();
     for (let j = i; j < visible.length; j++) {
-      const r = { key: keyOf(visible[j]), el: buildRow(visible[j]) };
+      const r = { key: keyOf(visible[j]), el: buildRow(visible[j]), startMs: visible[j].startMs, endMs: visible[j].endMs, gap: !!visible[j].gap };
       rows.push(r);
       frag.appendChild(r.el);
     }
     list.appendChild(frag);
+    if (currentIdx >= rows.length) currentIdx = -1;
+    if (currentIdx >= 0 && rows[currentIdx]) setCurrent(currentIdx, true);
 
     let words = 0;
     let gaps = 0;
@@ -129,6 +193,7 @@
   function boot() {
     if (!window.sf || !sf.transcript || !$('tvList')) return;
     sf.transcript.subscribe(schedule);
+    $('tvList').addEventListener('click', onListClick);
     sf.events.on('run:start', (d) => {
       const ctx = (typeof currentContext === 'string' && currentContext.trim()) ? currentContext.trim() : '';
       const file = d.source === 'upload' && typeof pendingFileName === 'string' ? pendingFileName : '';
@@ -143,7 +208,10 @@
     sf.events.on('run:end', () => { info.active = false; schedule(); });
     render();
     // For tests and scripted checks: render now instead of on the next frame.
-    sf.transcriptView = { flush: render, onRender: (f) => afterRender.push(f) };
+    sf.transcriptView = {
+      flush: render, onRender: (f) => afterRender.push(f),
+      setPlayer, setCurrent, rows: () => rows, hasPlayer: () => !!player,
+    };
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

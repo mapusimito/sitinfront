@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="/static/css/input.css">
     <link rel="stylesheet" href="/static/css/status.css">
     <link rel="stylesheet" href="/static/css/transcript.css">
+    <link rel="stylesheet" href="/static/css/persist.css">
 </head>
 <body data-stage="idle">
     <a class="sf-skip" href="#main">Saltar al contenido</a>
@@ -268,6 +269,7 @@
                     <svg class="sf-icon sf-sum__chev" aria-hidden="true" focusable="false"><use href="/static/icons.svg#i-chevron-down"></use></svg>
                 </summary>
                 <div class="sf-sum__body">
+                    <div id="storageSection"></div>
                     <h2 class="a-subtitle">Historial de procesos</h2>
                     <div class="a-log" tabindex="0" role="region" aria-label="Registro de procesos">
                         <div id="logsList" class="a-log__list">
@@ -308,6 +310,9 @@
     <script src="/static/js/input/recorder.js"></script>
     <script src="/static/js/input/upload.js"></script>
     <script src="/static/js/input/resume.js"></script>
+    <script src="/static/js/persist/classes.js"></script>
+    <script src="/static/js/persist/download.js"></script>
+    <script src="/static/js/persist/panel.js"></script>
     <script src="/static/js/status/run-view.js"></script>
     <script src="/static/js/core/ui.js"></script>
     <script src="/static/js/main.js"></script>

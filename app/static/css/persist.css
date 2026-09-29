@@ -1,0 +1,13 @@
+/* P1b: storage section, classes manager. Tokens only. */
+#storageSection { display: grid; gap: var(--sp-3); margin-bottom: var(--sp-5); justify-items: start; }
+#storageSection .sf-banner { justify-self: stretch; }
+.pst-line { margin: 0; color: var(--fg); }
+.pst-bar { width: 100%; max-width: 32rem; height: 0.75rem; accent-color: var(--accent-text); }
+.pst-manager { display: grid; gap: var(--sp-3); }
+.pst-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--sp-3); max-height: 50vh; overflow: auto; }
+.pst-item { display: flex; gap: var(--sp-3); align-items: center; justify-content: space-between; flex-wrap: wrap;
+  padding: var(--sp-3); border: 1px solid var(--line); border-radius: var(--radius); }
+.pst-item__info { min-width: 0; flex: 1 1 14rem; }
+.pst-item__name { font-weight: var(--fw-bold); overflow-wrap: anywhere; }
+.pst-item__meta { color: var(--muted); }
+.pst-item__actions { display: flex; gap: var(--sp-2); flex-wrap: wrap; }

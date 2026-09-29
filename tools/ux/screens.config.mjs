@@ -9,6 +9,19 @@
 // possible; the few scaffolds that fake a moment in time say so.
 // ---------------------------------------------------------------------------
 
+/** P1b: seed two saved classes (real record shape) into the RunStore database. */
+const seedClasses = (page) => page.evaluate(async () => {
+  await RunStore.getRun('init');
+  const db = await new Promise((res, rej) => { const r = indexedDB.open('sitinfront-runs', 1); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  const tx = db.transaction('runs', 'readwrite');
+  [['Clase de historia, tema 4', 3], ['sample_es_12min.m4a', 12]].forEach(([name, min], i) => tx.objectStore('runs').put({
+    runId: `demo-${i}`, status: 'done', createdAt: 1e12, updatedAt: 1e12, chunkResults: {}, chunkPlan: [], name, fileName: name,
+    sizeBytes: min * 500000, mimeType: 'audio/x-m4a', durationSec: min * 60, savedAt: 1.75e12 + i * 1e9, incomplete: false,
+    audioBlob: new Blob(['x'], { type: 'audio/x-m4a' }), segments: [{ startMs: 0, endMs: 1000, text: 'Hola' }],
+  }));
+  await new Promise((res) => { tx.oncomplete = res; });
+});
+
 /** A short mono 16-bit PCM WAV the browser can really decode. */
 function wav(seconds = 3, rate = 8000) {
   const n = seconds * rate;
@@ -445,6 +458,40 @@ export const screens = [
       await page.waitForSelector('.sf-toast');
     },
   })),
+  // P1b: storage section, classes dialog, delete confirm, toast with actions. Seeds real records through RunStore's database.
+  ...['refused', 'granted'].map((state) => ({
+    name: `storage-section-${state}`,
+    path: '/',
+    setup: async (page) => {
+      await page.evaluate((st) => { sf.events.emit('storage:saved', { persistence: st }); }, state);
+      await page.click('#logsSection > summary');
+      await page.waitForTimeout(500);
+    },
+  })),
+  {
+    name: 'storage-classes-dialog',
+    path: '/',
+    setup: async (page) => { await seedClasses(page); await page.evaluate(() => { sf.persist.openManager(); }); await page.waitForSelector('dialog[open] .pst-item'); },
+  },
+  {
+    name: 'storage-delete-confirm',
+    path: '/',
+    setup: async (page) => {
+      await seedClasses(page);
+      await page.evaluate(() => { sf.persist.openManager(); });
+      await page.waitForSelector('dialog[open] .pst-item');
+      await page.locator('dialog[open] .pst-item').first().getByRole('button', { name: /^Borrar/ }).click();
+      await page.waitForSelector('dialog[open] >> text=No se puede deshacer');
+    },
+  },
+  {
+    name: 'storage-toast-actions',
+    path: '/',
+    setup: async (page) => {
+      await page.evaluate(() => sf.storage.report(new DOMException('x', 'QuotaExceededError'), { op: 'saveClass', runId: 'demo' }));
+      await page.waitForSelector('.sf-toast .sf-btn');
+    },
+  },
   {
     name: 'gallery-toasts',
     path: '/static/gallery.html',

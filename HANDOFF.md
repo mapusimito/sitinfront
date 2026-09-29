@@ -1,40 +1,41 @@
 # HANDOFF
 
-> Overwritten by each relay step. Last writer: **P1a relay agent**, 2026-09-29, after surfacing storage errors, saving class data and changing the pruning policy (milestone 24, tasks 24.1 to 24.3). Tasks 24.4 to 24.6 (P1b) are open.
+> Overwritten by each relay step. Last writer: **P1b relay agent**, 2026-09-29, after the persistence notice, storage-full handling and "Descargar" backup (milestone 24, tasks 24.4 to 24.6). Milestone 24 is complete.
 
 ## Milestones completed since the last handoff
 | ID | Commits | What |
 |---|---|---|
-| P1a (milestone 24, 24.1 to 24.3) | `P1a: sf.storage error reporting...` and `P1a engine: ...` (see `git log`) | `core/storage.js`, `storage:error` event, catch handlers and `saveClassRecord` in `engine/transcribe.js`, `RunStore.saveClass` and new `pruneOldRuns` in `engine/run-store.js`, `tools/ux/p1a_check.mjs`, screens `storage-error-full/other`. |
+| P1b (milestone 24, 24.4 to 24.6) | `P1b: sf.storage.ensurePersistent...`, `P1b engine: retry persist()...`, `P1b: storage section, classes dialog, downloads` (see `git log`) | `core/storage.js` (`ensurePersistent`, `afterSave`, toast actions), `storage:saved` event, `transcript/model.js` (`formatText`), the single `.then(() => sf.storage.afterSave())` in `engine/transcribe.js`, new `persist/{classes,download,panel}.js`, `css/persist.css`, `#storageSection` in `templates/index.html`, `tools/ux/p1b_check.mjs`, screens `storage-*`, `tests/test_persist.py` + `tests/harness/persist_test.cjs`. |
 
-## Verified (real command output, 2026-09-29, server `MODEL_SIZE=tiny DEVICE=cpu COMPUTE_TYPE=int8 PORT=8633`)
-- `p1a_check.mjs --scenario normal` (real 12 min upload): record status done, name and fileName `sample_es_12min.m4a`, sizeBytes 5922331 (= file size), mimeType `audio/x-m4a`, durationSec 720, durationExactSec 720, savedAt set, incomplete false, 22 segments (= model 22), startMs strictly increasing, transcript sha equals baseline `ae2308e7...ab19`.
-- `--scenario quota` (`IDBObjectStore.put` throws QuotaExceededError after 3 calls, 3 faults): exactly 1 toast "No se ha podido guardar la clase en este navegador: almacenamiento lleno. La transcripción sigue en marcha y podrás copiarla o exportarla.", run completed, transcript sha equals baseline, record written before the fault still readable (status in-progress, chunkPlan intact).
-- `--scenario other` (UnknownError): exactly 1 toast with the generic text (no "lleno"), same hash and readable record.
-- `--scenario prune` (7 done, 2 partial, 5 fresh + 3 old in-progress, 1 aborted): after `pruneOldRuns()` 7 done, 2 partial, 5 fresh in-progress remain, 0 old, 0 aborted (aborted was the 6th newest recovery run, so the 5 run limit removed it); `getIncompleteRuns` lists only partial and in-progress.
-- axe (`screens.mjs --only storage-error-full,storage-error-other`, 1280 and 375, light and dark): 8 rows, 0 serious or critical, 0 overflow, 0 page errors. `contrast.mjs`: all pass.
-- Hashes: `transcribe_check.mjs` 4 min and 12 min into `/tmp/hb/baseline`, `shasum -c`: 6 of 6 OK (after the engine edit).
-- pytest per file: `test_input.py` 21, `test_server.py` 49 (one test updated to the new pruning rule), `test_repo_hygiene.py` 3, `test_transcript_model.py` 1, `test_transcript_reader.py` 2, `test_transcript_search.py` 4 passed.
-- `IMPLEMENTATION_STATUS.md` Summary recounted: 104 done, 1 in progress, 1 blocked, 51 open = 157.
+## Verified (real command output, 2026-09-29, server `MODEL_SIZE=tiny DEVICE=cpu COMPUTE_TYPE=int8 PORT=8635`)
+- `p1b_check.mjs --scenario persist` (stub persist false then true, short upload twice each): 6 PASS. Refused: calm banner text shown in Detalles técnicos and exactly 1 `sf-banner`; granted: "Este navegador ha concedido almacenamiento persistente." and no banner; `persist()` count 1 after run 1, 2 after run 2.
+- `--scenario noestimate` (`estimate()` resolves undefined): 3 PASS, no `<progress>`, no "%", shows "Espacio ocupado por tus clases guardadas: 8,6 MB".
+- `--scenario manager` (3 seeded classes, `IDBObjectStore.put` throws QuotaExceededError after 3 puts, real upload): 11 PASS. Toast has "Gestionar clases" and "Descargar copia" and the new body sentence; the copy dialog downloads a `.txt`; the dialog lists the seeded classes newest first with names as text (`<b>` in a name is not rendered); cancel and Escape on the confirm delete nothing; confirm removes exactly `seed-1` (4 records to 3); Borrar target 83x44 px; focus stays inside the dialog after delete.
+- `--scenario downloads` (real 12 min upload): audio download `sample_es_12min.m4a`, sha256 equals the original file; text download sha256 equals baseline `12min/transcript_export.txt`.
+- `--scenario recording` (fake microphone playing a speech wav): stored type `audio/webm;codecs=opus`, download `Grabación del 29 de septiembre de 2026.webm`, EBML magic `1a45dfa3`, not `.wav`.
+- axe (`screens.mjs --only storage-section-refused,storage-section-granted,storage-classes-dialog,storage-delete-confirm,storage-toast-actions`, 1280 and 375, light and dark): 20 rows, 0 serious or critical, 0 overflow. `contrast.mjs`: all pass.
+- Hashes: `transcribe_check.mjs` 4 min and 12 min into `/tmp/hb/baseline`, `shasum -c`: 6 of 6 OK (after the engine edit and all P1b code).
+- pytest per file: `test_input.py` 21, `test_server.py` 49, `test_repo_hygiene.py` 3, `test_transcript_model.py` 1, `test_transcript_reader.py` 2, `test_transcript_search.py` 4, `test_persist.py` 2 passed.
+- `IMPLEMENTATION_STATUS.md` Summary recounted from rows: 107 done, 1 in progress, 1 blocked, 48 open = 157. Milestone 24 set to done.
 
 ## Files touched
-`app/static/js/core/{storage,events}.js`, `app/static/js/engine/{run-store,transcribe}.js` (only the allowed parts), `app/templates/index.html` (script tag), `tests/test_server.py`, `tools/ux/{p1a_check,screens.config}.mjs`, `IMPLEMENTATION_STATUS.md`, `UX_REVAMP_PLAN.md` (DL47 to DL49), this file.
+`app/static/js/core/{storage,events}.js`, `app/static/js/transcript/model.js`, `app/static/js/engine/transcribe.js` (one call), `app/static/js/persist/*`, `app/static/css/persist.css`, `app/templates/index.html`, `tests/test_persist.py`, `tests/harness/persist_test.cjs`, `tools/ux/{p1b_check,screens.config}.mjs`, `IMPLEMENTATION_STATUS.md`, `UX_REVAMP_PLAN.md` (DL50 to DL53), this file.
 
 ## Deviations and notes
-- Recordings have no file name: `fileName` is empty for them (title falls to context or date).
-- On a resumed run the original blob comes from the stored record, so its type is kept.
-- The toast wording "La transcripción sigue en marcha" is as specified; if the fault happens at the very end it can read slightly off. Wording is a user decision if it matters.
-- Fault injection covers `put`; a failure inside `store.delete` in pruning is reported through the same handler.
-- `saveClass` writes the segment list into the same record as the audio blob; a very large class means a large record. P1b (storage-full handling) should look at `sf.storage.estimate()`.
-- Nothing calls `sf.storage.estimate()` yet.
+- `sf.classes.list()` reads the `by-status` index of the RunStore database directly (RunStore has no list call and the engine is frozen), see DL50. The first version opened the database without a version and created an empty one when absent; fixed by aborting the upgrade.
+- The quota check in `manager` also uses the real toast path with a real upload. The storage-full dialog "Descargar copia" falls back to the live transcript when the run record could not be saved; the audio button says honestly when nothing is stored.
+- Before the first save the section says persistence has not been requested yet (no `persist()` on page load).
+- Any toast action dismisses the toast (existing toast behaviour), so "Gestionar clases" and "Descargar copia" cannot both be used from one toast instance. The manager dialog also has per-class Audio and Texto buttons.
+- The recording download name is the auto title ("Grabación del ..."), the extension follows the stored MIME type.
+- The manager dialog is a plain `sf.dialog` list, not "Mis clases" (P3).
 
 ## Known issues and unfinished edges
 - Sticky toolbar 165 px at 375 (icon-only buttons, F).
-- Old `done` runs already in a user's browser under the previous rule may have been pruned before this change; nothing can restore them.
+- A very large class means a large record (audio plus segments in one record).
 
 ## What the next agent must verify first
 1. pytest per file, `node tools/ux/contrast.mjs`, `shasum -c` of the 6 hashes.
-2. Next: P1b (24.4 persist notice, 24.5 storage-full handling with delete list, 24.6 Descargar backup).
+2. Next: P2 (milestone 25, synchronized player) or as the user decides.
 
 ## Manual checks waiting for the user
-Unchanged: Safari via WebDriver, Safari storage eviction (tasks 19.5, 19.6), iOS manual check.
+Unchanged: Safari via WebDriver, Safari storage eviction (tasks 19.5, 19.6), iOS manual check. Also worth a manual look: real `persist()` refusal behaviour in Safari and Firefox.

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sitinfront, inicio (A)</title>
+<link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+<script src="/static/js/core/theme.js"></script>
+<link rel="stylesheet" href="/static/css/tokens.css">
+<link rel="stylesheet" href="/static/css/base.css">
+<link rel="stylesheet" href="/static/css/components.css">
+<link rel="stylesheet" href="/static/css/input.css">
+<link rel="stylesheet" href="../mockup-shared.css">
+<link rel="stylesheet" href="layout.css">
+</head>
+<body class="a-body ">
+<a class="sf-skip" href="#main">Saltar al contenido</a>
+<header class="x-head sf-wrap "><a class="sf-logo" href="start.html" aria-label="sitinfront, inicio"><svg class="sf-logo__mark" viewBox="0 0 74 70" aria-hidden="true"><use href="/static/icons.svg#mark"></use></svg><span class="sf-logo__word">sitinfront</span></a><div class="x-head__end"><a class="sf-btn sf-btn--ghost x-classes" href="classes.html"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-file-audio"></use></svg><span class="x-classes__t">Mis clases</span></a><button class="sf-btn sf-btn--ghost sf-btn--icon" type="button" data-theme-cycle aria-label="Tema: automático. Cambiar tema"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-monitor"></use></svg></button></div></header><main id="main" class="a-main a-main--start">
+<div><h1 class="a-title">Graba o sube tu clase</h1></div>
+<p class="a-lead">Te devolvemos el texto, con cada frase en su minuto.</p>
+<div class="a-actions"><a class="sf-btn sf-btn--primary a-big" href="recording.html"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-mic"></use></svg>Grabar clase</a><a class="sf-btn a-big" href="ready.html"><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-upload"></use></svg>Subir grabación</a></div>
+<p class="a-hint">Audio de hasta 500 MB. También puedes arrastrarlo a esta página.</p>
+<details class="a-set" id="set">
+<summary class="x-sum"><span class="x-sum__k">Ajustes:</span> <span class="x-sum__v">Español · modelo pequeño</span><svg class="sf-icon x-sum__chev" aria-hidden="true"><use href="/static/icons.svg#i-chevron-down"></use></svg></summary>
+<div class="x-sumbody"><div class="x-fields">
+<div class="sf-field"><label class="sf-field__label" for="setf-lang">Idioma de la clase</label>
+<div class="sf-select-wrap"><select class="sf-select" id="setf-lang"><option selected>Español</option><option>Inglés</option><option>Catalán</option><option>Gallego</option></select><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-chevron-down"></use></svg></div></div>
+<div class="sf-field"><label class="sf-field__label" for="setf-model">Modelo</label>
+<div class="sf-select-wrap"><select class="sf-select" id="setf-model" aria-describedby="setf-mh"><option selected>Pequeño (más rápido)</option><option>Mediano</option><option>Grande (el más lento)</option></select><svg class="sf-icon" aria-hidden="true"><use href="/static/icons.svg#i-chevron-down"></use></svg></div>
+<span class="sf-field__help" id="setf-mh">Un modelo más grande tarda más en transcribir.</span></div>
+</div></div></details></main>
+<script>(function(){var b=document.querySelector('[data-theme-cycle]');if(!b||!window.sf)return;var o=['auto','light','dark'],n={auto:'automático',light:'claro',dark:'oscuro'};function l(){b.setAttribute('aria-label','Tema: '+n[sf.theme.get()]+'. Cambiar tema');}l();b.addEventListener('click',function(){sf.theme.set(o[(o.indexOf(sf.theme.get())+1)%3]);l();});
+var m=window.matchMedia&&matchMedia('(max-width:63.99rem)').matches;if(m)document.querySelectorAll('.c-fold').forEach(function(d){d.open=false;});})();</script>
+</body>
+</html>
